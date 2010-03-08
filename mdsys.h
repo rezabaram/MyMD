@@ -1,6 +1,7 @@
 #ifndef MDSYS_H
 #define MDSYS_H 
 #include"common.h"
+#include"grid.h"
 #include"particle.h"
 
 typedef GeomObjectBase * BasePtr;
@@ -19,6 +20,7 @@ class CSys{
 	//void setup_grid(double d);
 
 	bool interact(CParticle *p1,CParticle *p2, vec &force)const; //force from p2 on p1
+	inline bool interact(CParticle *p1, GeomObject<tbox> *p2, vec &force)const;
 	bool interact(const CParticle *p1, const GeomObject<tbox> &b, vec &force)const;//force from box on p1
 
 	void overlappings();
@@ -47,10 +49,10 @@ CSys::~CSys(){
 
 bool CSys::add(CParticle *p){
 	vec force(0.0);
-	if(interact(p, box, force)){
-		ERROR("The particle is intially within the box: "<<p->x(0));
-		return false;
-		}
+	//if(interact(p, box, force)){
+		//ERROR("The particle is intially within the box: "<<p->x(0));
+		//return false;
+		//}
 	if(maxr<p->radius)maxr=p->radius;
 	particles.push_back(p);
 	//assert(grid);
@@ -79,7 +81,7 @@ void CSys::calForces(){
 			}
 		//the walls
 		force=0;
-		if(interact(*it1, box, force)){
+		if(interact(*it1, &box, force)){
 			(*it1)->addforce(force);
 			}
 		}
@@ -222,6 +224,24 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force)const{
 	return true;
 	}
 
+inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2, vec &force)const{
+
+	vector<COverlapping> overlaps;
+	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
+	//cerr<< overlaps.size()<<endl;
+	vec dv=p1->x(1);
+	double proj;
+	if(overlaps.size()==0)return false;
+	for(int i=0; i<overlaps.size(); i++){
+		proj=dv*overlaps.at(i).dx;
+		if(proj>0)force-=p1->material.stiffness1*overlaps.at(i).dx;
+		else force-=p1->material.stiffness2*overlaps.at(i).dx;
+		}
+/// ?????????????????? this is just a test
+	//force-=friction*dv;
+/////////////////////////////
+	return true;
+	}
 inline bool CSys::interact(const CParticle *p1, const GeomObject<tbox> &b, vec &force)const{
 	bool overlap=false;
 	double d=b.top()(0)-p1->x(0)(0)-p1->radius;

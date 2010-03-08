@@ -5,8 +5,8 @@
 #include<vector>
 #include<string>
 #include<iomanip>
-#include"dfreedom.h"
 #include"common.h"
+#include"dfreedom.h"
 #include"shapes.h"
 
 using namespace std;
@@ -14,7 +14,8 @@ class CProperty
 	{
 	public:
 	CProperty():
-	 	stiffness1(paramsDouble("stiffness1")), stiffness2(paramsDouble("stiffness1")), color(" 1"), density(paramsDouble("density")){};
+	 	stiffness1(paramsDouble("stiffness1")), stiffness2(paramsDouble("stiffness2")), color(" 1"), density(paramsDouble("density")){
+		};
 	~CProperty(){}
 	double stiffness1, stiffness2;
 	double density;
@@ -22,8 +23,8 @@ class CProperty
  	private:
 	};
 
-#define particleType tcomposite
-//#define particleType tsphere
+//#define particleType tcomposite
+#define particleType tsphere
 class CParticle : public GeomObject<particleType>{
 	public:
 	CParticle(const vec & _x0, double r):GeomObject<particleType>(_x0, r), id(-1), forces(vec(0.0)), frozen(false){
@@ -77,6 +78,7 @@ void CParticle::calPos(double dt){
 	static vec n(1); //FIXME this temporary
 	static double t=0;
 	t+=dt;
+
 	rotate(vec(1.0), 10*dt);
 	moveto(x(0));
 	}

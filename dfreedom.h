@@ -1,7 +1,6 @@
 #ifndef DFREEDOM_H
 #define DFREEDOM_H 
 #include"vector.h"
-#include"common.h"
 
 typedef unsigned short indexType;
 template<indexType depth=5>//number of derivatives, i.e., r, v, a, j, etc ...

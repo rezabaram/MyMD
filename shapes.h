@@ -68,6 +68,9 @@ class GeomObject<tplane> : public GeomObjectBase
 		void print(std::ostream &out)const{
 			out<< Xc<< "  "<<n;
 			}
+		vec normal_to_point(const vec & p, double shift){
+			return ((Xc-p)*n-shift)*n;
+			}
 	
 	vec n;//normal
  	private:
@@ -148,6 +151,10 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		s2=new CSphere(vec(2,+r/2.), r);
 		elems.push_back(s2);
 		s2=new CSphere(vec(2,-r/2.), r);
+		elems.push_back(s2);
+		s2=new CSphere(vec(1,-r/2.), r);
+		elems.push_back(s2);
+		s2=new CSphere(vec(1,+r/2.), r);
 		elems.push_back(s2);
 
 		this->moveto(v);
@@ -236,14 +243,13 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 	vec v;
 	double d, dd;
 	for(int i=0; i<6; i++){//FIXME to general Box to any polygon, 6 should be the number of faces
-		v=((b->face[i]->distance(p1))*b->face[i]->n)*b->face[i]->n;//vertical vector from the center of sphere to the plane
+		v=b->face[i]->normal_to_point(p1->Xc, p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
 		if(dd>0) ovs.push_back(COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v));
-		cerr<< ovs.size() <<endl;
 		}
-
 	}
+
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
 	for(int i=0; i< (p1->elems.size()); i++){
 	for(int j=0; j< (p2->elems.size()); j++){
@@ -255,7 +261,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	for(int i=0; i<p1->elems.size(); i++){
-		overlaps(ovs, p1, b);
+		overlaps(ovs, p1->elems.at(i), b);
 		}
 
 }

@@ -1,5 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H 
+
+#define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 //#include"matrix.h"
 #include<assert.h>
 #include<memory>
@@ -9,7 +11,6 @@
 #include<vector>
 #include"vector.h"
 #include"log.h"
-#define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 
 #include"config.h"
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
@@ -26,5 +27,6 @@ void define_parameters()
 	config.add_param<double>("stiffness1", 5000000.0); 
 	config.add_param<double>("stiffness2", 1000000.0); 
 	config.add_param<double>("density", 10000.0); 
+	config.add_param<double>("particleSize", 0.05); 
 }
 #endif /* COMMON_H */

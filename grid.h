@@ -1,8 +1,7 @@
 #ifndef GRID_H
 #define GRID_H
-#include"common.h"
-#include"particle.h"
-#include"box.h"
+#include "vector.h"
+#include "particle.h"
 
 enum {
 	Periodic=1,
@@ -10,8 +9,8 @@ enum {
 
 enum EDirction
 	{ left, right,
-	back, forth,
-	up, down
+	  back, forth,
+	  up, down
 	};
 
 //give names to the neighbours not to have to deal with their indices
@@ -98,7 +97,7 @@ class CNode3D : public Container
 class CRecGrid
 	{
 	public:
-	CRecGrid(const vec &_corner, const vec & _L, double _d);
+	CRecGrid(const vec3d &_corner, const vec3d & _L, double _d);
 	~CRecGrid();
 	CNode3D &operator ()(int i, int j, int k); //returns the ith node
 	CNode3D *node(int i, int j, int k); //returns the ith node
@@ -115,8 +114,8 @@ class CRecGrid
 		out<< "print not yet implemented for this class" <<std::endl;
         	}
 
-	vec corner;
-	vec L, dL;//dimensions of the grid L, and cells dL 
+	vec3d corner;
+	vec3d L, dL;//dimensions of the grid L, and cells dL 
 	CCoord N;//number of cells in each direction
 
 	//private:
@@ -127,7 +126,7 @@ class CRecGrid
 };
 
 
-CRecGrid::CRecGrid(const vec & _corner, const vec & _L, double _d):
+CRecGrid::CRecGrid(const vec3d & _corner, const vec3d & _L, double _d):
 	corner(_corner), L(_L)
 	{
 	
@@ -185,7 +184,7 @@ void CRecGrid::add(CParticle *part)
 	{
 	assert(part);
 	vec3d R=part->x(0)-corner;
-	double r=part->size;
+	double r=part->radius;
 	CWindow win(floor((R(0)-r)/dL(0)), floor((R(1)-r)/dL(1)), floor((R(2)-r)/dL(2)),
 	            floor((R(0)+r)/dL(0)), floor((R(1)+r)/dL(1)), floor((R(2)+r)/dL(2))
 		   );
