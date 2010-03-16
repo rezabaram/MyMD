@@ -31,6 +31,7 @@ class CParticle : public GeomObject<particleType>{
 		mass=material.density*4.0/3.0*M_PI*r*r*r;
 		x(0)=_x0;
 		w(0)=0.0;
+		identifier=-1;
 		};
 
 	double kEnergy(){
@@ -55,7 +56,7 @@ class CParticle : public GeomObject<particleType>{
 	CProperty material;
 	CDFreedom<6> x, x0;//TranslationalDFreedom;
 	CDFreedom<6> w, w0;//Rotational;
-	int id;
+	int id, identifier;
 	bool frozen;
 	protected:
 	double mass;
@@ -64,8 +65,9 @@ class CParticle : public GeomObject<particleType>{
 	};
 
 ostream &operator <<(ostream &out, const CParticle &p){
+		out<< p.identifier<< "   ";
 		p.print(out);
-		out<< " 0 0 0  "<<p.material.color;
+		out<< "  "<<p.material.color;
 	}
 
 double friction=1;

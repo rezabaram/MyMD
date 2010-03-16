@@ -6,6 +6,7 @@
 #include<assert.h>
 #include<memory>
 #include<limits>
+#include<iomanip>
 #include<sstream>
 #include<ostream>
 #include<vector>
@@ -29,4 +30,13 @@ void define_parameters()
 	config.add_param<double>("density", 10000.0); 
 	config.add_param<double>("particleSize", 0.05); 
 }
+
+template <class T>
+string stringify(T x, int width=15, const char ch=' ')
+ {
+   std::ostringstream o;
+   if (!(o << setw(width)<<setfill(ch)<<x))
+     cerr<<"Bad coversion to string"<<endl;
+   return o.str();
+ }
 #endif /* COMMON_H */

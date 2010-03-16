@@ -16,6 +16,7 @@ class CSys{
 	void calForces();
 	vector<CParticle *> particles;
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
+	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
 	int write_packing(string infilename);
 	//void setup_grid(double d);
 
@@ -115,7 +116,8 @@ void CSys::forward(double dt){
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			ofstream out(outname.str().c_str());
 			for(it=particles.begin(); it!=particles.end(); ++it){
-				if(!(*it)->frozen)out<<**it<<endl;
+				//if(!(*it)->frozen)out<<**it<<endl;
+				out<<**it<<endl;
 				}
 			count=0;
 			outN++;
@@ -131,6 +133,7 @@ void CSys::solve(double tMax, double dt){
 			stop=true;
 			}
 
+		calForces();
 		forward(dt);
 		t+=dt;
 		if(stop)break;
@@ -144,6 +147,52 @@ int CSys::write_packing(string outfilename){
 		cout<<**it<<endl;
 		}
 	}
+int CSys::read_packing2(string infilename, const vec &shift, double scale){
+        cerr<< "Reading contacts ..." <<endl;
+        ifstream inputFile(infilename.c_str());
+        if(!inputFile.good())
+        {
+        std::cerr << "Unable to open input file: " << infilename << std::endl;
+        return 0;
+        }
+
+        string line;
+        string vname;
+
+	double a1[]={1020.0, 1020.0};
+	vec center(a1);
+	vec dist(0.0);
+        //Parse the line
+        while(getline(inputFile,line))
+                {
+                stringstream ss(line);
+                CParticle *p=new CParticle(vec(0.0), 0);
+                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
+		//if(exist(p->id))continue;
+		p->frozen=true;//FIXME if it is not frozen it doesnt work, why?
+		p->identifier=0;
+		if(particles.size()>1000)break;
+		
+		p->x(0)+=shift;
+		p->x(0)*=scale;
+		double ran=drand48();
+		if(ran<0.05)p->identifier=1;
+		else if(ran<0.2)p->identifier=2;
+		else p->identifier=3;
+		p->material.color=stringify(drand48())+stringify(drand48())+stringify(drand48());
+		p->Xc=p->x(0);
+		p->x(1)=0.0;
+		p->x(2)=0.0;
+		p->x0(1)=0.0;
+		p->x0(2)=0.0;
+                add(p);
+                }
+
+        cerr<< "done" <<endl;
+        inputFile.close();
+	return particles.size();
+        }
+
 //int CSys::read_packing(string infilename, const vec &shift, double scale){
 int CSys::read_packing(string infilename, const vec &shift, double scale){
         cerr<< "Reading contacts ..." <<endl;
