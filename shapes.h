@@ -14,16 +14,18 @@ typedef enum {tsphere, tplane, tbox, tcomposite} GType;
 class GeomObjectBase
 	{
 	public:
-	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t), q(0.0,1.0, 0.0, 0.0){};
+	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t), q(0.0, 1.0, 0.0, 0.0){identifier=1;};
 	virtual ~GeomObjectBase(){};
 	virtual void shift(const vec&)=0;
 	virtual void rotate(const vec& n, double alpha){//maybe overriden by derived class
 		//q.rotateMe(n, alpha);
 		//Xc0=q.rotate(Xc0);
 		};
+	virtual void rotateTo(const Quaternion &q){};
 
 	virtual void scale(double)=0;
 	virtual void print(std::ostream &out)const=0;
+	virtual void parse(std::istream &in)=0;
 
 	virtual void moveto(const vec& v){//derived classes can override this. especially composite particles should!
 		Xc=v;
@@ -42,8 +44,9 @@ class GeomObjectBase
 	GType type;
 	double radius;
 	
-	vec Xc, Xc0; //center of mass
+	vec Xc, Xc0; //center 
 	Quaternion q;//orientation
+	int identifier;
 	protected:
  	private:
 	};
@@ -66,8 +69,14 @@ class GeomObject<tplane> : public GeomObjectBase
 		void rotate(const vec &_n, double alpha){};//FIXME
 		void scale(double s){Xc*=s;};//FIXME if necessary
 		void print(std::ostream &out)const{
+			out<< identifier<< "   ";
 			out<< Xc<< "  "<<n;
 			}
+		void parse(std::istream &in){
+			in>>identifier;
+			in>>Xc>>n;
+			}
+
 		vec normal_to_point(const vec & p, double shift){
 			return ((Xc-p)*n-shift)*n;
 			}
@@ -98,8 +107,14 @@ class GeomObject<tbox>: public GeomObjectBase
 	void rotate(const vec &n, double alpha){}//FIXME 
 	void scale(double scale){L*=scale;};
 	void print(std::ostream &out)const{
+		out<< identifier<< "   ";
 		out<<corner<<"  "<<L;
 		}
+
+	void parse(std::istream &in){
+			in>>identifier;
+			in>>corner>>L;
+			}
 
 	void scale(double s0, double s1, double s2){L(0)*=s0; L(1)*=s1; L(2)*=s2;}
 
@@ -125,8 +140,14 @@ class GeomObject<tsphere>: public GeomObjectBase
 	void scale(double scale){radius*=scale; Xc*=scale;};
 
 	void print(std::ostream &out)const{
-		out<< Xc<< "  "<<radius;
+		out<< identifier<< "   ";
+		out<< Xc<<"  "<<radius;
 		}
+
+	void parse(std::istream &in){
+			in>>identifier;
+			in>> Xc >>radius;
+			}
 
 	double radius;
 	private:
@@ -148,16 +169,19 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		if(s1==NULL || s2==NULL){ERROR("error in memory allocation"); exit(1);}
 		elems.push_back(s1);
 		elems.push_back(s2);
-		s2=new CSphere(vec(2,+r/2.), r);
-		elems.push_back(s2);
-		s2=new CSphere(vec(2,-r/2.), r);
-		elems.push_back(s2);
-		s2=new CSphere(vec(1,-r/2.), r);
-		elems.push_back(s2);
-		s2=new CSphere(vec(1,+r/2.), r);
-		elems.push_back(s2);
+		//s2=new CSphere(vec(2,+r/2.), r);
+		//elems.push_back(s2);
+		//s2=new CSphere(vec(2,-r/2.), r);
+		//elems.push_back(s2);
+		//s2=new CSphere(vec(1,-r/2.), r);
+		//elems.push_back(s2);
+		//s2=new CSphere(vec(1,+r/2.), r);
+		//elems.push_back(s2);
 
-		this->moveto(v);
+		Xc=v;
+		for(int i=0; i<elems.size(); i++){
+			elems.at(i)->Xc=Xc+elems.at(i)->Xc0;
+			}
 		}
 
 	~GeomObject<tcomposite>(){
@@ -168,11 +192,19 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		}
 
 	void moveto(const vec &v){
+		vec dx = v-Xc;
 		for(int i=0; i<elems.size(); i++){
-			elems.at(i)->Xc=elems.at(i)->Xc0+v;
+			elems.at(i)->Xc+=dx;
 			}
-		Xc=v;
+		Xc+=dx;
 		}
+
+	void rotateTo(const Quaternion &q){
+		for(int i=0; i<elems.size(); i++){
+			elems.at(i)->Xc=Xc+q.rotate(elems.at(i)->Xc0);
+			
+			}
+		};
 
 	void rotate(const vec& n , double alpha){
 		q.setRotation(n, alpha);
@@ -191,6 +223,11 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 			elems.back()->print(out);
 		}
+	
+	void parse(std::istream &in)const{//FIXME
+			ERROR("not implemented");
+			//in>>identifier;
+			}
 
 	vector<GeomObjectBase *> elems;
 	private:
@@ -211,7 +248,7 @@ class COverlapping{
 			overlaps(ovs, static_cast<const GeomObject<tsphere> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
 		else if(p1->type==tcomposite && p2->type==tcomposite)
 			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tcomposite> *>(p2));
-		else if(p1->type==tcomposite && p2->type==tbox)
+		else if(p1->type==tcomposite && p2->type==tbox)//FIXME
 			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
 		else ERROR("Not Implemented");
 		};
@@ -239,10 +276,9 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 	}
 
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
-
 	vec v;
 	double d, dd;
-	for(int i=0; i<6; i++){//FIXME to general Box to any polygon, 6 should be the number of faces
+	for(int i=0; i<6; i++){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		v=b->face[i]->normal_to_point(p1->Xc, p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
@@ -257,13 +293,21 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 		}
 
-}
+	for(int j=0; j< ovs.size(); j++){
+		ovs.at(j).x-=p1->Xc; // contact point with respect to center of composit particle
+		}
+	}
 
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	for(int i=0; i<p1->elems.size(); i++){
 		overlaps(ovs, p1->elems.at(i), b);
 		}
 
-}
+	for(int j=0; j< ovs.size(); j++){
+		ovs.at(j).x-=p1->Xc; // contact point with respect to center of composit particle
+		}
+
+	}
 
 #endif /* SHAPES_H */
+

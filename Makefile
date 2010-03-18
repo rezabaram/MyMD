@@ -14,6 +14,9 @@ test.avi:
 clean:
 	rm -rf a.out *o out* test.avi
 
+aclean:
+	rm -rf test.avi *jpg
+
 pov:
 	coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
 	#coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png

@@ -1,6 +1,7 @@
 Gravity  0   0   -10
 density  10000
-outDt  0.02
-particleSize  0.04
+outDt  0.01
+timeStep 0.0005
+particleSize  0.08
 stiffness1  5e+06
-stiffness2  1e+06
+stiffness2  3e+06

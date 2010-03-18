@@ -17,11 +17,12 @@ class CSys{
 	vector<CParticle *> particles;
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
+	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
 	int write_packing(string infilename);
 	//void setup_grid(double d);
 
-	bool interact(CParticle *p1,CParticle *p2, vec &force)const; //force from p2 on p1
-	inline bool interact(CParticle *p1, GeomObject<tbox> *p2, vec &force)const;
+	inline bool interact(CParticle *p1,CParticle *p2, vec &force, vec &torque)const; //force from p2 on p1
+	inline bool interact(CParticle *p1, GeomObject<tbox> *p2, vec &force, vec &torque)const;
 	bool interact(const CParticle *p1, const GeomObject<tbox> &b, vec &force)const;//force from box on p1
 
 	void overlappings();
@@ -69,21 +70,26 @@ void CSys::calForces(){
 		}
 	//calculation of interaactions
 	vec force;
+	vec torque;
 	int temp=0;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		temp++;
 		for(it2=it1+1; it2!=particles.end(); ++it2){
 			if((*it1)->frozen && (*it2)->frozen)continue;
 			force=0;
-			if(interact(*it1, *it2, force)){
+			if(interact(*it1, *it2, force, torque)){
 				(*it1)->addforce(force);
+				(*it1)->addtorque(force);
+				
 				(*it2)->addforce(force*-1.0);
+				(*it2)->addtorque(force*-1.0);
 				}
 			}
 		//the walls
 		force=0;
-		if(interact(*it1, &box, force)){
+		if(interact(*it1, &box, force, torque)){
 			(*it1)->addforce(force);
+			(*it1)->addforce(torque);
 			}
 		}
 	
@@ -144,9 +150,43 @@ int CSys::write_packing(string outfilename){
 	vector<CParticle*>::iterator it;
 	ofstream out(outfilename.c_str());
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		cout<<**it<<endl;
+		out<<**it<<endl;
 		}
 	}
+int CSys::read_packing3(string infilename, const vec &shift, double scale){
+        cerr<< "Reading contacts ..." <<endl;
+        ifstream inputFile(infilename.c_str());
+        if(!inputFile.good())
+        {
+        std::cerr << "Unable to open input file: " << infilename << std::endl;
+        return 0;
+        }
+
+        string line;
+        string vname;
+
+	double a1[]={1020.0, 1020.0};
+	vec center(a1);
+	vec dist(0.0);
+        //Parse the line
+        while(getline(inputFile,line))
+                {
+                stringstream ss(line);
+                CParticle *p=new CParticle(vec(0.0), 0);
+		p->parse(ss);
+		p->frozen=false;//FIXME if it is not frozen it doesnt work, why?
+		
+		p->x(0)+=shift;
+		p->x(0)*=scale;
+		double ran=drand48();
+                add(p);
+                }
+
+        cerr<< "done" <<endl;
+        inputFile.close();
+	return particles.size();
+        }
+
 int CSys::read_packing2(string infilename, const vec &shift, double scale){
         cerr<< "Reading contacts ..." <<endl;
         ifstream inputFile(infilename.c_str());
@@ -254,7 +294,7 @@ void CSys::overlappings(){
 
 		}
 
-inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force)const{
+inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force, vec &torque)const{
 
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
@@ -264,16 +304,22 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force)const{
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		proj=dv*overlaps.at(i).dx;
-		if(proj>0)force-=p1->material.stiffness1*overlaps.at(i).dx;
-		else force-=p1->material.stiffness2*overlaps.at(i).dx;
+		if(proj>0){
+			force-=p1->material.stiffness1*overlaps.at(i).dx;
+			torque+=cross(force, overlaps.at(i).x);
+			}
+		else {
+			force-=p1->material.stiffness2*overlaps.at(i).dx;
+			torque+=cross(force, overlaps.at(i).x);
+			}
 		}
 /// ?????????????????? this is just a test
-	force-=friction*dv;
+	//force-=friction*dv;//FIXME
 /////////////////////////////
 	return true;
 	}
 
-inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2, vec &force)const{
+inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2, vec &force, vec &torque)const{
 
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
@@ -283,8 +329,15 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2, vec &force)const
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		proj=dv*overlaps.at(i).dx;
-		if(proj>0)force-=p1->material.stiffness1*overlaps.at(i).dx;
-		else force-=p1->material.stiffness2*overlaps.at(i).dx;
+		if(proj>0){
+			force-=p1->material.stiffness1*overlaps.at(i).dx;
+			torque+=cross(force, overlaps.at(i).x);
+			}
+		else {
+			force-=p1->material.stiffness2*overlaps.at(i).dx;
+			torque+=cross(force, overlaps.at(i).x);
+			}
+
 		}
 /// ?????????????????? this is just a test
 	//force-=friction*dv;

@@ -96,9 +96,9 @@ explicit CVector(T a){
   CVector<Dim,T> & normalized()const;
 
   template<indexType _Dim, class U>
-  friend std::ostream & operator<< (std::ostream &out, CVector<_Dim, U> v);
+  friend std::ostream & operator<< (std::ostream &out, const CVector<_Dim, U> &v);
   template<indexType _Dim, class U>
-  friend std::istream & operator>>(std::istream &in, CVector<_Dim, U> v);
+  friend std::istream & operator>>(std::istream &in, CVector<_Dim, U> &v);
 private:
 static const indexType dim=Dim;
   T x[Dim];
@@ -107,16 +107,16 @@ static const indexType dim=Dim;
 
 
 template<indexType Dim, class T>
-  std::ostream & operator<< (std::ostream &out, CVector<Dim,T> v){
+  std::ostream & operator<< (std::ostream &out, const CVector<Dim,T> &v){
 	out<<v.x[0];
 	for(indexType i=1; i<Dim; i++){
-		out<<"   "<<v.x[i];
+		out<<"  "<<v.x[i];
 		}
 	return out;
 	}
 
 template<indexType Dim, class T>
-  std::istream & operator>>(std::istream &in, CVector<Dim,T> v){
+  std::istream & operator>>(std::istream &in, CVector<Dim,T> &v){
 	for(indexType i=0; i<Dim; i++){
 		in>>v.x[i];
 		}

@@ -10,9 +10,10 @@
 
 class Quaternion{
 protected:
+public:
 double u;
 vec3d v;
-public:
+
 Quaternion();
 Quaternion(double u,double x,double y,double z);
 Quaternion(const vec3d &_v, double a);
@@ -25,7 +26,7 @@ void setRotation(const vec3d &_V, double _a);
 //void setRotation(double _a, const vec3d &_V){setRotation(_V, a);};
 
 double abs();
-vec3d getAxis(void);
+vec3d getAxis(void)const{return v;};
 
 
 vec3d rotate(const vec3d &v)const;
@@ -34,7 +35,7 @@ Quaternion rotate(const Quaternion &q)const;
 void rotateMe(const vec3d &axis, double angle);
 
 /// Convert a vector in body coordinates to a vector in world coordinates (with me as base)
-vec3d toWorld(const vec3d &v);
+vec3d toWorld(const vec3d &v)const;
 /// Convert a vector in world coordinates to a vector in body coordinates (with me as base)
 vec3d toBody(const vec3d &v);
 
@@ -99,7 +100,7 @@ v=_V.normalized()*sin(_a/2.0);
 }
 
 std::ostream &operator<<(std::ostream & out, const Quaternion &q){
-	out<<q.u<<"  "<<q.v<<std::endl;
+	out<<q.u<<"  "<<q.v;
 return out;
 }
 
@@ -194,7 +195,7 @@ log <<"Check this!"<<std::endl; // FIXME
 /**
 * Just a rotation
 */
-inline vec3d Quaternion::toWorld(const vec3d &_v){
+inline vec3d Quaternion::toWorld(const vec3d &_v)const{
 return ((*this)*_v*(~(*this))).getAxis();
 }
 

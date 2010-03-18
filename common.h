@@ -29,6 +29,7 @@ void define_parameters()
 	config.add_param<double>("stiffness2", 1000000.0); 
 	config.add_param<double>("density", 10000.0); 
 	config.add_param<double>("particleSize", 0.05); 
+	config.add_param<double>("timeStep", 0.0001); 
 }
 
 template <class T>
