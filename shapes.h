@@ -162,9 +162,10 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite){
 		N++;
 		GeomObjectBase *s1=NULL;
-		s1=new CSphere(vec(0,-r/2.), r);
+		s1=new CSphere(vec(0,-r/2), r);
 		GeomObjectBase *s2=NULL;
-		s2=new CSphere(vec(0,r/2.), r);
+		s2=new CSphere(vec(0,r/2), r);
+		s2->identifier=2;
 
 		if(s1==NULL || s2==NULL){ERROR("error in memory allocation"); exit(1);}
 		elems.push_back(s1);
@@ -202,7 +203,6 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	void rotateTo(const Quaternion &q){
 		for(int i=0; i<elems.size(); i++){
 			elems.at(i)->Xc=Xc+q.rotate(elems.at(i)->Xc0);
-			
 			}
 		};
 
@@ -306,7 +306,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	for(int j=0; j< ovs.size(); j++){
 		ovs.at(j).x-=p1->Xc; // contact point with respect to center of composit particle
 		}
-
 	}
 
 #endif /* SHAPES_H */

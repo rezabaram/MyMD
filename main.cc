@@ -31,11 +31,13 @@ sys.G=G;
 
 double time=0;
 vec x;
-double margin=4*size;
-for(double i=margin; i<1-margin; i+=4.3*size)
-for(double j=margin; j<1-margin; j+=4.3*size)
-for(double k=margin; k<1-2.0*size; k+=4.3*size){
-	x(0)=i+size*drand48()/10; x(1)=j+size*drand48()/10; x(2)=k+size*drand48()/10;
+double margin=2*size;
+for(double i=margin; i<1-margin; i+=4.3*size){
+for(double j=margin; j<1-margin; j+=4.3*size){
+for(double k=margin; k<1-2*size; k+=4.3*size){
+	x(0)=i+size*drand48()/10; 
+	x(1)=j+size*drand48()/10;
+	x(2)=k+size*drand48()/10; 
 	CParticle *p = new CParticle(x,size);
 	double ran=drand48();
 	if(ran<0.1)p->material.color="1 0 0";
@@ -45,9 +47,11 @@ for(double k=margin; k<1-2.0*size; k+=4.3*size){
 	p->identifier=1;
 	p->rotate(vec(1.0), drand48()*3.14);
 	sys.add(p);
-	if(sys.particles.size()>1)break;
+	if(sys.particles.size()>15)break;
 	}
-	sys.solve(3, Dt);
+	}
+	}
+	sys.solve(2, Dt);
 
 return 0;
 }

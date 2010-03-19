@@ -67,6 +67,7 @@ void CSys::calForces(){
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->forces=G*((*it1)->get_mass());
+		(*it1)->torques=0;
 		}
 	//calculation of interaactions
 	vec force;
@@ -77,19 +78,14 @@ void CSys::calForces(){
 		for(it2=it1+1; it2!=particles.end(); ++it2){
 			if((*it1)->frozen && (*it2)->frozen)continue;
 			force=0;
-			if(interact(*it1, *it2, force, torque)){
-				(*it1)->addforce(force);
-				(*it1)->addtorque(force);
-				
-				(*it2)->addforce(force*-1.0);
-				(*it2)->addtorque(force*-1.0);
-				}
+			torque=0;
+			if(interact(*it1, *it2, force, torque)){ }
 			}
 		//the walls
 		force=0;
 		if(interact(*it1, &box, force, torque)){
 			(*it1)->addforce(force);
-			(*it1)->addforce(torque);
+			(*it1)->addtorque(torque);
 			}
 		}
 	
@@ -300,17 +296,36 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force, vec &torque
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 	//cerr<< overlaps.size()<<endl;
 	vec dv=p1->x(1)-p2->x(1);
+	vec r1, r2, v1, v2;
 	double proj;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
+		r1=p1->x(0)-overlaps.at(i).x;
+		r2=p2->x(0)-overlaps.at(i).x;
+		v1=p1->x(1)-cross(r1, p1->x(1));
+		v2=p2->x(1)-cross(r2, p2->x(1));
+		dv=v1-v2;
 		proj=dv*overlaps.at(i).dx;
 		if(proj>0){
-			force-=p1->material.stiffness1*overlaps.at(i).dx;
-			torque+=cross(force, overlaps.at(i).x);
+			force=-p1->material.stiffness1*overlaps.at(i).dx;
+
+			p1->addforce(force);
+			torque=-cross(force, r1);
+			p1->addtorque(torque);
+				
+			p2->addforce(-force);
+			torque=cross(force, r2);
+			p2->addtorque(-torque);
 			}
 		else {
-			force-=p1->material.stiffness2*overlaps.at(i).dx;
-			torque+=cross(force, overlaps.at(i).x);
+			force=-p1->material.stiffness2*overlaps.at(i).dx;
+			p1->addforce(force);
+			torque=-cross(force, r1);
+			p1->addtorque(torque);
+				
+			p2->addforce(-force);
+			torque=cross(force, r2);
+			p2->addtorque(-torque);
 			}
 		}
 /// ?????????????????? this is just a test
