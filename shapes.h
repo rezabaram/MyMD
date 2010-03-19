@@ -304,7 +304,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 
 	for(int j=0; j< ovs.size(); j++){
-		ovs.at(j).x-=p1->Xc; // contact point with respect to center of composit particle
+		//ovs.at(j).x+=p1->Xc; // contact point with respect to center of composit particle
 		}
 	}
 
