@@ -38,9 +38,9 @@ class CParticle : public GeomObject<particleType>{
 			w(i)=0.0;
 			}
 
-		Ixx=2*(2*mass*r*r/5.0+mass*r*r/4);//FIXME only for a very specific composite particle
-		Iyy=4*mass*r*r/5.0;
-		Izz=Ixx;
+		Iyy=2*(2*mass*r*r/5.0+mass*r*r/4);//FIXME only for a very specific composite particle
+		Ixx=4*mass*r*r/5.0;
+		Izz=Iyy;
 		};
 
 	double kEnergy(){
@@ -98,20 +98,23 @@ void CParticle::calPos(double dt){
 	x(0) += x(1)*dt + x(2)*(dt*dt*4.0*c) - x0(2)*(dt*dt*c);
 	x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
 
+
 	//rotational degree
 	static vec wp;
 	static Quaternion dq;
+
 	wp=q.toBody(w(1));
-
-	dq.u =     q.v(0)*w(1)(0) + q.v(1)*w(1)(1) + q.v(2)*w(1)(2);
-	dq.v(0) = -q.u  * w(1)(0) - q.v(2)*w(1)(1) + q.v(1)*w(1)(2);
-	dq.v(1) =  q.v(2)*w(1)(0) - q.u *  w(1)(1) - q.v(0)*w(1)(2);
-	dq.v(2) = -q.v(1)*w(1)(0) + q.v(0)*w(1)(1) - q.u *  w(1)(2);
-
-	q+=dq*dt;
-	q.normalize();
-
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
+	dq.u =    -q.v(0)*w(1)(0) - q.v(1)*w(1)(1) - q.v(2)*w(1)(2);
+	dq.v(0) =  q.u  * w(1)(0) - q.v(2)*w(1)(1) + q.v(1)*w(1)(2);
+	dq.v(1) =  q.v(2)*w(1)(0) + q.u *  w(1)(1) - q.v(0)*w(1)(2);
+	dq.v(2) = -q.v(1)*w(1)(0) + q.v(0)*w(1)(1) + q.u *  w(1)(2);
+
+	q+=dq*dt/2.0;
+	//cout<< q.abs() <<endl;
+	q.normalize();
+	//cout<< q.abs() <<endl;
+
 	
 	rotateTo(q);
 	moveto(x(0));

@@ -21,8 +21,8 @@ class CSys{
 	int write_packing(string infilename);
 	//void setup_grid(double d);
 
-	inline bool interact(CParticle *p1,CParticle *p2, vec &force, vec &torque)const; //force from p2 on p1
-	inline bool interact(CParticle *p1, GeomObject<tbox> *p2, vec &force, vec &torque)const;
+	inline bool interact(CParticle *p1,CParticle *p2)const; //force from p2 on p1
+	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
 	bool interact(const CParticle *p1, const GeomObject<tbox> &b, vec &force)const;//force from box on p1
 
 	void overlappings();
@@ -77,13 +77,10 @@ void CSys::calForces(){
 		temp++;
 		for(it2=it1+1; it2!=particles.end(); ++it2){
 			if((*it1)->frozen && (*it2)->frozen)continue;
-			force=0;
-			torque=0;
-			if(interact(*it1, *it2, force, torque)){ }
+			if(interact(*it1, *it2)){ }
 			}
 		//the walls
-		force=0;
-		if(interact(*it1, &box, force, torque)){
+		if(interact(*it1, &box)){
 			}
 		}
 	
@@ -122,8 +119,8 @@ void CSys::forward(double dt){
 				GeomObject<tsphere> s0(vec(0.0), 0.01);
 				s.identifier=3;
 				s0.identifier=1;
-				s.print(out);
-				out<<endl;
+				//s.print(out);
+				//out<<endl;
 				//s0.print(out);
 				//out<<endl;
 				
@@ -297,13 +294,13 @@ void CSys::overlappings(){
 
 		}
 
-inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force, vec &torque)const{
+inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 	//cerr<< overlaps.size()<<endl;
 	vec dv=p1->x(1)-p2->x(1);
-	vec r1, r2, v1, v2;
+	vec r1, r2, v1, v2, force, torque;
 	double proj;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
@@ -313,28 +310,28 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force, vec &torque
 		v2=p2->x(1)+cross(r2, p2->x(1));
 		dv=v1-v2;
 		proj=dv*overlaps.at(i).dx;
-		//p1->test=r1;//just for test
+		p1->test=r1;//just for test
 		if(proj>0){
 			force=-p1->material.stiffness1*overlaps.at(i).dx;
 
 			p1->addforce(force);
-			torque=cross(force, r1);
-			//p1->addtorque(torque);
+			torque=-cross(force, r1);
+			p1->addtorque(torque);
 				
 			p2->addforce(-force);
-			torque=cross(force, r2);
-			//p2->addtorque(-torque);
+			torque=-cross(force, r2);
+			p2->addtorque(-torque);
 			}
 		else {
 			force=-p1->material.stiffness2*overlaps.at(i).dx;
 
 			p1->addforce(force);
-			torque=cross(force, r1);
-			//p1->addtorque(torque);
+			torque=-cross(force, r1);
+			p1->addtorque(torque);
 				
 			p2->addforce(-force);
-			torque=cross(force, r2);
-			//p2->addtorque(-torque);
+			torque=-cross(force, r2);
+			p2->addtorque(-torque);
 			}
 		}
 
@@ -344,12 +341,12 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2, vec &force, vec &torque
 	return true;
 	}
 
-inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2, vec &force, vec &torque)const{
+inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 
-	vec dv, r1;
+	static vec dv, r1, force, torque;
 	double proj;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
@@ -361,13 +358,13 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2, vec &force, vec 
 			force=-p1->material.stiffness1*overlaps.at(i).dx;
 			p1->addforce(force);
 			torque=cross(force, r1);
-			p1->addtorque(torque);
+			p1->addtorque(-torque);
 			}
 		else {
 			force=-p1->material.stiffness2*overlaps.at(i).dx;
 			p1->addforce(force);
 			torque=cross(force, r1);
-			p1->addtorque(torque);
+			p1->addtorque(-torque);
 			}
 
 		}

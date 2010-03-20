@@ -22,7 +22,7 @@ double shift[3]={0};
 
 double v[]={0,0.0, -.0};
 vec G(0.0);
-G(2)=-1;
+//G(2)=-10;
 sys.G=G;
 //sys.read_packing3("coord2.dat");
 //sys.write_packing("test.dat");
@@ -32,11 +32,10 @@ sys.G=G;
 double time=0;
 vec x;
 double margin=2*size;
-for(double i=margin; i<1-margin; i+=4.3*size){
-for(double j=margin; j<1-margin; j+=4.3*size){
-for(double k=1-2*size; k>margin; k-=4.3*size){
+for(double i=margin; i<1-margin; i+=2.8*size){
+for(double k=1-2*size; k>margin; k-=2.8*size){
 	x(0)=i+size*drand48()/10; 
-	x(1)=j+size*drand48()/10;
+	x(1)= 0.2;//j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 	CParticle *p = new CParticle(x,size);
 	double ran=drand48();
@@ -45,12 +44,15 @@ for(double k=1-2*size; k>margin; k-=4.3*size){
 	else p->material.color="0 0 1";
 	double col=drand48();
 	p->identifier=1;
-	p->rotate(vec(1.0), drand48()*3.14);
-	if(sys.particles.size()<5) sys.add(p);
+	vec axis(0.0);
+	p->w(1)=axis;
+	axis(0)=2.0*drand48();
+	p->x(1)=axis;
+	//p->rotate(vec(1.0), drand48()*3.14);
+	if(sys.particles.size()<165) sys.add(p);
 	}
 	}
-	}
-	sys.solve(2, Dt);
+	sys.solve(7, Dt);
 
 return 0;
 }
