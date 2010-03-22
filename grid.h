@@ -1,6 +1,6 @@
 #ifndef GRID_H
 #define GRID_H
-#include "vector.h"
+#include "common.h"
 #include "particle.h"
 
 enum {
@@ -33,13 +33,13 @@ enum {
 };
 
 
-//an ad hoc class for int coordinates. Maybe I will make vec3d a template to simply include this class in it.
-class CCoord : public CVector<3, int>
+//an ad hoc class for int coordinates. Maybe I will make vec a template to simply include this class in it.
+class CCoord : public vec3d<int>
 	{
 	public:
 	CCoord(){};
 	CCoord(const int i, const int j, const int k)
-		:CVector<3,int>()
+		:vec3d<int>()
 		{
 		(*this)(0)=i; (*this)(1)=j; (*this)(2)=k;
 		}
@@ -97,7 +97,7 @@ class CNode3D : public Container
 class CRecGrid
 	{
 	public:
-	CRecGrid(const vec3d &_corner, const vec3d & _L, double _d);
+	CRecGrid(const vec &_corner, const vec & _L, double _d);
 	~CRecGrid();
 	CNode3D &operator ()(int i, int j, int k); //returns the ith node
 	CNode3D *node(int i, int j, int k); //returns the ith node
@@ -106,7 +106,7 @@ class CRecGrid
 	inline CNode3D* top_node(int i, int y);
 	void add(CParticle *part);
 	void add(CParticle *part, const CWindow &win);
-	CNode3D* which(const vec3d &p) {
+	CNode3D* which(const vec &p) {
 		return node (floor((p-corner)(0)/dL(0)), floor((p-corner)(1)/dL(1)), floor((p-corner)(2)/dL(2)));
 		}
 
@@ -114,8 +114,8 @@ class CRecGrid
 		out<< "print not yet implemented for this class" <<std::endl;
         	}
 
-	vec3d corner;
-	vec3d L, dL;//dimensions of the grid L, and cells dL 
+	vec corner;
+	vec L, dL;//dimensions of the grid L, and cells dL 
 	CCoord N;//number of cells in each direction
 
 	//private:
@@ -126,7 +126,7 @@ class CRecGrid
 };
 
 
-CRecGrid::CRecGrid(const vec3d & _corner, const vec3d & _L, double _d):
+CRecGrid::CRecGrid(const vec & _corner, const vec & _L, double _d):
 	corner(_corner), L(_L)
 	{
 	
@@ -183,7 +183,7 @@ void CRecGrid::add(CParticle *cir,const CWindow &win)
 void CRecGrid::add(CParticle *part)
 	{
 	assert(part);
-	vec3d R=part->x(0)-corner;
+	vec R=part->x(0)-corner;
 	double r=part->radius;
 	CWindow win(floor((R(0)-r)/dL(0)), floor((R(1)-r)/dL(1)), floor((R(2)-r)/dL(2)),
 	            floor((R(0)+r)/dL(0)), floor((R(1)+r)/dL(1)), floor((R(2)+r)/dL(2))

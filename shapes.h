@@ -1,7 +1,6 @@
 #ifndef SHAPES_H
 #define SHAPES_H 
 #include"common.h"
-#include"vector.h"
 #include"quaternion.h"
 using std::cerr; 
 using std::endl;
@@ -90,7 +89,7 @@ class GeomObject<tbox>: public GeomObjectBase
 	{
 	public:
 	virtual ~GeomObject(){};
-	GeomObject(vec3d corner=vec3d(std::numeric_limits<double>::max()), vec3d _L=vec3d(0.0)):
+	GeomObject(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0)):
 		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L),
 		u0(vec(0,1)), u1(vec(1,1.0)), u2(vec(2,1.0))
 		 {
@@ -120,8 +119,8 @@ class GeomObject<tbox>: public GeomObjectBase
 
 
 
-	vec3d top()const{return corner+L;}
-	vec3d corner, L;
+	vec top()const{return corner+L;}
+	vec corner, L;
 	auto_ptr<GeomObject<tplane> > face[6];
  	private:
 	GeomObject();
@@ -159,12 +158,12 @@ template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
 		
-	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite){
+	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,2.5*r){
 		N++;
 		GeomObjectBase *s1=NULL;
-		s1=new CSphere(vec(0,-r/2), r);
+		s1=new CSphere(vec(0,-r/4), r);
 		GeomObjectBase *s2=NULL;
-		s2=new CSphere(vec(0,r/2), r);
+		s2=new CSphere(vec(0,r/4), r);
 		s2->identifier=2;
 
 		if(s1==NULL || s2==NULL){ERROR("error in memory allocation"); exit(1);}
@@ -198,6 +197,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			elems.at(i)->Xc+=dx;
 			}
 		Xc+=dx;
+		shell.Xc+=dx;
 		}
 
 	void rotateTo(const Quaternion &q){
@@ -230,6 +230,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 
 	vector<GeomObjectBase *> elems;
+	CSphere shell;
 	private:
 	static int N;
 	GeomObject<tcomposite> (const GeomObject<tcomposite> & p);//not allow copies
@@ -262,8 +263,8 @@ class COverlapping{
 	};
 
 void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2){
-	vec v;
-	double d, dd;
+	static vec v;
+	static double d, dd;
 	v=p2->displacement(p1);//Xc2-Xc1
 	d=v.abs();
 	dd=p2->radius+p1->radius-d;//FIXME can be put in the base class too
@@ -276,8 +277,8 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 	}
 
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
-	vec v;
-	double d, dd;
+	static vec v;
+	static double d, dd;
 	for(int i=0; i<6; i++){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		v=b->face[i]->normal_to_point(p1->Xc, p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
@@ -287,6 +288,11 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 	}
 
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
+
+	vector<COverlapping> dummy;
+	overlaps(dummy, &p1->shell, &p2->shell);
+	if(dummy.size()==0)return;
+
 	for(int i=0; i< (p1->elems.size()); i++){
 	for(int j=0; j< (p2->elems.size()); j++){
 		overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
@@ -299,6 +305,9 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	}
 
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
+	vector<COverlapping> dummy;
+	overlaps(dummy, &p1->shell, b);
+	if(dummy.size()==0)return;
 	for(int i=0; i<p1->elems.size(); i++){
 		overlaps(ovs, p1->elems.at(i), b);
 		}

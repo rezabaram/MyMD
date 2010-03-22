@@ -10,13 +10,13 @@
 #include<sstream>
 #include<ostream>
 #include<vector>
-#include"vector.h"
+#include"vec3d.h"
 #include"log.h"
 
 #include"config.h"
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
 
-typedef vec3d vec;
+typedef vec3d<double> vec;
 
 double aG[]={0.0, 0, -10.0};
 vec G(aG);

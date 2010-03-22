@@ -38,7 +38,7 @@ class CParticle : public GeomObject<particleType>{
 			w(i)=0.0;
 			}
 
-		Iyy=2*(2*mass*r*r/5.0+mass*r*r/4);//FIXME only for a very specific composite particle
+		Iyy=2*(2*mass*r*r/5.0+mass*r*r/16.0);//FIXME only for a very specific composite particle
 		Ixx=4*mass*r*r/5.0;
 		Izz=Iyy;
 		};
@@ -92,6 +92,7 @@ ostream &operator <<(ostream &out, const CParticle &p){
 
 double friction=1;
 
+//using beeman method
 void CParticle::calPos(double dt){
 	static const double c=1./6.0;
 	//translational degree
@@ -110,11 +111,9 @@ void CParticle::calPos(double dt){
 	dq.v(1) =  q.v(2)*w(1)(0) + q.u *  w(1)(1) - q.v(0)*w(1)(2);
 	dq.v(2) = -q.v(1)*w(1)(0) + q.v(0)*w(1)(1) + q.u *  w(1)(2);
 
-	q+=dq*dt/2.0;
+	q+=dq*dt*0.5;
 	//cout<< q.abs() <<endl;
 	q.normalize();
-	//cout<< q.abs() <<endl;
-
 	
 	rotateTo(q);
 	moveto(x(0));

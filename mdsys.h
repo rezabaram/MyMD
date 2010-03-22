@@ -299,9 +299,9 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 	//cerr<< overlaps.size()<<endl;
-	vec dv=p1->x(1)-p2->x(1);
-	vec r1, r2, v1, v2, force, torque;
-	double proj;
+	//vec dv=p1->x(1)-p2->x(1);
+	static vec r1, r2, v1, v2, dv, force, torque;
+	static double proj;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
@@ -315,23 +315,23 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 			force=-p1->material.stiffness1*overlaps.at(i).dx;
 
 			p1->addforce(force);
-			torque=-cross(force, r1);
+			torque=cross(r1, force);
 			p1->addtorque(torque);
 				
 			p2->addforce(-force);
-			torque=-cross(force, r2);
-			p2->addtorque(-torque);
+			torque=cross(force, r2);
+			p2->addtorque(torque);
 			}
 		else {
 			force=-p1->material.stiffness2*overlaps.at(i).dx;
 
 			p1->addforce(force);
-			torque=-cross(force, r1);
+			torque=cross(r1,force);
 			p1->addtorque(torque);
 				
 			p2->addforce(-force);
-			torque=-cross(force, r2);
-			p2->addtorque(-torque);
+			torque=cross(force, r2);
+			p2->addtorque(torque);
 			}
 		}
 
@@ -347,7 +347,7 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 
 	static vec dv, r1, force, torque;
-	double proj;
+	static double proj;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
@@ -357,14 +357,14 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 		if(proj>0){
 			force=-p1->material.stiffness1*overlaps.at(i).dx;
 			p1->addforce(force);
-			torque=cross(force, r1);
-			p1->addtorque(-torque);
+			torque=cross(r1, force);
+			p1->addtorque(torque);
 			}
 		else {
 			force=-p1->material.stiffness2*overlaps.at(i).dx;
 			p1->addforce(force);
-			torque=cross(force, r1);
-			p1->addtorque(-torque);
+			torque=cross(r1, force);
+			p1->addtorque(torque);
 			}
 
 		}
