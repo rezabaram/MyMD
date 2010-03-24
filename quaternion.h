@@ -25,7 +25,8 @@ void set(double angle, const vec3d<double> &axis);
 void setRotation(const vec3d<double> &_V, double _a);
 //void setRotation(double _a, const vec3d<double> &_V){setRotation(_V, a);};
 
-double abs();
+double abs()const;
+double abs2()const;
 vec3d<double> getAxis(void)const{return v;};
 
 
@@ -104,7 +105,11 @@ std::ostream &operator<<(std::ostream & out, const Quaternion &q){
 return out;
 }
 
-inline double Quaternion::abs(){
+inline double Quaternion::abs2()const{
+return u*u+v.abs2();
+}
+
+inline double Quaternion::abs()const{
 return sqrt(u*u+v.abs2());
 }
 

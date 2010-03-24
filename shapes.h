@@ -7,7 +7,7 @@ using std::endl;
 using namespace std;
 
 
-typedef enum {tsphere, tplane, tbox, tcomposite} GType;
+typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid} GType;
 
 
 class GeomObjectBase
@@ -236,8 +236,56 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	GeomObject<tcomposite> (const GeomObject<tcomposite> & p);//not allow copies
 	GeomObject<tcomposite> ();
 	};
-
 int GeomObject<tcomposite>::N=0;
+
+/*
+template<>
+class GeomObject<tellipsoid>: public GeomObjectBase{
+	public:	
+		
+	GeomObject<tcomposite> (const vec &v, double a, double b, double c):GeomObjectBase(v,tellipsoid), shell(v,max(a, max(b,c))){
+		}
+
+	~GeomObject<tcomposite>(){}
+
+	void moveto(const vec &v){
+		Xc=v;
+		shell.Xc=v;
+		}
+
+	void rotateTo(const Quaternion &q){
+			orientation=q.rotate(orientation);//FIXME optimize it. it doesn't need to be returned
+		}
+
+	void rotate(const vec& n , double alpha){
+		q.setRotation(n, alpha);
+			orientation=q.rotate(orientation);
+		};
+
+	void shift(const vec& v){Xc+=v;};
+	void scale(double scale){};//FIXME
+
+	void print(std::ostream &out)const{
+		for(int i=0; i<elems.size()-1; i++){
+			elems.at(i)->print(out);
+			out<< endl;
+			}
+			elems.back()->print(out);
+		}
+	
+	void parse(std::istream &in)const{//FIXME
+			ERROR("not implemented");
+			//in>>identifier;
+			}
+
+	vector<GeomObjectBase *> elems;
+	CSphere shell;
+	private:
+	static int N;
+	GeomObject<tcomposite> (const GeomObject<tcomposite> & p);//not allow copies
+	GeomObject<tcomposite> ();
+	};
+*/
 class COverlapping{
 	public:
 	COverlapping();

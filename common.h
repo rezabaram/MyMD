@@ -11,6 +11,8 @@
 #include<ostream>
 #include<vector>
 #include"vec3d.h"
+#include"quaternion.h"
+#include"matrix.h"
 #include"log.h"
 
 #include"config.h"
@@ -40,4 +42,24 @@ string stringify(T x, int width=15, const char ch=' ')
      cerr<<"Bad coversion to string"<<endl;
    return o.str();
  }
+
+
+using namespace math;
+typedef matrix<double> Matrix;
+void quaternionToMatrix(const Quaternion &q, Matrix M){
+	double Nq = q.abs2();
+	static double s;
+	if( Nq > 0.0) s = 2.0/Nq; else s = 0.0;
+	double X = q.v(0)*s,   Y = q.v(1)*s,  Z = q.v(2)*s;
+	double wX = q.u*X, wY = q.u*Y, wZ = q.u*Z;
+	double xX = q.v(0)*X, xY = q.v(0)*Y, xZ = q.v(0)*Z;
+	double yY = q.v(1)*Y, yZ = q.v(1)*Z, zZ = q.v(2)*Z;
+
+	M(0,0)=1.0-(yY+zZ); M(0,0)=xY-wZ ;       M(0,0)= xZ+wY;
+	M(0,0)= xY+wZ;      M(0,0)=1.0-(xX+zZ);  M(0,0)=yZ-wX;
+	M(0,0)=xZ-wY;       M(0,0)= yZ+wX;       M(0,0)=1.0-(xX+yY);
+
+return;
+}
+
 #endif /* COMMON_H */
