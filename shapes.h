@@ -158,17 +158,20 @@ template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
 		
-	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,2.5*r){
+	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,3.1*r){
 		N++;
 		GeomObjectBase *s1=NULL;
-		s1=new CSphere(vec(0,-r/4), r);
-		GeomObjectBase *s2=NULL;
-		s2=new CSphere(vec(0,r/4), r);
+		s1=new CSphere(vec(-r,0.0,0.0), r/2);
+		GeomObjectBase *s2=NULL, *s3;
+		s2=new CSphere(vec(0.0), r);
 		s2->identifier=2;
+		s3=new CSphere(vec(r, 0.0, 0.0), r/2);
+		s3->identifier=1;
 
 		if(s1==NULL || s2==NULL){ERROR("error in memory allocation"); exit(1);}
 		elems.push_back(s1);
 		elems.push_back(s2);
+		elems.push_back(s3);
 		//s2=new CSphere(vec(2,+r/2.), r);
 		//elems.push_back(s2);
 		//s2=new CSphere(vec(2,-r/2.), r);
@@ -328,7 +331,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 	static vec v;
 	static double d, dd;
 	for(int i=0; i<6; i++){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		v=b->face[i]->normal_to_point(p1->Xc, p1->radius);//vertical vector from the center of sphere to the plane
+		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the plane to the center of sphere 
 		d=v.abs();
 		dd=p1->radius-d;
 		if(dd>0) ovs.push_back(COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v));

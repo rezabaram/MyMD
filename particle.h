@@ -39,7 +39,7 @@ class CParticle : public GeomObject<particleType>{
 			}
 
 		Iyy=2*(2*mass*r*r/5.0+mass*r*r/16.0);//FIXME only for a very specific composite particle
-		Ixx=4*mass*r*r/5.0;
+		Ixx=2*mass*r*r/5.0+2*mass*r*r/4.0/5.0;
 		Izz=Iyy;
 		};
 
