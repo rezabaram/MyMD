@@ -158,7 +158,7 @@ template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
 		
-	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,3.1*r){
+	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,5.1*r){
 		N++;
 		GeomObjectBase *s1=NULL;
 		s1=new CSphere(vec(-r,0.0,0.0), r/2);
@@ -323,7 +323,7 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 	if(dd>0) {
 		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
 		v.normalized();
-		ovs.push_back(COverlapping(p1->getpos()+v, (0.5*dd)*v));
+		ovs.push_back(COverlapping(p1->getpos()+v, (dd)*v));
 		}
 	}
 
@@ -331,10 +331,11 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 	static vec v;
 	static double d, dd;
 	for(int i=0; i<6; i++){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the plane to the center of sphere 
+		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
-		if(dd>0) ovs.push_back(COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v));
+		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
+		if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v*(1-0.5*dd), (dd)*v) );
 		}
 	}
 

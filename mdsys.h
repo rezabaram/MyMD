@@ -69,19 +69,14 @@ void CSys::calForces(){
 		(*it1)->forces=G*((*it1)->get_mass());
 		(*it1)->torques=0;
 		}
-	//calculation of interaactions
-	vec force;
-	vec torque;
-	int temp=0;
+	//interactions
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		temp++;
 		for(it2=it1+1; it2!=particles.end(); ++it2){
 			if((*it1)->frozen && (*it2)->frozen)continue;
 			if(interact(*it1, *it2)){ }
 			}
 		//the walls
-		if(interact(*it1, &box)){
-			}
+		if(interact(*it1, &box)){ }
 		}
 	
 	};
@@ -114,13 +109,14 @@ void CSys::forward(double dt){
 			ofstream out(outname.str().c_str());
 			for(it=particles.begin(); it!=particles.end(); ++it){
 				//if(!(*it)->frozen)out<<**it<<endl;
+				//if((*it)->identifier != 2)out<<**it<<endl;
 				out<<**it<<endl;
 				GeomObject<tsphere> s((*it)->test+(*it)->x(0), 0.01);
-				GeomObject<tsphere> s0(vec(0.0), 0.01);
+				GeomObject<tsphere> s0((*it)->x(0), 0.01);
 				s.identifier=3;
 				s0.identifier=1;
-				//s.print(out);
-				//out<<endl;
+				s.print(out);
+				out<<endl;
 				//s0.print(out);
 				//out<<endl;
 				
@@ -310,7 +306,7 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 		v2=p2->x(1)+cross(r2, p2->x(1));
 		dv=v1-v2;
 		proj=dv*overlaps.at(i).dx;
-		p1->test=r1;//just for test
+		//p1->test=r1;//just for test
 		if(proj>0){
 			force=-p1->material.stiffness1*overlaps.at(i).dx;
 

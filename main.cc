@@ -22,7 +22,7 @@ double shift[3]={0};
 
 double v[]={0,0.0, -.0};
 vec G(0.0);
-G(2)=-0;
+G(2)=-10;
 sys.G=G;
 //sys.read_packing3("coord2.dat");
 //sys.write_packing("test.dat");
@@ -35,9 +35,10 @@ double margin=2*size;
 for(double i=margin; i<1-margin; i+=2.9*size){
 for(double j=1-2*size; j>margin; j-=2.9*size){
 for(double k=1-2*size; k>margin; k-=2.9*size){
-	x(0)=i+size*drand48()/10; 
-	x(1)= j+size*drand48()/10;
+	x(0)=0.5;//i+size*drand48()/10; 
+	x(1)= 0.5;//+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
+
 	CParticle *p = new CParticle(x,size*(1+0.2*drand48()));
 	double ran=drand48();
 	if(ran<0.1)p->material.color="1 0 0";
@@ -50,11 +51,11 @@ for(double k=1-2*size; k>margin; k-=2.9*size){
 	axis(0)=2.0*drand48();
 	p->x(1)=axis;
 	//p->rotate(vec(1.0), drand48()*3.14);
-	if(sys.particles.size()<65) sys.add(p);
+	if(sys.particles.size()<5) sys.add(p);
 	}
 	}
 	}
-	sys.solve(6.24, Dt);
+	sys.solve(1.24, Dt);
 
 return 0;
 }

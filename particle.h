@@ -25,12 +25,11 @@ class CProperty
  	private:
 	};
 
-#define particleType tcomposite
-//#define particleType tsphere
+//#define particleType tcomposite
+#define particleType tsphere
 class CParticle : public GeomObject<particleType>{
 	public:
 	CParticle(const vec & _x0, double r):GeomObject<particleType>(_x0, r), id(-1), forces(vec(0.0)), frozen(false){
-		mass=material.density*4.0/3.0*M_PI*r*r*r;
 		x(0)=_x0;
 		w(0)=0.0;
 		for(int i=1; i<6; ++i){
@@ -38,9 +37,14 @@ class CParticle : public GeomObject<particleType>{
 			w(i)=0.0;
 			}
 
-		Iyy=2*(2*mass*r*r/5.0+mass*r*r/16.0);//FIXME only for a very specific composite particle
-		Ixx=2*mass*r*r/5.0+2*mass*r*r/4.0/5.0;
-		Izz=Iyy;
+		
+		mass=material.density*4.0/3.0*M_PI*r*r*r;
+		if(type==tcomposite){
+			mass=mass*(1.5);//FIXME for a specific composite particle
+			Iyy=2*(2*mass*r*r/5.0+mass*r*r/128.0);
+			Ixx=2*mass*r*r/5.0+2*mass*r*r/32.0/5.0;
+			Izz=Iyy;
+			}
 		};
 
 	double kEnergy(){
