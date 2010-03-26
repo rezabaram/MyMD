@@ -296,14 +296,14 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 	//cerr<< overlaps.size()<<endl;
 	//vec dv=p1->x(1)-p2->x(1);
-	static vec r1, r2, v1, v2, dv, force, torque;
+	static vec r1, r2, v1, v2, dv, force, torque(0.0);
 	static double proj;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		r2=overlaps.at(i).x-p2->x(0);
-		v1=p1->x(1)+cross(r1, p1->x(1));
-		v2=p2->x(1)+cross(r2, p2->x(1));
+		v1=p1->x(1)-cross(r1, p1->w(1));
+		v2=p2->x(1)-cross(r2, p2->w(1));
 		dv=v1-v2;
 		proj=dv*overlaps.at(i).dx;
 		//p1->test=r1;//just for test
@@ -347,7 +347,7 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
-		dv=p1->x(1)+cross(r1, p1->w(1));
+		dv=p1->x(1)-cross(r1, p1->w(1));
 		proj=dv*overlaps.at(i).dx;
 		p1->test=r1;//just for test
 		if(proj>0){
@@ -362,7 +362,6 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 			torque=cross(r1, force);
 			p1->addtorque(torque);
 			}
-
 		}
 /// ?????????????????? this is just a test
 	//force-=friction*dv;

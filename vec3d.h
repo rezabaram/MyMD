@@ -112,7 +112,7 @@ private:
 
 template<class T>
   std::ostream & operator<< (std::ostream &out, const vec3d<T> &v){
-	out<<v.x[0]<<"  "<<v.x[1]<<"  "<<"  "<<v.x[2];
+	out<<v.x[0]<<"  "<<v.x[1]<<"  "<<v.x[2];
 	return out;
 	}
 

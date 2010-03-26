@@ -25,8 +25,8 @@ class CProperty
  	private:
 	};
 
-//#define particleType tcomposite
-#define particleType tsphere
+#define particleType tcomposite
+//#define particleType tsphere
 class CParticle : public GeomObject<particleType>{
 	public:
 	CParticle(const vec & _x0, double r):GeomObject<particleType>(_x0, r), id(-1), forces(vec(0.0)), frozen(false){
@@ -44,6 +44,9 @@ class CParticle : public GeomObject<particleType>{
 			Iyy=2*(2*mass*r*r/5.0+mass*r*r/128.0);
 			Ixx=2*mass*r*r/5.0+2*mass*r*r/32.0/5.0;
 			Izz=Iyy;
+			}
+		else{
+			Ixx=Iyy=Izz=2*mass*r*r/5.0;
 			}
 		};
 
@@ -106,17 +109,16 @@ void CParticle::calPos(double dt){
 
 	//rotational degree
 	static vec wp;
-	static Quaternion dq;
+	static Quaternion dq(0,0,0,0);
 
 	wp=q.toBody(w(1));
-	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
+	//w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
 	dq.u =    -q.v(0)*w(1)(0) - q.v(1)*w(1)(1) - q.v(2)*w(1)(2);
 	dq.v(0) =  q.u  * w(1)(0) - q.v(2)*w(1)(1) + q.v(1)*w(1)(2);
 	dq.v(1) =  q.v(2)*w(1)(0) + q.u *  w(1)(1) - q.v(0)*w(1)(2);
 	dq.v(2) = -q.v(1)*w(1)(0) + q.v(0)*w(1)(1) + q.u *  w(1)(2);
 
 	q+=dq*dt*0.5;
-	//cout<< q.abs() <<endl;
 	q.normalize();
 	
 	rotateTo(q);

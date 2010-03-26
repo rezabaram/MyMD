@@ -35,7 +35,7 @@ double margin=2*size;
 for(double i=margin; i<1-margin; i+=2.9*size){
 for(double j=1-2*size; j>margin; j-=2.9*size){
 for(double k=1-2*size; k>margin; k-=2.9*size){
-	x(0)=0.5;//i+size*drand48()/10; 
+	x(0)=0.5+size*drand48()/10; 
 	x(1)= 0.5;//+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 
@@ -47,6 +47,7 @@ for(double k=1-2*size; k>margin; k-=2.9*size){
 	double col=drand48();
 	p->identifier=1;
 	vec axis(0.0);
+	axis(0)=20.0*drand48();
 	p->w(1)=axis;
 	axis(0)=2.0*drand48();
 	p->x(1)=axis;
@@ -55,7 +56,7 @@ for(double k=1-2*size; k>margin; k-=2.9*size){
 	}
 	}
 	}
-	sys.solve(1.24, Dt);
+	sys.solve(4.24, Dt);
 
 return 0;
 }

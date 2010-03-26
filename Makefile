@@ -6,8 +6,8 @@ a.out:	*.cc *h
 	g++  main.cc 
 
 animate: test.avi
-	feh *jpg
-	#mplayer test.avi
+	#feh *jpg
+	mplayer test.avi
 
 test.avi: 
 	sh genFrames.sh out* > /dev/null 2>&1

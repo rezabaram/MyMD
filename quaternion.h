@@ -9,12 +9,12 @@
 #include "common.h"
 
 class Quaternion{
+Quaternion();
 protected:
 public:
 double u;
 vec3d<double> v;
 
-Quaternion();
 Quaternion(double u,double x,double y,double z);
 Quaternion(const vec3d<double> &_v, double a);
 Quaternion(double a, const vec3d<double> &_v);
@@ -38,7 +38,7 @@ void rotateMe(const vec3d<double> &axis, double angle);
 /// Convert a vector in body coordinates to a vector in world coordinates (with me as base)
 vec3d<double> toWorld(const vec3d<double> &v)const;
 /// Convert a vector in world coordinates to a vector in body coordinates (with me as base)
-vec3d<double> toBody(const vec3d<double> &v);
+vec3d<double> toBody(const vec3d<double> &v)const;
 
 Quaternion normalize(){ (*this)/=abs(); return *this; }
 Quaternion normalized()const{ return Quaternion(*this).normalize(); }
@@ -71,7 +71,6 @@ u=_u;
 v(0)=_x; 
 v(1)=_y;
 v(2)=_z;
-setRotation(v, u);
 }
 
 inline void Quaternion::set(double _u,double _x,double _y,double _z){
@@ -207,7 +206,7 @@ return ((*this)*_v*(~(*this))).getAxis();
 /**
 * Just a rotation vs the conjugate
 */
-inline vec3d<double> Quaternion::toBody(const vec3d<double> &_v){
+inline vec3d<double> Quaternion::toBody(const vec3d<double> &_v)const{
 return ((~(*this))*_v*(*this)).v;
 }
 #endif /* QUATERNION_H */

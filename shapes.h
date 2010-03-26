@@ -13,7 +13,7 @@ typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid} GType;
 class GeomObjectBase
 	{
 	public:
-	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t), q(0.0, 1.0, 0.0, 0.0){identifier=1;};
+	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t), q(1.0, 0.0, 0.0, 0.0){identifier=1;};
 	virtual ~GeomObjectBase(){};
 	virtual void shift(const vec&)=0;
 	virtual void rotate(const vec& n, double alpha){//maybe overriden by derived class
@@ -91,15 +91,15 @@ class GeomObject<tbox>: public GeomObjectBase
 	virtual ~GeomObject(){};
 	GeomObject(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0)):
 		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L),
-		u0(vec(0,1)), u1(vec(1,1.0)), u2(vec(2,1.0))
+		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
-		face[0]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,-u0));
-		face[1]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,-u1));
-		face[2]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,-u2));
+		face[0]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u0));
+		face[1]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u1));
+		face[2]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u2));
 
-		face[3]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,u0));
-		face[4]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,u1));
-		face[5]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,u2));
+		face[3]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u0));
+		face[4]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u1));
+		face[5]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u2));
 		};
 
 	void shift(const vec &x){corner+=x;}
@@ -158,7 +158,7 @@ template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
 		
-	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,5.1*r){
+	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,1.5*r){
 		N++;
 		GeomObjectBase *s1=NULL;
 		s1=new CSphere(vec(-r,0.0,0.0), r/2);
@@ -209,7 +209,8 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 		};
 
-	void rotate(const vec& n , double alpha){
+	void rotate(const vec& n , double alpha){//FIXME
+		ERROR("check this");
 		q.setRotation(n, alpha);
 		for(int i=0; i<elems.size(); i++){
 			elems.at(i)->Xc0=q.rotate(elems.at(i)->Xc0);
@@ -343,7 +344,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 
 	vector<COverlapping> dummy;
 	overlaps(dummy, &p1->shell, &p2->shell);
-	if(dummy.size()==0)return;
+	//if(dummy.size()==0)return;
 
 	for(int i=0; i< (p1->elems.size()); i++){
 	for(int j=0; j< (p2->elems.size()); j++){
@@ -359,7 +360,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	vector<COverlapping> dummy;
 	overlaps(dummy, &p1->shell, b);
-	if(dummy.size()==0)return;
+	//if(dummy.size()==0)return;
 	for(int i=0; i<p1->elems.size(); i++){
 		overlaps(ovs, p1->elems.at(i), b);
 		}
