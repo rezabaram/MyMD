@@ -20,10 +20,7 @@ double shift[3]={0};
 //cerr<< sys.read_packing("Mini9.dat")<<endl;
 //sys.overlappings();
 
-double v[]={0,0.0, -.0};
-vec G(0.0);
-G(2)=-10;
-sys.G=G;
+sys.G=config.get_param<vec>("Gravity");
 //sys.read_packing3("coord2.dat");
 //sys.write_packing("test.dat");
 //sys.solve(2, 0.0001);
@@ -52,11 +49,11 @@ for(double k=1-2*size; k>margin; k-=2.9*size){
 	axis(0)=2.0*drand48();
 	p->x(1)=axis;
 	//p->rotate(vec(1.0), drand48()*3.14);
-	if(sys.particles.size()<5) sys.add(p);
+	if(sys.particles.size()<config.get_param<int>("nParticle")) sys.add(p);
 	}
 	}
 	}
-	sys.solve(4.24, Dt);
+	sys.solve(config.get_param<double>("maxTime"), Dt);
 
 return 0;
 }

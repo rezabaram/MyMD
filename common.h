@@ -32,6 +32,8 @@ void define_parameters()
 	config.add_param<double>("density", 10000.0); 
 	config.add_param<double>("particleSize", 0.05); 
 	config.add_param<double>("timeStep", 0.0001); 
+	config.add_param<double>("maxTime", 1.0); 
+	config.add_param<int>("nParticle", 10); 
 }
 
 template <class T>
