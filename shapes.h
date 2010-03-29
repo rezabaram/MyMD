@@ -314,6 +314,7 @@ class COverlapping{
 	vec x, dx;
 	};
 
+inline
 void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2){
 	static vec v;
 	static double d, dd;
@@ -328,10 +329,11 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 		}
 	}
 
+inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
 	static vec v;
 	static double d, dd;
-	for(int i=0; i<6; i++){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
@@ -340,34 +342,36 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 		}
 	}
 
+inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
 
 	vector<COverlapping> dummy;
 	overlaps(dummy, &p1->shell, &p2->shell);
 	//if(dummy.size()==0)return;
 
-	for(int i=0; i< (p1->elems.size()); i++){
-	for(int j=0; j< (p2->elems.size()); j++){
+	for(int i=0; i< (p1->elems.size()); ++i){
+	for(int j=0; j< (p2->elems.size()); ++j){
 		overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
 		}
 		}
 
-	for(int j=0; j< ovs.size(); j++){
+	//for(int j=0; j< ovs.size(); j++){
 //		ovs.at(j).x-=p1->Xc; // contact point with respect to center of composit particle
-		}
+		//}
 	}
 
+inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	vector<COverlapping> dummy;
 	overlaps(dummy, &p1->shell, b);
 	//if(dummy.size()==0)return;
-	for(int i=0; i<p1->elems.size(); i++){
+	for(int i=0; i<p1->elems.size(); ++i){
 		overlaps(ovs, p1->elems.at(i), b);
 		}
 
-	for(int j=0; j< ovs.size(); j++){
+	//for(int j=0; j< ovs.size(); ++j){
 		//ovs.at(j).x+=p1->Xc; // contact point with respect to center of composit particle
-		}
+	//	}
 	}
 
 #endif /* SHAPES_H */

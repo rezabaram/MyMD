@@ -113,10 +113,10 @@ void CParticle::calPos(double dt){
 
 	wp=q.toBody(w(1));
 	//w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
-	dq.u =    -q.v(0)*w(1)(0) - q.v(1)*w(1)(1) - q.v(2)*w(1)(2);
-	dq.v(0) =  q.u  * w(1)(0) - q.v(2)*w(1)(1) + q.v(1)*w(1)(2);
-	dq.v(1) =  q.v(2)*w(1)(0) + q.u *  w(1)(1) - q.v(0)*w(1)(2);
-	dq.v(2) = -q.v(1)*w(1)(0) + q.v(0)*w(1)(1) + q.u *  w(1)(2);
+	dq.u =    -q.v(0)*wp(0) - q.v(1)*wp(1) - q.v(2)*wp(2);
+	dq.v(0) =  q.u  * wp(0) - q.v(2)*wp(1) + q.v(1)*wp(2);
+	dq.v(1) =  q.v(2)*wp(0) + q.u *  wp(1) - q.v(0)*wp(2);
+	dq.v(2) = -q.v(1)*wp(0) + q.v(0)*wp(1) + q.u *  wp(2);
 
 	q+=dq*dt*0.5;
 	q.normalize();
@@ -134,11 +134,17 @@ void CParticle::calVel(double dt){
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
 	torquep=q.toBody(torques);
+
+	if(torques.abs()>0){
+	//cerr<< torques <<"\t"<< torquep <<endl;
+	//cerr<< q.toBody(vec(-1.0,0,0)) <<endl;
+	}
 	wp=q.toBody(w(1));
-	wwp(0)=(torquep(0)+w(1)(1)*w(1)(2)*(Iyy-Izz))/Ixx;
-	wwp(1)=(torquep(1)+w(1)(0)*w(1)(2)*(Izz-Ixx))/Iyy;
-	wwp(2)=(torquep(2)+w(1)(0)*w(1)(1)*(Ixx-Iyy))/Izz;
+	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
+	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;
+	wwp(2)=(torquep(2)+wp(0)*wp(1)*(Ixx-Iyy))/Izz;
 	w(2)=q.toWorld(wwp);
+
 
 	w(1)+=w(2)*(dt*2*c);
 	}

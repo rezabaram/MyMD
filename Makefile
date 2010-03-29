@@ -3,7 +3,7 @@ run: a.out
 	time ./run.sh
 
 a.out:	*.cc *h
-	g++  main.cc 
+	g++  main.cc -O1
 
 animate: test.avi
 	#feh *jpg

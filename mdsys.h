@@ -67,7 +67,7 @@ void CSys::calForces(){
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->forces=G*((*it1)->get_mass());
-		(*it1)->torques=0;
+		(*it1)->torques=0.0;
 		}
 	//interactions
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
@@ -302,8 +302,8 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		r2=overlaps.at(i).x-p2->x(0);
-		v1=p1->x(1)-cross(r1, p1->w(1));
-		v2=p2->x(1)-cross(r2, p2->w(1));
+		v1=p1->x(1)+cross(r1, p1->w(1));
+		v2=p2->x(1)+cross(r2, p2->w(1));
 		dv=v1-v2;
 		proj=dv*overlaps.at(i).dx;
 		//p1->test=r1;//just for test
@@ -347,7 +347,7 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
-		dv=p1->x(1)-cross(r1, p1->w(1));
+		dv=p1->x(1)+cross(r1, p1->w(1));
 		proj=dv*overlaps.at(i).dx;
 		p1->test=r1;//just for test
 		if(proj>0){
