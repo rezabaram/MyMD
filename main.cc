@@ -29,13 +29,16 @@ sys.G=config.get_param<vec>("Gravity");
 double time=0;
 vec x;
 double margin=3.1*size;
-for(double i=margin; i<1-3.1*margin; i+=3.1*size){
-for(double j=1-3.1*size; j>margin; j-=3.1*size){
-for(double k=1-3.1*size; k>margin; k-=3.1*size){
+for(double i=margin; i<1-margin; i+=margin){
+for(double j=1-margin; j>margin; j-=margin){
+for(double k=1-margin; k>margin; k-=margin){
+
+	if(sys.particles.size()==config.get_param<int>("nParticle")) {
+				break;
+				}
 	x(1)=i+size*drand48()/10; 
 	x(0)= 0.5+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
-
 	CParticle *p = new CParticle(x,size*(1+0.2*drand48()));
 	double ran=drand48();
 	if(ran<0.1)p->material.color="1 0 0";
@@ -44,14 +47,14 @@ for(double k=1-3.1*size; k>margin; k-=3.1*size){
 	double col=drand48();
 	p->identifier=1;
 	vec axis(0.0);
-	axis(1)=20.0*drand48();
-	p->w(1)=axis;
+	//axis(1)=20.0*drand48();
+	//p->w(1)=axis;
 	//axis(0)=2.0*drand48();
-	p->q=Quaternion(cos(M_PI/8.),sin(M_PI/8.),0,0 )*Quaternion(cos(M_PI/8.),0,0,sin(M_PI/8.) );
-	//p->q=Quaternion(cos(M_PI/8.),0,sin(M_PI/8.),0 );
+	//p->q=Quaternion(cos(M_PI/8.),sin(M_PI/8.),0,0 )*Quaternion(cos(M_PI/8.),0,0,sin(M_PI/8.) );
+	p->q=Quaternion(cos(M_PI/8.),0,sin(M_PI/8.),0 );
 //	p->x(1)=axis;
 	//p->rotate(vec(1.0), drand48()*3.14);
-	if(sys.particles.size()<config.get_param<int>("nParticle")) sys.add(p);
+	sys.add(p);
 	}
 	}
 	}

@@ -131,7 +131,7 @@ template<>
 class GeomObject<tsphere>: public GeomObjectBase
 	{
 	public:	
-	GeomObject<tsphere> (const vec &v, double r):GeomObjectBase(v,tsphere),radius(r){}
+	GeomObject<tsphere> (const vec &v, double r):GeomObjectBase(v,tsphere){radius=r;}
 	virtual ~GeomObject(){};
 
 	void rotate(const vec&, double alpha){};
@@ -148,7 +148,6 @@ class GeomObject<tsphere>: public GeomObjectBase
 			in>> Xc >>radius;
 			}
 
-	double radius;
 	private:
 	GeomObject<tsphere>();
 	};
@@ -158,11 +157,14 @@ template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
 		
-	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite), shell(v,1.5*r){
+	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite){
+		radius=3.0*r;
 		N++;
+		cerr<< r/4 <<endl;
 		GeomObjectBase *s1=NULL;
-		s1=new CSphere(vec(-r,0.0,0.0), r/2);
 		GeomObjectBase *s2=NULL, *s3;
+		s1=new CSphere(vec(-r,0.0,0.0), r/2);
+		s1->identifier=1;
 		s2=new CSphere(vec(0.0), r);
 		s2->identifier=2;
 		s3=new CSphere(vec(r, 0.0, 0.0), r/2);
@@ -200,9 +202,15 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			elems.at(i)->Xc+=dx;
 			}
 		Xc+=dx;
-		shell.Xc+=dx;
 		}
 
+	double min(size_t j){
+		double miny=10;
+		for(int i=0; i<elems.size(); i++){
+			if((elems.at(i)->Xc)(j)-elems.at(i)->radius < miny) miny=((elems.at(i)->Xc)(j)-elems.at(i)->radius);
+			}
+		return miny;
+		};
 	void rotateTo(const Quaternion &q){
 		for(int i=0; i<elems.size(); i++){
 			elems.at(i)->Xc=Xc+q.rotate(elems.at(i)->Xc0);
@@ -234,7 +242,6 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 
 	vector<GeomObjectBase *> elems;
-	CSphere shell;
 	private:
 	static int N;
 	GeomObject<tcomposite> (const GeomObject<tcomposite> & p);//not allow copies
@@ -345,9 +352,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
 
-	vector<COverlapping> dummy;
-	overlaps(dummy, &p1->shell, &p2->shell);
-	//if(dummy.size()==0)return;
+	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
 
 	for(int i=0; i< (p1->elems.size()); ++i){
 	for(int j=0; j< (p2->elems.size()); ++j){
@@ -362,12 +367,21 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
-	vector<COverlapping> dummy;
-	overlaps(dummy, &p1->shell, b);
-	//if(dummy.size()==0)return;
+	static double d;
+	bool need_to_check=false;
+	for(int i=0; i<6; ++i){
+		d=(b->face[i]->normal_to_point(p1->Xc,0.0)).abs2() - p1->radius*p1->radius;
+		if(d<0){
+			need_to_check=true;
+			break;
+			}
+		}
+	if(!need_to_check)return;
+
 	for(int i=0; i<p1->elems.size(); ++i){
 		overlaps(ovs, p1->elems.at(i), b);
 		}
+	//cerr<< miny <<endl;
 
 	//for(int j=0; j< ovs.size(); ++j){
 		//ovs.at(j).x+=p1->Xc; // contact point with respect to center of composit particle

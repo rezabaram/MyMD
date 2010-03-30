@@ -36,7 +36,6 @@ class CParticle : public GeomObject<particleType>{
 			x(i)=0.0;
 			w(i)=0.0;
 			}
-
 		
 		mass=material.density*4.0/3.0*M_PI*r*r*r;
 		if(type==tcomposite){
@@ -51,7 +50,14 @@ class CParticle : public GeomObject<particleType>{
 		};
 
 	double kEnergy(){
-		return 0.5*mass*x(1).abs();
+		return 0.5*mass*x(1).abs2();
+		}
+
+	double pEnergy(const vec &g){
+		return -mass*(g*x(0));
+		}
+	double rEnergy(){
+		return 0.5*(Ixx*w(1)(0)*w(1)(0)+Iyy*w(1)(1)*w(1)(1)+Izz*w(1)(1)*w(1)(1));
 		}
 
 	double get_mass()const{return mass;}
@@ -71,7 +77,7 @@ class CParticle : public GeomObject<particleType>{
 	void parse(std::istream &in){
 			GeomObject<particleType>::parse(in);
 			x(0)=Xc;
-			mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
+			//mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
 			}
 
 	void calPos(double dt);
@@ -111,8 +117,8 @@ void CParticle::calPos(double dt){
 	static vec wp;
 	static Quaternion dq(0,0,0,0);
 
+	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
 	wp=q.toBody(w(1));
-	//w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
 	dq.u =    -q.v(0)*wp(0) - q.v(1)*wp(1) - q.v(2)*wp(2);
 	dq.v(0) =  q.u  * wp(0) - q.v(2)*wp(1) + q.v(1)*wp(2);
 	dq.v(1) =  q.v(2)*wp(0) + q.u *  wp(1) - q.v(0)*wp(2);
@@ -135,10 +141,6 @@ void CParticle::calVel(double dt){
 	static vec wp, wwp, torquep;
 	torquep=q.toBody(torques);
 
-	if(torques.abs()>0){
-	//cerr<< torques <<"\t"<< torquep <<endl;
-	//cerr<< q.toBody(vec(-1.0,0,0)) <<endl;
-	}
 	wp=q.toBody(w(1));
 	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
 	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;

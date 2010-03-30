@@ -13,7 +13,7 @@ test.avi:
 	sh genFrames.sh out* > /dev/null 2>&1
 
 clean:
-	rm -rf a.out *o out* test.avi
+	rm -rf  out* test.avi
 
 aclean:
 	rm -rf test.avi *jpg

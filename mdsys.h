@@ -83,11 +83,13 @@ void CSys::calForces(){
 
 void CSys::forward(double dt){
 	static int count=0, outN=0,outPutN=outDt/dt;
+	double energy=0.0;
 	
 	vector<CParticle *>::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(!(*it)->frozen) (*it)->calPos(dt);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
+		//energy+=(*it)->rEnergy()+(*it)->kEnergy()+(*it)->pEnergy(G);
 		}
 	calForces();
 	ke=0;
@@ -108,18 +110,7 @@ void CSys::forward(double dt){
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			ofstream out(outname.str().c_str());
 			for(it=particles.begin(); it!=particles.end(); ++it){
-				//if(!(*it)->frozen)out<<**it<<endl;
-				//if((*it)->identifier != 2)out<<**it<<endl;
 				out<<**it<<endl;
-				GeomObject<tsphere> s((*it)->test+(*it)->x(0), 0.01);
-				GeomObject<tsphere> s0((*it)->x(0), 0.01);
-				s.identifier=3;
-				s0.identifier=1;
-				s.print(out);
-				out<<endl;
-				//s0.print(out);
-				//out<<endl;
-				
 				}
 			count=0;
 			outN++;
@@ -297,7 +288,7 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 	//cerr<< overlaps.size()<<endl;
 	//vec dv=p1->x(1)-p2->x(1);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
-	static double proj;
+	static double proj, ksi;
 	if(overlaps.size()==0)return false;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
@@ -305,30 +296,22 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 		v1=p1->x(1)+cross(r1, p1->w(1));
 		v2=p2->x(1)+cross(r2, p2->w(1));
 		dv=v1-v2;
-		proj=dv*overlaps.at(i).dx;
-		//p1->test=r1;//just for test
-		if(proj>0){
-			force=-p1->material.stiffness1*overlaps.at(i).dx;
 
-			p1->addforce(force);
-			torque=cross(r1, force);
-			p1->addtorque(torque);
-				
-			p2->addforce(-force);
-			torque=cross(force, r2);
-			p2->addtorque(torque);
-			}
-		else {
-			force=-p1->material.stiffness2*overlaps.at(i).dx;
+		proj=(dv*overlaps.at(i).dx.normalized());
 
-			p1->addforce(force);
-			torque=cross(r1,force);
-			p1->addtorque(torque);
-				
-			p2->addforce(-force);
-			torque=cross(force, r2);
-			p2->addtorque(torque);
-			}
+		ksi=overlaps.at(i).dx.abs();
+		ksi=(ksi>0)?(ksi+0.00015*proj)/sqrt(ksi):0; //to eliminate artifical attractions
+		ksi*=p1->material.stiffness1;
+		force=-ksi*overlaps.at(i).dx;
+
+		p1->addforce(force);
+		torque=cross(r1, force);
+		p1->addtorque(torque);
+			
+		p2->addforce(-force);
+		torque=cross(force, r2);
+		p2->addtorque(torque);
+
 		}
 
 /// ?????????????????? this is just a test
@@ -342,98 +325,36 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
 
-	static vec dv, r1, force, torque;
-	static double proj;
+	static vec dv, r1, force, torque, vt, vn;
+	static double proj, ksi;
 	if(overlaps.size()==0)return false;
+	//cerr<< p1->min(2)<< "    " <<p1->x(0) <<endl;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
-		proj=dv*overlaps.at(i).dx;
-		p1->test=r1;//just for test
-		if(proj>0){
-			force=-p1->material.stiffness1*overlaps.at(i).dx;
-			p1->addforce(force);
-			torque=cross(r1, force);
-			p1->addtorque(torque);
-			}
-		else {
-			force=-p1->material.stiffness2*overlaps.at(i).dx;
-			p1->addforce(force);
-			torque=cross(r1, force);
-			p1->addtorque(torque);
-			}
+
+		proj=(dv*overlaps.at(i).dx.normalized());
+
+		ksi=overlaps.at(i).dx.abs();
+		ksi=(ksi>0)?(ksi+0.00015*proj)/sqrt(ksi):0; //to eliminate artifical attractions
+		ksi*=p1->material.stiffness1;
+
+		force=-ksi*overlaps.at(i).dx;//visco-elastic Hertz law
+		p1->addforce(force);
+
+		torque=cross(r1, force);
+		p1->addtorque(torque);
+		//cerr<< p1->x(0)+r1 <<endl;
+
+		//tangent=(1.0-fabs(proj)/dv.abs()/overlaps.at(i).dx.abs())*dv;
+
+		//cerr<< tangent <<endl;
+		//force=200*tangent;
+		//p1->addforce(force);
+		//torque=cross(r1, force);
+		//p1->addtorque(torque);
 		}
-/// ?????????????????? this is just a test
-	//force-=friction*dv;
-/////////////////////////////
 	return true;
-	}
-inline bool CSys::interact(const CParticle *p1, const GeomObject<tbox> &b, vec &force)const{
-	bool overlap=false;
-	double d=b.top()(0)-p1->x(0)(0)-p1->radius;
-
-	if(d<0){
-		if(p1->x(1)(0)>=0)force(0)+= (p1->material.stiffness1*d);
-		else force(0)+= (p1->material.stiffness2*d);
-		overlap=true;
-
-/// ?????????????????? this is just a test
-	force(0)-=friction*p1->x(1)(0);
-/////////////////////////////
-		}
-
-	d=-b.corner(0)+p1->x(0)(0)-p1->radius;
-	if(d<0){
-		if(p1->x(1)(0)<=0)force(0)-= (p1->material.stiffness1*d);
-		else force(0)-= (p1->material.stiffness2*d);
-		overlap=true;
-/// ?????????????????? this is just a test
-	force(0)-=friction*p1->x(1)(0);
-/////////////////////////////
-		}
-
-	d=b.top()(1)-p1->x(0)(1)-p1->radius;
-	if(d<0){
-		if(p1->x(1)(1)>=0)force(1)+= (p1->material.stiffness1*d);
-		else force(1)+= (p1->material.stiffness2*d);
-		overlap=true;
-/// ?????????????????? this is just a test
-	force(1)-=friction*p1->x(1)(1);
-/////////////////////////////
-		}
-
-	d=-b.corner(1)+p1->x(0)(1)-p1->radius;
-	if(d<0){
-		if(p1->x(1)(1)<=0)force(1)-= (p1->material.stiffness1*d);
-		else force(1)-= (p1->material.stiffness2*d);
-		overlap=true;
-/// ?????????????????? this is just a test
-	force(1)-=friction*p1->x(1)(1);
-/////////////////////////////
-		}
-
-	//for 3d
-	d=b.top()(2)-p1->x(0)(2)-p1->radius;
-	if(d<0){
-		if(p1->x(1)(2)>=0)force(2)+= (p1->material.stiffness1*d);
-		else force(2)+= (p1->material.stiffness2*d);
-		overlap=true;
-/// ?????????????????? this is just a test
-	force(2)-=friction*p1->x(1)(2);
-/////////////////////////////
-		}
-
-	d=-b.corner(2)+p1->x(0)(2)-p1->radius;
-	if(d<0){
-		if(p1->x(1)(2)<=0)force(2)-= (p1->material.stiffness1*d);
-		else force(2)-= (p1->material.stiffness2*d);
-		overlap=true;
-/// ?????????????????? this is just a test
-	force(2)-=friction*p1->x(1)(2);
-/////////////////////////////
-		}
-
-	return overlap;
 	}
 
 #endif /* MDSYS_H */

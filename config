@@ -1,9 +1,9 @@
-Gravity  0   0   -10
+Gravity  0   0   -2
 density  	10000
-outDt  		0.01
-timeStep 	0.0001
-matTime		4.0
-particleSize 	0.08
-nParticle 	10
-stiffness1  	9e+07
-stiffness2  	1e+06
+outDt  		0.02
+timeStep 	0.00002
+particleSize 	0.06
+nParticle 	5
+maxTime		5.0
+stiffness1  	7.32e+08
+stiffness2  	2e+07
