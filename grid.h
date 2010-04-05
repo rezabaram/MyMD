@@ -184,7 +184,7 @@ void CRecGrid::add(CParticle *part)
 	{
 	assert(part);
 	vec R=part->x(0)-corner;
-	double r=part->radius;
+	double r=part->shape->radius;
 	CWindow win(floor((R(0)-r)/dL(0)), floor((R(1)-r)/dL(1)), floor((R(2)-r)/dL(2)),
 	            floor((R(0)+r)/dL(0)), floor((R(1)+r)/dL(1)), floor((R(2)+r)/dL(2))
 		   );

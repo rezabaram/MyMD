@@ -13,7 +13,7 @@ typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid} GType;
 class GeomObjectBase
 	{
 	public:
-	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t), q(1.0, 0.0, 0.0, 0.0){identifier=1;};
+	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t){identifier=1;};
 	virtual ~GeomObjectBase(){};
 	virtual void shift(const vec&)=0;
 	virtual void rotate(const vec& n, double alpha){//maybe overriden by derived class
@@ -21,6 +21,8 @@ class GeomObjectBase
 		//Xc0=q.rotate(Xc0);
 		};
 	virtual void rotateTo(const Quaternion &q){};
+	virtual double vol()=0;
+	virtual double I(vec n)=0;
 
 	virtual void scale(double)=0;
 	virtual void print(std::ostream &out)const=0;
@@ -44,7 +46,6 @@ class GeomObjectBase
 	double radius;
 	
 	vec Xc, Xc0; //center 
-	Quaternion q;//orientation
 	int identifier;
 	protected:
  	private:
@@ -79,6 +80,10 @@ class GeomObject<tplane> : public GeomObjectBase
 		vec normal_to_point(const vec & p, double shift){
 			return ((Xc-p)*n-shift)*n;
 			}
+	double vol(){return 0;}
+	double I(vec n){
+		ERROR("Not implemented."); //FIXME
+		return 0;}
 	
 	vec n;//normal
  	private:
@@ -109,6 +114,11 @@ class GeomObject<tbox>: public GeomObjectBase
 		out<< identifier<< "   ";
 		out<<corner<<"  "<<L;
 		}
+
+	double vol(){return L(0)*L(1)*L(2);}
+	double I(vec n){
+		ERROR("Not implemented."); //FIXME
+		return 0;}
 
 	void parse(std::istream &in){
 			in>>identifier;
@@ -148,6 +158,9 @@ class GeomObject<tsphere>: public GeomObjectBase
 			in>> Xc >>radius;
 			}
 
+	double vol(){ 
+			return 4.0/3.0*radius*radius*radius;}
+	double I(vec n){return 2.0/5.0*vol()*radius*radius;}
 	private:
 	GeomObject<tsphere>();
 	};
@@ -156,25 +169,46 @@ typedef GeomObject<tsphere> CSphere;
 template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
+	GeomObject<tcomposite> (const GeomObject<tcomposite> & p):GeomObjectBase(p.Xc,tcomposite){
+		for(int i=0; i<p.elems.size(); i++){
+			elems.push_back(new CSphere(*(p.elems.at(i))));
+			}
+		radius=p.radius;
+		Xc=p.Xc;
+		}
 		
 	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite){
-		radius=3.0*r;
-		N++;
-		cerr<< r/4 <<endl;
-		GeomObjectBase *s1=NULL;
-		GeomObjectBase *s2=NULL, *s3;
-		s1=new CSphere(vec(-r,0.0,0.0), r/2);
+
+		radius=r;
+		CSphere *s1=NULL;
+		CSphere *s2=NULL, *s3;
+		s1=new CSphere(vec(-2*r/3,0.0,0.0), r/3);
 		s1->identifier=1;
-		s2=new CSphere(vec(0.0), r);
+		s2=new CSphere(vec(0.0), 2*r/3);
 		s2->identifier=2;
-		s3=new CSphere(vec(r, 0.0, 0.0), r/2);
+		s3=new CSphere(vec(2*r/3, 0.0, 0.0), r/3);
 		s3->identifier=1;
 
 		if(s1==NULL || s2==NULL){ERROR("error in memory allocation"); exit(1);}
 		elems.push_back(s1);
 		elems.push_back(s2);
 		elems.push_back(s3);
-		//s2=new CSphere(vec(2,+r/2.), r);
+
+		s3=new CSphere(vec(0.0,2*r/3, 0.0), r/3);
+		s3->identifier=1;
+		elems.push_back(s3);
+
+		s3=new CSphere(vec(0.0,-2*r/3, 0.0), r/3);
+		s3->identifier=1;
+		elems.push_back(s3);
+
+		s3=new CSphere(vec(0.0,0.0,2*r/3), r/3);
+		s3->identifier=1;
+		elems.push_back(s3);
+
+		s3=new CSphere(vec(0.0,0.0,-2*r/3), r/3);
+		s3->identifier=1;
+		elems.push_back(s3);
 		//elems.push_back(s2);
 		//s2=new CSphere(vec(2,-r/2.), r);
 		//elems.push_back(s2);
@@ -189,6 +223,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 		}
 
+	
 	~GeomObject<tcomposite>(){
 		for(int i=0; i<elems.size(); i++){
 			delete elems.at(i);
@@ -202,6 +237,23 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			elems.at(i)->Xc+=dx;
 			}
 		Xc+=dx;
+		}
+
+	double vol(){
+		double v=0;
+		for(int i=0; i<elems.size(); i++){
+			v+=elems.at(i)->vol();
+			}
+		return v;
+		}
+
+	double I(vec n){//FIXME this works only when the elements are on the axes
+		n.normalize();
+		double II=0;
+		for(int i=0; i<elems.size(); i++){
+			II+=elems.at(i)->I(n)+elems.at(i)->vol()*(elems.at(i)->Xc0-(elems.at(i)->Xc0*n)*n).abs2();
+			}
+		return II;
 		}
 
 	double min(size_t j){
@@ -219,9 +271,9 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 
 	void rotate(const vec& n , double alpha){//FIXME
 		ERROR("check this");
-		q.setRotation(n, alpha);
+		//q.setRotation(n, alpha);
 		for(int i=0; i<elems.size(); i++){
-			elems.at(i)->Xc0=q.rotate(elems.at(i)->Xc0);
+			//elems.at(i)->Xc0=q.rotate(elems.at(i)->Xc0);
 			}
 		};
 
@@ -235,71 +287,106 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 			elems.back()->print(out);
 		}
+	void parse(std::istream &in){ERROR("check this.");};
 	
-	void parse(std::istream &in)const{//FIXME
-			ERROR("not implemented");
-			//in>>identifier;
-			}
-
-	vector<GeomObjectBase *> elems;
+	vector<CSphere *> elems;
 	private:
-	static int N;
-	GeomObject<tcomposite> (const GeomObject<tcomposite> & p);//not allow copies
 	GeomObject<tcomposite> ();
 	};
-int GeomObject<tcomposite>::N=0;
 
-/*
+#include"matrix.h"
+using namespace math;
+typedef matrix<double> Matrix;
+
 template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
-	GeomObject<tcomposite> (const vec &v, double a, double b, double c):GeomObjectBase(v,tellipsoid), shell(v,max(a, max(b,c))){
+	GeomObject(const vec &v,double _a, double _b, double _c) :GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c) {
+		identifier=5;
+		radius=tmax(a, tmax(b,c));
+		setup();
 		}
+	~GeomObject(){}
 
-	~GeomObject<tcomposite>(){}
+	void setup(){
 
+		//Elements of the rotational matrix
+
+		double beta = M_PI/2.;
+		  rotat_mat(2,2)= 1;
+		  rotat_mat(1,2)= 0;
+		  rotat_mat(2,1)= 0;
+		  rotat_mat(0,2)= 0;
+		  rotat_mat(2,0)= 0;
+
+		  rotat_mat(0,0)= cos(beta);
+		  rotat_mat(0,1)= -sin(beta);
+		  rotat_mat(1,0)= sin(beta);
+		  rotat_mat(1,1)= cos(beta);
+
+		  //Elements of the scaling matrix
+
+		  scale_mat(0,0)=1.0/(a*a);
+		  scale_mat(1,1)=1.0/(b*b);
+		  scale_mat(2,2)=1.0/(c*c);
+
+		  ellip_mat=rotat_mat*scale_mat*~rotat_mat;
+
+		}
 	void moveto(const vec &v){
 		Xc=v;
-		shell.Xc=v;
 		}
 
 	void rotateTo(const Quaternion &q){
 			orientation=q.rotate(orientation);//FIXME optimize it. it doesn't need to be returned
 		}
 
-	void rotate(const vec& n , double alpha){
-		q.setRotation(n, alpha);
-			orientation=q.rotate(orientation);
+	double I(vec n){//FIXME only in special coordinate system
+		ERROR("check this");
+		n.normalize();
+		return vol()*(n*scale_mat*n)/5.0;
+		}
+	double vol(){
+		4.0/3.0*M_PI*a*b*c;
+		}
+	void rotate(const vec& n , double alpha){//FIXME
+		//q.setRotation(n, alpha);
+			//orientation=q.rotate(orientation);
 		};
 
 	void shift(const vec& v){Xc+=v;};
 	void scale(double scale){};//FIXME
 
 	void print(std::ostream &out)const{
-		for(int i=0; i<elems.size()-1; i++){
-			elems.at(i)->print(out);
-			out<< endl;
-			}
-			elems.back()->print(out);
+		out<< identifier<< "   ";
+		out<< Xc<< "  "<<100*radius<<"  ";
+		out<<ellip_mat(0,0)<< "  "<<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
+		out<<ellip_mat(1,0)<< "  "<<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
+		out<<-(Xc*ellip_mat)(0)<< "  "<<-(Xc*ellip_mat)(1)<< "  "<<-(Xc*ellip_mat)(2)<< "  ";
+		out<<Xc*ellip_mat*Xc-1<<endl;
+		cerr<< ellip_mat <<endl;
 		}
 	
-	void parse(std::istream &in)const{//FIXME
+	void parse(std::istream &in){//FIXME
 			ERROR("not implemented");
 			//in>>identifier;
 			}
 
-	vector<GeomObjectBase *> elems;
-	CSphere shell;
+	Matrix rotat_mat;
+	Matrix scale_mat;
+	Matrix ellip_mat;
+	double a,b,c;
+	vec orientation;
 	private:
 	static int N;
-	GeomObject<tcomposite> (const GeomObject<tcomposite> & p);//not allow copies
-	GeomObject<tcomposite> ();
+	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
+	GeomObject<tellipsoid> ();
 	};
-*/
+
 class COverlapping{
-	public:
 	COverlapping();
+	public:
 	COverlapping(const vec &_x, const vec &_dx ):x(_x), dx(_dx){}
 	static void overlaps(vector<COverlapping> &ovs, const GeomObjectBase *p1, const GeomObjectBase *p2){
 		if(p1->type==tsphere && p2->type==tsphere)
@@ -345,13 +432,19 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 		d=v.abs();
 		dd=p1->radius-d;
 		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
-		if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v*(1-0.5*dd), (dd)*v) );
+		if(dd>0) {
+				ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+				}
 		}
 	}
 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
 
+	if(p1==p2){
+		ERROR("A particle is checked against itself for overlapping.")
+		return;
+		}
 	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
 
 	for(int i=0; i< (p1->elems.size()); ++i){
@@ -359,10 +452,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
 		}
 		}
-
-	//for(int j=0; j< ovs.size(); j++){
-//		ovs.at(j).x-=p1->Xc; // contact point with respect to center of composit particle
-		//}
 	}
 
 inline
@@ -376,17 +465,13 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 			break;
 			}
 		}
-	if(!need_to_check)return;
+//	if(!need_to_check)return;
 
 	for(int i=0; i<p1->elems.size(); ++i){
 		overlaps(ovs, p1->elems.at(i), b);
 		}
-	//cerr<< miny <<endl;
-
-	//for(int j=0; j< ovs.size(); ++j){
-		//ovs.at(j).x+=p1->Xc; // contact point with respect to center of composit particle
-	//	}
 	}
+
 
 #endif /* SHAPES_H */
 

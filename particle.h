@@ -11,42 +11,60 @@
 #include"dfreedom.h"
 #include"shapes.h"
 
+
+
 using namespace std;
 class CProperty
 	{
 	public:
 	CProperty():
-	 	stiffness1(paramsDouble("stiffness1")), stiffness2(paramsDouble("stiffness2")), color(" 1"), density(paramsDouble("density")){
+	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")), color(" 1"), density(paramsDouble("density")){
 		};
 	~CProperty(){}
-	double stiffness1, stiffness2;
+	double stiffness, damping;
 	double density;
 	string color;
  	private:
 	};
 
-#define particleType tcomposite
-//#define particleType tsphere
-class CParticle : public GeomObject<particleType>{
+template<typename T1, typename T2>
+class CContact: public vector<COverlapping>
+	{
 	public:
-	CParticle(const vec & _x0, double r):GeomObject<particleType>(_x0, r), id(-1), forces(vec(0.0)), frozen(false){
-		x(0)=_x0;
+	CContact(){};
+	CContact(T1 *_p1, T1 *_p2):p1(_p1), p2(_p2){}
+	T1 *p1;
+	T2 *p2;
+	//bool (CParticle *_p1, CParticle *_p1){}
+ 	private:
+	};
+
+//#define shapeType tcomposite
+//#define shapeType tsphere
+class CParticle{
+	CParticle(const CParticle&);
+	public:
+	//template<GType shapeType>
+	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
+	template<GType shapeType>
+	CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
+	~CParticle(){
+		delete shape;
+		}
+
+	void init(){
+		x(0)=shape->Xc;
 		w(0)=0.0;
 		for(int i=1; i<6; ++i){
 			x(i)=0.0;
 			w(i)=0.0;
 			}
 		
-		mass=material.density*4.0/3.0*M_PI*r*r*r;
-		if(type==tcomposite){
-			mass=mass*(1.5);//FIXME for a specific composite particle
-			Iyy=2*(2*mass*r*r/5.0+mass*r*r/128.0);
-			Ixx=2*mass*r*r/5.0+2*mass*r*r/32.0/5.0;
-			Izz=Iyy;
-			}
-		else{
-			Ixx=Iyy=Izz=2*mass*r*r/5.0;
-			}
+		mass=material.density*shape->vol();
+		Ixx=material.density*shape->I(vec(1,0,0));
+		Iyy=material.density*shape->I(vec(0,1,0));
+		Izz=material.density*shape->I(vec(0,0,1));
+
 		};
 
 	double kEnergy(){
@@ -75,8 +93,8 @@ class CParticle : public GeomObject<particleType>{
 		};
 
 	void parse(std::istream &in){
-			GeomObject<particleType>::parse(in);
-			x(0)=Xc;
+			shape->parse(in);
+			x(0)=shape->Xc;
 			//mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
 			}
 
@@ -91,6 +109,8 @@ class CParticle : public GeomObject<particleType>{
 	int id;
 	bool frozen;
 	vec test;
+	GeomObjectBase *shape;
+	Quaternion q;//orientation
 	protected:
 	double mass, Ixx, Iyy, Izz;
  	private:
@@ -98,7 +118,7 @@ class CParticle : public GeomObject<particleType>{
 	};
 
 ostream &operator <<(ostream &out, const CParticle &p){
-	p.print(out);
+	p.shape->print(out);
 	//out<<"  "<<p.x(1);
 	out<<"  "<<drand48()<<" "<<drand48()<<" "<<drand48();
 	}
@@ -127,8 +147,8 @@ void CParticle::calPos(double dt){
 	q+=dq*dt*0.5;
 	q.normalize();
 	
-	rotateTo(q);
-	moveto(x(0));
+	shape->rotateTo(q);
+	shape->moveto(x(0));
 	}
 
 void CParticle::calVel(double dt){

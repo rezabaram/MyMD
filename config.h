@@ -20,11 +20,13 @@ Disclaimer:
 using namespace std;
 class CParamBase {
 	public:
+		typedef enum {Normal, Default} out_type;
+		
 		CParamBase(string _name):name(_name){}
 		virtual ~CParamBase();
 		const string name;
 		virtual void parse(istream &in)=0;
-		virtual void print(ostream &out)=0;
+		virtual void print(ostream &out, CParamBase::out_type def=Normal)=0;
 	
  	private:
 	};
@@ -33,9 +35,12 @@ class CParamBase {
 template <class T>
 class CParam : public CParamBase {
 	public:
-		CParam(string _name, T _value):CParamBase(_name), value(_value){};
+		CParam(string _name, T _value):CParamBase(_name), value(_value), def_value(_value){};
 		T get() const {
 			return value;
+			};
+		T get_default() const {
+			return def_value;
 			};
 		void set(T _value){
 			value=_value;
@@ -43,8 +48,10 @@ class CParam : public CParamBase {
 		void parse(istream &in){
 			in>>value;//param.name<<":   "<<param.value;
 			}
-		void print(ostream &out){
-			out<<value;
+		void print(ostream &out, CParamBase::out_type def=Normal){
+			if(def==CParamBase::Default) out<<def_value;
+
+			else out<<value;
 			}
 		template <class U>
 		friend istream &operator>>(istream &in, CParam<U> &param);
@@ -54,6 +61,7 @@ class CParam : public CParamBase {
  	private:
 		CParam(){};
 		T value;
+		const T def_value;
 	};
 
 template <class T>
@@ -78,15 +86,17 @@ class CConfig {
 	void print(ostream &out=cout);
 
 	template<class T>
-	T get_param(string name) {
+	T get_param(string name, CParamBase::out_type def=CParamBase::Normal) {
 		//const CParamBase  *pp=params[name];
 	      if(!isValid(name)){
 			cerr<< "Warning: "<<name<<" is not a valid parameter or keyword" <<endl;
 			T dummy;
 			return dummy;
 			}
-		CParam<T> * const p=static_cast< CParam<T>* > (params[name]);
-		return p->get();
+		CParam<T> * const p=static_cast< CParam<T>* > (params[name]);//i dont know if there is a better solution, i like this tough
+
+		if(def==CParamBase::Default) return p->get_default();
+		else return p->get();
 		};
 
 	template<class T>
@@ -96,7 +106,7 @@ class CConfig {
 		params[name]=p;
 		name_dict.push_back(name);
 		}catch(...){
-			cerr<< "error" <<endl;
+			cerr<< "error: invalid paramter." <<endl;
 			}
 		};
 

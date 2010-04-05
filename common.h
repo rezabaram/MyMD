@@ -20,20 +20,20 @@ extern CConfig &config; // don't forget "&" or you get a vicious bug, which took
 
 typedef vec3d<double> vec;
 
-double aG[]={0.0, 0, -10.0};
+double aG[]={0.0, 0, -2.0};
 vec G(aG);
 
 void define_parameters()
 {
 	config.add_param<vec>("Gravity", G);
 	config.add_param<double>("outDt", 0.02);
-	config.add_param<double>("stiffness1", 5000000.0); 
-	config.add_param<double>("stiffness2", 1000000.0); 
+	config.add_param<double>("stiffness", 5.0e+07); 
+	config.add_param<double>("damping", 0.00005); 
 	config.add_param<double>("density", 10000.0); 
 	config.add_param<double>("particleSize", 0.05); 
-	config.add_param<double>("timeStep", 0.0001); 
-	config.add_param<double>("maxTime", 1.0); 
-	config.add_param<int>("nParticle", 10); 
+	config.add_param<double>("timeStep", 0.00001); 
+	config.add_param<double>("maxTime", 4.0); 
+	config.add_param<int>("nParticle", 5); 
 }
 
 template <class T>
@@ -45,10 +45,16 @@ string stringify(T x, int width=15, const char ch=' ')
    return o.str();
  }
 
+template<typename T>
+inline
+T tmax(const T &a, const T &b){
+	if(a>b)return a;
+	return b;
+	}
 
 using namespace math;
 typedef matrix<double> Matrix;
-void quaternionToMatrix(const Quaternion &q, Matrix M){
+void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
 	double Nq = q.abs2();
 	static double s;
 	if( Nq > 0.0) s = 2.0/Nq; else s = 0.0;
@@ -64,4 +70,23 @@ void quaternionToMatrix(const Quaternion &q, Matrix M){
 return;
 }
 
+inline
+vec operator *(const vec &v, const Matrix &M){
+
+	return vec(
+		v(0)*M(0,0)+v(1)*M(1,0)+v(2)*M(2,0),
+		v(1)*M(0,1)+v(1)*M(1,1)+v(2)*M(2,1),
+		v(2)*M(0,2)+v(1)*M(1,2)+v(2)*M(2,2)
+		);
+	}
+
+inline
+vec operator *(const Matrix &M, const vec &v){
+
+	return vec(
+		v(0)*M(0,0)+v(1)*M(0,1)+v(2)*M(0,2),
+		v(1)*M(1,0)+v(1)*M(1,1)+v(2)*M(1,2),
+		v(2)*M(2,0)+v(1)*M(2,1)+v(2)*M(2,2)
+		);
+	}
 #endif /* COMMON_H */

@@ -10,26 +10,26 @@ class CSys{
 	CSys():t(0), outDt(0.01),epsFreeze(1.0e-12), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)){};
 	~CSys();
 
-	bool add(CParticle *p);
 	void solve(double tMax, double dt);
 	void forward(double dt);
 	void calForces();
-	vector<CParticle *> particles;
+	void overlappings();
+	inline bool interact(CParticle *p1,CParticle *p2)const; //force from p2 on p1
+	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
+
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
 	int write_packing(string infilename);
 	//void setup_grid(double d);
 
-	inline bool interact(CParticle *p1,CParticle *p2)const; //force from p2 on p1
-	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
-	bool interact(const CParticle *p1, const GeomObject<tbox> &b, vec &force)const;//force from box on p1
+	bool add(CParticle *p);
+	inline bool exist(int i);
 
-	void overlappings();
-	bool exist(int i);
-	double t;
 	double ke;//kinetic energy
-	double outDt;
+
+	double outDt, t;
+	vector<CParticle *> particles;
 	GeomObject<tbox> box;
 	//CRecGrid *grid;
 	double maxr;
@@ -55,7 +55,7 @@ bool CSys::add(CParticle *p){
 		//ERROR("The particle is intially within the box: "<<p->x(0));
 		//return false;
 		//}
-	if(maxr<p->radius)maxr=p->radius;
+	if(maxr<p->shape->radius)maxr=p->shape->radius;
 	particles.push_back(p);
 	//assert(grid);
 	//grid->add(p);
@@ -140,6 +140,7 @@ int CSys::write_packing(string outfilename){
 		out<<**it<<endl;
 		}
 	}
+/*
 int CSys::read_packing3(string infilename, const vec &shift, double scale){
         cerr<< "Reading contacts ..." <<endl;
         ifstream inputFile(infilename.c_str());
@@ -194,20 +195,20 @@ int CSys::read_packing2(string infilename, const vec &shift, double scale){
                 {
                 stringstream ss(line);
                 CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
+                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
 		//if(exist(p->id))continue;
 		p->frozen=true;//FIXME if it is not frozen it doesnt work, why?
-		p->identifier=0;
+		p->shape->identifier=0;
 		if(particles.size()>1000)break;
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
 		double ran=drand48();
-		if(ran<0.05)p->identifier=1;
-		else if(ran<0.2)p->identifier=2;
-		else p->identifier=3;
+		if(ran<0.05)p->shape->identifier=1;
+		else if(ran<0.2)p->shape->identifier=2;
+		else p->shape->identifier=3;
 		p->material.color=stringify(drand48())+stringify(drand48())+stringify(drand48());
-		p->Xc=p->x(0);
+		p->shape->Xc=p->x(0);
 		p->x(1)=0.0;
 		p->x(2)=0.0;
 		p->x0(1)=0.0;
@@ -244,7 +245,7 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
                 {
                 stringstream ss(line);
                 CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
+                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
 		//if(exist(p->id))continue;
 		if(p->x(0)(2)<270 || p->x(0)(2)>1725)p->frozen=true;
 		dist(0)=p->x(0)(0); dist(1)=p->x(0)(1);
@@ -252,8 +253,8 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
-		//p.radius=44;
-		p->radius*=scale*1.04;
+		//p.shape->radius=44;
+		p->shape->radius*=scale*1.04;
 		p->x0(0)=p->x(0);
                 add(p);
                 }
@@ -262,6 +263,7 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
 	return particles.size();
         }
 
+*/
 bool CSys::exist(int i){
 	vector<CParticle *>::iterator it1;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
@@ -274,17 +276,26 @@ void CSys::overlappings(){
 	vector<CParticle *>::iterator it1, it2;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 	for(it2=it1+1; it2!=particles.end(); ++it2){
-		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->radius - (*it2)->radius;
+		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->shape->radius - (*it2)->shape->radius;
 		if(d<0)cerr<< d<<" "<< (*it1)->id<<"  "<< (*it2)->id <<endl;
 		}
 		}
 
 		}
 
+inline
+vec contactForce(const vec &dx, const vec &dv, double stiff, double damp){
+		static double proj, ksi;
+		proj=(dv*dx.normalized());
+		ksi=dx.abs();
+		ksi=(stiff*ksi+damp*proj)*sqrt(ksi); //to eliminate artifical attractions
+		if(ksi<0)ksi=0;
+		return -ksi*dx;//visco-elastic Hertz law
+		}
 inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 
 	vector<COverlapping> overlaps;
-	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
+	COverlapping::overlaps(overlaps, p1->shape, p2->shape);
 	//cerr<< overlaps.size()<<endl;
 	//vec dv=p1->x(1)-p2->x(1);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
@@ -297,19 +308,15 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 		v2=p2->x(1)+cross(r2, p2->w(1));
 		dv=v1-v2;
 
-		proj=(dv*overlaps.at(i).dx.normalized());
-
-		ksi=overlaps.at(i).dx.abs();
-		ksi=(ksi>0)?(ksi+0.00015*proj)/sqrt(ksi):0; //to eliminate artifical attractions
-		ksi*=p1->material.stiffness1;
-		force=-ksi*overlaps.at(i).dx;
+		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
 
 		p1->addforce(force);
 		torque=cross(r1, force);
 		p1->addtorque(torque);
 			
-		p2->addforce(-force);
-		torque=cross(force, r2);
+		force*=-1.0;
+		p2->addforce(force);
+		torque=cross(r2, force);
 		p2->addtorque(torque);
 
 		}
@@ -320,29 +327,25 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 	return true;
 	}
 
+
 inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 
 	vector<COverlapping> overlaps;
-	COverlapping::overlaps(overlaps, (GeomObjectBase*)p1, (GeomObjectBase*)p2);
+	COverlapping::overlaps(overlaps, p1->shape, (GeomObjectBase*)p2);
 
 	static vec dv, r1, force, torque, vt, vn;
-	static double proj, ksi;
 	if(overlaps.size()==0)return false;
 	//cerr<< p1->min(2)<< "    " <<p1->x(0) <<endl;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
 
-		proj=(dv*overlaps.at(i).dx.normalized());
 
-		ksi=overlaps.at(i).dx.abs();
-		ksi=(ksi>0)?(ksi+0.00015*proj)/sqrt(ksi):0; //to eliminate artifical attractions
-		ksi*=p1->material.stiffness1;
-
-		force=-ksi*overlaps.at(i).dx;//visco-elastic Hertz law
+		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
+		//cerr<< torque<<endl;
 		p1->addtorque(torque);
 		//cerr<< p1->x(0)+r1 <<endl;
 
