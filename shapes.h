@@ -309,11 +309,11 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 	~GeomObject(){}
 
-	void setup(){
+	void setup(double beta=0){
 
 		//Elements of the rotational matrix
 
-		double beta = M_PI/2.;
+		//double beta = M_PI/3.;
 		  rotat_mat(2,2)= 1;
 		  rotat_mat(1,2)= 0;
 		  rotat_mat(2,1)= 0;
@@ -339,16 +339,23 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	void rotateTo(const Quaternion &q){
-			orientation=q.rotate(orientation);//FIXME optimize it. it doesn't need to be returned
+		//static double beta=0;
+		//setup(beta);
+		//beta+=0.00005;
+			quaternionToMatrix(q, rotat_mat);
+			
+		  	ellip_mat=rotat_mat*scale_mat*~rotat_mat;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
+		return 2.0/5.0*vol()*radius*radius;
 		ERROR("check this");
 		n.normalize();
 		return vol()*(n*scale_mat*n)/5.0;
 		}
 	double vol(){
-		4.0/3.0*M_PI*a*b*c;
+		return 4.0/3.0*M_PI*radius*radius*radius;
+		return 4.0/3.0*M_PI*a*b*c;
 		}
 	void rotate(const vec& n , double alpha){//FIXME
 		//q.setRotation(n, alpha);
@@ -356,16 +363,26 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		};
 
 	void shift(const vec& v){Xc+=v;};
-	void scale(double scale){};//FIXME
+	void scale(double scale){
+			a*=scale;
+			b*=scale;
+			c*=scale;
+		  	scale_mat(0,0)=1.0/(a*a);
+		  	scale_mat(1,1)=1.0/(b*b);
+		  	scale_mat(2,2)=1.0/(c*c);
+		  	ellip_mat=rotat_mat*scale_mat*~rotat_mat;
+			radius*=scale;
+			};
 
 	void print(std::ostream &out)const{
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<100*radius<<"  ";
+		out<< Xc<< "  "<<radius+0.00001<<"  ";
 		out<<ellip_mat(0,0)<< "  "<<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<<ellip_mat(1,0)<< "  "<<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
-		out<<-(Xc*ellip_mat)(0)<< "  "<<-(Xc*ellip_mat)(1)<< "  "<<-(Xc*ellip_mat)(2)<< "  ";
-		out<<Xc*ellip_mat*Xc-1<<endl;
-		cerr<< ellip_mat <<endl;
+		//out<<-(ellip_mat)(0,1)<< "  "<<-(Xc*ellip_mat)(1)<< "  "<<-(Xc*ellip_mat)(2)<< "  ";
+		out<<0<< "  "<<0<< "  "<<0<< "  ";
+		//out<<Xc*ellip_mat*Xc-1<<endl;
+		out<<-1<<endl;
 		}
 	
 	void parse(std::istream &in){//FIXME
@@ -397,11 +414,17 @@ class COverlapping{
 			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tcomposite> *>(p2));
 		else if(p1->type==tcomposite && p2->type==tbox)//FIXME
 			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
+		else if(p1->type==tellipsoid&& p2->type==tbox)//FIXME
+			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
+		else if(p1->type==tellipsoid&& p2->type==tellipsoid)//FIXME
+			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tellipsoid> *>(p2));
 		else ERROR("Not Implemented");
 		};
 
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2);
+	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b);
+	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tellipsoid>  * p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  *b);
 
@@ -425,6 +448,34 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
+	static vec v;
+	static double d, dd;
+	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
+		d=v.abs();
+		dd=p1->radius-d;
+		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
+		if(dd>0) {
+				ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+				}
+		}
+	}
+inline
+void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tellipsoid>  * p2){
+	static vec v;
+	static double d, dd;
+	v=p2->displacement(p1);//Xc2-Xc1
+	d=v.abs();
+	dd=p2->radius+p1->radius-d;//FIXME can be put in the base class too
+
+	if(dd>0) {
+		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
+		v.normalized();
+		ovs.push_back(COverlapping(p1->getpos()+v, (dd)*v));
+		}
+	}
+inline
+void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 	static vec v;
 	static double d, dd;
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
@@ -472,6 +523,58 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 	}
 
+typedef GeomObject<tellipsoid> CEllipsoid;
+vec rescale_ellipse_to_touch(const CEllipsoid &E, const CEllipsoid &E0){
+//here we should if E will touch E0 or not;
+
+static vec R, R0, R12;
+R12=E0.Xc-E.Xc; 
+R=E.Xc; //FIXME unnecessary, just not to modify the rest for the moment
+R0=E0.Xc;
+
+
+// Begin of iteration for lambda
+static Matrix D(3,3), invD(3,3), F(3,3), A(3,3), B(3,3);
+static Matrix invE(3,3), invE0(3,3);
+invE=!E.ellip_mat;
+invE0=!E0.ellip_mat;
+int itermax=1000;
+double lambda=0.5;
+for(int loop=1;loop<=itermax;loop++){
+
+	D=invE0+lambda*invE;	
+	invD=!D;
+//these two lines can be optimized
+	double d=lambda*lambda*invE.Det()+lambda*((invE+invE0).Det()-invE.Det()-invE0.Det())+invE0.Det();
+	double dd=2*lambda*invE.Det()+((invE+invE0).Det()-invE.Det()-invE0.Det());
+	
+	F=invE*invE0*invD;
+	A=invD*invE0*invD;
+	
+	B=2.0/d*(F-dd*A);
+
+
+
+	double dx= (R*A*R)/(R*B*R);
+
+	double threshold=1e-4;
+	static Matrix E12(3,3);
+	static vec rc;
+	static vec rE;
+	if(fabs(dx) < threshold){
+		//CVector rc;
+		E12=!(E.ellip_mat-(lambda*E0.ellip_mat));
+		rc=R0-E12*(E.ellip_mat*R12);
+		double s=lambda*sqrt(R*(E0.ellip_mat*E12*E.ellip_mat*E12*E0.ellip_mat)*R);
+		rE=(1-1/s)*rc+(1/s)*R;
+		cerr<< s <<endl;
+		return rE;
+		}
+	lambda -= dx;
+	}   
+
+  return E.Xc;   //NON Convergence.
+
+}
 
 #endif /* SHAPES_H */
-

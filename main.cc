@@ -29,12 +29,10 @@ sys.G=config.get_param<vec>("Gravity");
 
 
 double time=0;
-vec x(0.2, 0.2, 0.2);
-//vec x(0.0, 0.0, 0.0);
-GeomObject<tellipsoid> E(x, 0.25, .05, .1);
-CParticle p(E);
-E.print(cout);
-return 0;
+//vec x(0.5, 0.5, 0.5);
+vec x(0.0, 0.0, 0.0);
+//E.print(cout);
+//return 0;
 double margin=2.1*size;
 for(double i=margin; i<1-margin; i+=margin){
 for(double j=1-margin; j>margin; j-=margin){
@@ -46,19 +44,18 @@ for(double k=1-margin; k>margin; k-=margin){
 	x(1)=0.5;//i+size*drand48()/10; 
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
-	CParticle *p = new CParticle(GeomObject<tcomposite>(x,size*(1+0.2*drand48())));
-	double ran=drand48();
-	if(ran<0.1)p->material.color="1 0 0";
-	else if(ran<0.45)p->material.color="0 1 0";
-	else p->material.color="0 0 1";
-	double col=drand48();
-	p->shape->identifier=1;
+	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
+	GeomObject<tellipsoid> E(x, 1, 1, 1);
+	E.moveto(x);
+	E.scale(size*(1+0.2*drand48()));
+	CParticle *p = new CParticle(E);
 	vec axis(0.0);
-	//axis(1)=20.0*drand48();
-	//p->w(1)=axis;
+	axis(2)=10.0*drand48();
+	//axis(0)=axis(2);
 	//axis(0)=2.0*drand48();
 	//p->q=Quaternion(cos(M_PI/8.),sin(M_PI/8.),0,0 )*Quaternion(cos(M_PI/8.),0,0,sin(M_PI/8.) );
-	p->q=Quaternion(cos(M_PI/9.01),0,sin(M_PI/9.01),0 );
+	p->q=Quaternion(cos(M_PI/12.0),0,sin(M_PI/12.0),0 );
+	//p->w(1)=axis;
 //	p->x(1)=axis;
 	//p->rotate(vec(1.0), drand48()*3.14);
 	sys.add(p);

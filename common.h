@@ -59,13 +59,15 @@ void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
 	static double s;
 	if( Nq > 0.0) s = 2.0/Nq; else s = 0.0;
 	double X = q.v(0)*s,   Y = q.v(1)*s,  Z = q.v(2)*s;
-	double wX = q.u*X, wY = q.u*Y, wZ = q.u*Z;
+
+	double wX = q.u*X,    wY = q.u*Y,    wZ = q.u*Z;
 	double xX = q.v(0)*X, xY = q.v(0)*Y, xZ = q.v(0)*Z;
 	double yY = q.v(1)*Y, yZ = q.v(1)*Z, zZ = q.v(2)*Z;
 
-	M(0,0)=1.0-(yY+zZ); M(0,0)=xY-wZ ;       M(0,0)= xZ+wY;
-	M(0,0)= xY+wZ;      M(0,0)=1.0-(xX+zZ);  M(0,0)=yZ-wX;
-	M(0,0)=xZ-wY;       M(0,0)= yZ+wX;       M(0,0)=1.0-(xX+yY);
+	M(0,0)=1.0-(yY+zZ); M(1,0)=xY-wZ ;       M(2,0)= xZ+wY;
+	M(0,1)= xY+wZ;      M(1,1)=1.0-(xX+zZ);  M(2,1)=yZ-wX;
+	M(0,2)=xZ-wY;       M(1,2)= yZ+wX;       M(2,2)=1.0-(xX+yY);
+	
 
 return;
 }
