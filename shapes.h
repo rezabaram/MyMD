@@ -6,6 +6,13 @@ using std::cerr;
 using std::endl;
 using namespace std;
 
+class CContact
+	{
+	public:
+	CContact(const vec &_x, const vec &_dx):x(_x), dx(_dx){};
+	vec x, dx;
+ 	private:
+	};
 
 typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid} GType;
 
@@ -77,7 +84,7 @@ class GeomObject<tplane> : public GeomObjectBase
 			in>>Xc>>n;
 			}
 
-		vec normal_to_point(const vec & p, double shift){
+		vec normal_to_point(const vec & p, double shift)const{
 			return ((Xc-p)*n-shift)*n;
 			}
 	double vol(){return 0;}
@@ -88,6 +95,8 @@ class GeomObject<tplane> : public GeomObjectBase
 	vec n;//normal
  	private:
 	};
+
+typedef GeomObject<tplane> CPlane;
 
 template<>
 class GeomObject<tbox>: public GeomObjectBase
@@ -373,16 +382,21 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  	ellip_mat=rotat_mat*scale_mat*~rotat_mat;
 			radius*=scale;
 			};
+	double distance_to_plane(const CPlane &P)const{
+		CPlane p(!scale_mat*(P.Xc-Xc)+Xc, !scale_mat*P.n);
+		cerr<<(scale_mat*p.normal_to_point(!scale_mat*Xc,0)).abs();
+		cerr<<"  "<<(P.normal_to_point(Xc,0)).abs()<<endl;
+		}
 
 	void print(std::ostream &out)const{
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+0.00001<<"  ";
+		out<< Xc<< "  "<<radius+5.0001<<"  ";
 		out<<ellip_mat(0,0)<< "  "<<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<<ellip_mat(1,0)<< "  "<<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
 		//out<<-(ellip_mat)(0,1)<< "  "<<-(Xc*ellip_mat)(1)<< "  "<<-(Xc*ellip_mat)(2)<< "  ";
 		out<<0<< "  "<<0<< "  "<<0<< "  ";
 		//out<<Xc*ellip_mat*Xc-1<<endl;
-		out<<-1<<endl;
+		out<<-1;
 		}
 	
 	void parse(std::istream &in){//FIXME
@@ -474,6 +488,7 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tellips
 		ovs.push_back(COverlapping(p1->getpos()+v, (dd)*v));
 		}
 	}
+
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 	static vec v;
@@ -484,8 +499,9 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipso
 		dd=p1->radius-d;
 		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-				ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
-				}
+			ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+			p1->distance_to_plane(*(b->face[i])) ;
+			}
 		}
 	}
 
@@ -565,10 +581,13 @@ for(int loop=1;loop<=itermax;loop++){
 		//CVector rc;
 		E12=!(E.ellip_mat-(lambda*E0.ellip_mat));
 		rc=R0-E12*(E.ellip_mat*R12);
-		double s=lambda*sqrt(R*(E0.ellip_mat*E12*E.ellip_mat*E12*E0.ellip_mat)*R);
+		double s2=lambda*lambda*(R*(E0.ellip_mat*E12*E.ellip_mat*E12*E0.ellip_mat)*R);
+		double s=sqrt(s2);
+		if(s>1)break;//not overlapping
 		rE=(1-1/s)*rc+(1/s)*R;
-		cerr<< s <<endl;
-		return rE;
+		//cerr<< s <<endl;
+		
+		//return CContact(rc-R, rE-R);
 		}
 	lambda -= dx;
 	}   

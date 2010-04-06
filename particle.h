@@ -26,7 +26,7 @@ class CProperty
 	string color;
  	private:
 	};
-
+/*
 template<typename T1, typename T2>
 class CContact: public vector<COverlapping>
 	{
@@ -38,6 +38,7 @@ class CContact: public vector<COverlapping>
 	//bool (CParticle *_p1, CParticle *_p1){}
  	private:
 	};
+*/
 
 //#define shapeType tcomposite
 //#define shapeType tsphere
@@ -120,7 +121,6 @@ class CParticle{
 ostream &operator <<(ostream &out, const CParticle &p){
 	p.shape->print(out);
 	//out<<"  "<<p.x(1);
-	out<<"  "<<drand48()<<" "<<drand48()<<" "<<drand48();
 	}
 
 double friction=1;

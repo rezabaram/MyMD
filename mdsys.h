@@ -74,7 +74,7 @@ void CSys::calForces(){
 		for(it2=it1+1; it2!=particles.end(); ++it2){
 			if((*it1)->frozen && (*it2)->frozen)continue;
 			if(interact(*it1, *it2)){ }
-				rescale_ellipse_to_touch(*(static_cast<CEllipsoid*> ((*it1)->shape)), *(static_cast<CEllipsoid*> ((*it2)->shape)));
+				//rescale_ellipse_to_touch(*(static_cast<CEllipsoid*> ((*it1)->shape)), *(static_cast<CEllipsoid*> ((*it2)->shape)));
 				}
 		//the walls
 		if(interact(*it1, &box)){ }
