@@ -1,7 +1,9 @@
 #ifndef SHAPES_H
 #define SHAPES_H 
+
 #include"common.h"
 #include"quaternion.h"
+
 using std::cerr; 
 using std::endl;
 using namespace std;
@@ -107,6 +109,7 @@ class GeomObject<tbox>: public GeomObjectBase
 		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L),
 		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
+		identifier=6;
 		face[0]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u0));
 		face[1]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u1));
 		face[2]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u2));
@@ -119,9 +122,12 @@ class GeomObject<tbox>: public GeomObjectBase
 	void shift(const vec &x){corner+=x;}
 	void rotate(const vec &n, double alpha){}//FIXME 
 	void scale(double scale){L*=scale;};
-	void print(std::ostream &out)const{
-		out<< identifier<< "   ";
-		out<<corner<<"  "<<L;
+	void print(std::ostream &out)const{//FIXME this is ad-hoc
+		out<< identifier<< "   "<<corner<<"  "<<corner+vec(1,0,0)<<"  "<<corner+vec(1,1,0)<<endl;
+		out<< identifier<< "   "<<corner<<"  "<<corner+vec(0,0,1)<<"  "<<corner+vec(0,1,1)<<endl;
+		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(0,0,1)<<"  "<<corner+vec(0,1,1)<<endl;
+		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(0,0,1)<<"  "<<corner+vec(1,0,1)<<endl;
+		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(1,0,0)<<"  "<<corner+L+vec(1,1,0)<<endl;
 		}
 
 	double vol(){return L(0)*L(1)*L(2);}
@@ -130,13 +136,11 @@ class GeomObject<tbox>: public GeomObjectBase
 		return 0;}
 
 	void parse(std::istream &in){
-			in>>identifier;
-			in>>corner>>L;
-			}
+		in>>identifier;
+		in>>corner>>L;
+		}
 
 	void scale(double s0, double s1, double s2){L(0)*=s0; L(1)*=s1; L(2)*=s2;}
-
-
 
 	vec top()const{return corner+L;}
 	vec corner, L;
@@ -319,7 +323,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	~GeomObject(){}
 
 	void setup(double beta=0){
-
 		//Elements of the rotational matrix
 
 		//double beta = M_PI/3.;
@@ -335,14 +338,13 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  rotat_mat(1,1)= cos(beta);
 
 		  //Elements of the scaling matrix
-
 		  scale_mat(0,0)=1.0/(a*a);
 		  scale_mat(1,1)=1.0/(b*b);
 		  scale_mat(2,2)=1.0/(c*c);
 
 		  ellip_mat=rotat_mat*scale_mat*~rotat_mat;
-
 		}
+
 	void moveto(const vec &v){
 		Xc=v;
 		}
@@ -351,9 +353,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//static double beta=0;
 		//setup(beta);
 		//beta+=0.00005;
-			quaternionToMatrix(q, rotat_mat);
-			
-		  	ellip_mat=rotat_mat*scale_mat*~rotat_mat;
+		quaternionToMatrix(q, rotat_mat);
+		ellip_mat=rotat_mat*scale_mat*~rotat_mat;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
@@ -362,40 +363,49 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		n.normalize();
 		return vol()*(n*scale_mat*n)/5.0;
 		}
+
 	double vol(){
 		return 4.0/3.0*M_PI*radius*radius*radius;
 		return 4.0/3.0*M_PI*a*b*c;
 		}
+
 	void rotate(const vec& n , double alpha){//FIXME
 		//q.setRotation(n, alpha);
-			//orientation=q.rotate(orientation);
-		};
+		//orientation=q.rotate(orientation);
+		}
 
-	void shift(const vec& v){Xc+=v;};
+	void shift(const vec& v){
+		Xc+=v;
+		}
+
 	void scale(double scale){
-			a*=scale;
-			b*=scale;
-			c*=scale;
-		  	scale_mat(0,0)=1.0/(a*a);
-		  	scale_mat(1,1)=1.0/(b*b);
-		  	scale_mat(2,2)=1.0/(c*c);
-		  	ellip_mat=rotat_mat*scale_mat*~rotat_mat;
-			radius*=scale;
-			};
+		a*=scale;
+		b*=scale;
+		c*=scale;
+		scale_mat(0,0)=1.0/(a*a);
+		scale_mat(1,1)=1.0/(b*b);
+		scale_mat(2,2)=1.0/(c*c);
+		ellip_mat=rotat_mat*scale_mat*~rotat_mat;
+		radius*=scale;
+		}
+
 	double distance_to_plane(const CPlane &P)const{
-		CPlane p(!scale_mat*(P.Xc-Xc)+Xc, !scale_mat*P.n);
-		cerr<<(scale_mat*p.normal_to_point(!scale_mat*Xc,0)).abs();
-		cerr<<"  "<<(P.normal_to_point(Xc,0)).abs()<<endl;
+		CPlane p(!scale_mat*P.Xc, !scale_mat*P.n);
+		
+		//cerr<< scale_mat <<endl;	
+		vec v=p.normal_to_point(!scale_mat*Xc,0);
+		cerr<< v <<endl;
+		v-=v.normalized();
+		cerr<<(scale_mat*v).abs();
+		cerr<<"  "<<(P.normal_to_point(Xc,0)).abs()-radius<<endl;
 		}
 
 	void print(std::ostream &out)const{
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+5.0001<<"  ";
-		out<<ellip_mat(0,0)<< "  "<<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
-		out<<ellip_mat(1,0)<< "  "<<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
-		//out<<-(ellip_mat)(0,1)<< "  "<<-(Xc*ellip_mat)(1)<< "  "<<-(Xc*ellip_mat)(2)<< "  ";
-		out<<0<< "  "<<0<< "  "<<0<< "  ";
-		//out<<Xc*ellip_mat*Xc-1<<endl;
+		out<< Xc<< "  "<<radius+0.0001<<"  ";
+		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
+		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
+		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
 		out<<-1;
 		}
 	
@@ -470,10 +480,11 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 		dd=p1->radius-d;
 		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-				ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
-				}
+			ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+			}
 		}
 	}
+
 inline
 void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tellipsoid>  * p2){
 	static vec v;
@@ -540,59 +551,60 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	}
 
 typedef GeomObject<tellipsoid> CEllipsoid;
+
 vec rescale_ellipse_to_touch(const CEllipsoid &E, const CEllipsoid &E0){
-//here we should if E will touch E0 or not;
+	//here we should if E will touch E0 or not;
 
-static vec R, R0, R12;
-R12=E0.Xc-E.Xc; 
-R=E.Xc; //FIXME unnecessary, just not to modify the rest for the moment
-R0=E0.Xc;
-
-
-// Begin of iteration for lambda
-static Matrix D(3,3), invD(3,3), F(3,3), A(3,3), B(3,3);
-static Matrix invE(3,3), invE0(3,3);
-invE=!E.ellip_mat;
-invE0=!E0.ellip_mat;
-int itermax=1000;
-double lambda=0.5;
-for(int loop=1;loop<=itermax;loop++){
-
-	D=invE0+lambda*invE;	
-	invD=!D;
-//these two lines can be optimized
-	double d=lambda*lambda*invE.Det()+lambda*((invE+invE0).Det()-invE.Det()-invE0.Det())+invE0.Det();
-	double dd=2*lambda*invE.Det()+((invE+invE0).Det()-invE.Det()-invE0.Det());
-	
-	F=invE*invE0*invD;
-	A=invD*invE0*invD;
-	
-	B=2.0/d*(F-dd*A);
+	static vec R, R0, R12;
+	R12=E0.Xc-E.Xc; 
+	R=E.Xc; //FIXME unnecessary, just not to modify the rest for the moment
+	R0=E0.Xc;
 
 
+	// Begin of iteration for lambda
+	static Matrix D(3,3), invD(3,3), F(3,3), A(3,3), B(3,3);
+	static Matrix invE(3,3), invE0(3,3);
+	invE=!E.ellip_mat;
+	invE0=!E0.ellip_mat;
+	int itermax=1000;
+	double lambda=0.5;
+	for(int loop=1;loop<=itermax;loop++){
 
-	double dx= (R*A*R)/(R*B*R);
-
-	double threshold=1e-4;
-	static Matrix E12(3,3);
-	static vec rc;
-	static vec rE;
-	if(fabs(dx) < threshold){
-		//CVector rc;
-		E12=!(E.ellip_mat-(lambda*E0.ellip_mat));
-		rc=R0-E12*(E.ellip_mat*R12);
-		double s2=lambda*lambda*(R*(E0.ellip_mat*E12*E.ellip_mat*E12*E0.ellip_mat)*R);
-		double s=sqrt(s2);
-		if(s>1)break;//not overlapping
-		rE=(1-1/s)*rc+(1/s)*R;
-		//cerr<< s <<endl;
+		D=invE0+lambda*invE;	
+		invD=!D;
+	//these two lines can be optimized
+		double d=lambda*lambda*invE.Det()+lambda*((invE+invE0).Det()-invE.Det()-invE0.Det())+invE0.Det();
+		double dd=2*lambda*invE.Det()+((invE+invE0).Det()-invE.Det()-invE0.Det());
 		
-		//return CContact(rc-R, rE-R);
-		}
-	lambda -= dx;
-	}   
+		F=invE*invE0*invD;
+		A=invD*invE0*invD;
+		
+		B=2.0/d*(F-dd*A);
 
-  return E.Xc;   //NON Convergence.
+
+
+		double dx= (R*A*R)/(R*B*R);
+
+		double threshold=1e-4;
+		static Matrix E12(3,3);
+		static vec rc;
+		static vec rE;
+		if(fabs(dx) < threshold){
+			//CVector rc;
+			E12=!(E.ellip_mat-(lambda*E0.ellip_mat));
+			rc=R0-E12*(E.ellip_mat*R12);
+			double s2=lambda*lambda*(R*(E0.ellip_mat*E12*E.ellip_mat*E12*E0.ellip_mat)*R);
+			double s=sqrt(s2);
+			if(s>1)break;//not overlapping
+			rE=(1-1/s)*rc+(1/s)*R;
+			//cerr<< s <<endl;
+			
+			//return CContact(rc-R, rE-R);
+			}
+		lambda -= dx;
+		}   
+
+	  return E.Xc;   //NON Convergence.
 
 }
 

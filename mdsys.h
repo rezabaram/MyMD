@@ -110,6 +110,7 @@ void CSys::forward(double dt){
 			stringstream outname;
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			ofstream out(outname.str().c_str());
+			box.print(out);
 			for(it=particles.begin(); it!=particles.end(); ++it){
 				out<<**it<<endl;
 				}
