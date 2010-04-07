@@ -62,9 +62,9 @@ class CParticle{
 			}
 		
 		mass=material.density*shape->vol();
-		Ixx=material.density*shape->I(vec(1,0,0));
-		Iyy=material.density*shape->I(vec(0,1,0));
-		Izz=material.density*shape->I(vec(0,0,1));
+		Ixx=mass*shape->I(vec(1,0,0));
+		Iyy=mass*shape->I(vec(0,1,0));
+		Izz=mass*shape->I(vec(0,0,1));
 
 		};
 

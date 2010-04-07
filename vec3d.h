@@ -52,6 +52,7 @@ explicit vec3d(T a){
 	};
 
   T operator*(const vec3d<T> &p)const;
+  vec3d<T> operator^(const vec3d<T> &p)const;
   //const vec3d<T> operator*(T a)const ;
   vec3d<T> &operator=(T a);
   vec3d<T> &operator*=(T a);
@@ -91,6 +92,11 @@ template<class T>
   std::istream & operator>>(std::istream &in, vec3d<T> &v){
 		in>>v.x[0]>>v.x[1]>>v.x[2];
 	return in;
+	}
+
+template<class T>
+vec3d<T> vec3d<T>::operator^(const vec3d<T> &p)const{
+	return vec3d<T>(x[0]*p.x[0], x[1]*p.x[1], x[2]*p.x[2]);
 	}
 
 template<class T>

@@ -77,7 +77,7 @@ void CSys::calForces(){
 				//rescale_ellipse_to_touch(*(static_cast<CEllipsoid*> ((*it1)->shape)), *(static_cast<CEllipsoid*> ((*it2)->shape)));
 				}
 		//the walls
-		if(interact(*it1, &box)){ }
+		if(interact(*it1, &box)){  }
 		}
 	
 	};
@@ -341,7 +341,8 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
-
+		//cerr<< overlaps.at(i).x <<endl;
+		//exit(0);
 
 		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
 		p1->addforce(force);

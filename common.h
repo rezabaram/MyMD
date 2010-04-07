@@ -2,6 +2,7 @@
 #define COMMON_H 
 
 #define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
+#define WARNING(x)  std::cerr<<"Warning: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 //#include"matrix.h"
 #include<assert.h>
 #include<memory>

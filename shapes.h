@@ -22,7 +22,7 @@ typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid} GType;
 class GeomObjectBase
 	{
 	public:
-	GeomObjectBase(vec const & v, GType t):Xc(v),Xc0(v),type(t){identifier=1;};
+	GeomObjectBase(const vec &v, GType t):Xc(v),Xc0(v),type(t){identifier=1;};
 	virtual ~GeomObjectBase(){};
 	virtual void shift(const vec&)=0;
 	virtual void rotate(const vec& n, double alpha){//maybe overriden by derived class
@@ -86,7 +86,7 @@ class GeomObject<tplane> : public GeomObjectBase
 			in>>Xc>>n;
 			}
 
-		vec normal_to_point(const vec & p, double shift)const{
+		vec normal_to_point(const vec & p, double shift=0)const{
 			return ((Xc-p)*n-shift)*n;
 			}
 	double vol(){return 0;}
@@ -315,7 +315,7 @@ template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
-	GeomObject(const vec &v,double _a, double _b, double _c) :GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c) {
+	GeomObject(const vec &v,double _a, double _b, double _c):GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c), R(_a,_b,_c) {
 		identifier=5;
 		radius=tmax(a, tmax(b,c));
 		setup();
@@ -326,16 +326,17 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//Elements of the rotational matrix
 
 		//double beta = M_PI/3.;
-		  rotat_mat(2,2)= 1;
-		  rotat_mat(1,2)= 0;
-		  rotat_mat(2,1)= 0;
-		  rotat_mat(0,2)= 0;
-		  rotat_mat(2,0)= 0;
+		for(int i=0; i<3; ++i)
+		for(int j=0; j<3; ++j){
+		  rotat_mat(i,j)= 0;
+		  scale_mat(i,j)=0;
+			}
 
 		  rotat_mat(0,0)= cos(beta);
 		  rotat_mat(0,1)= -sin(beta);
 		  rotat_mat(1,0)= sin(beta);
 		  rotat_mat(1,1)= cos(beta);
+		  rotat_mat(2,2)= 1;
 
 		  //Elements of the scaling matrix
 		  scale_mat(0,0)=1.0/(a*a);
@@ -350,22 +351,18 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	void rotateTo(const Quaternion &q){
-		//static double beta=0;
-		//setup(beta);
-		//beta+=0.00005;
 		quaternionToMatrix(q, rotat_mat);
 		ellip_mat=rotat_mat*scale_mat*~rotat_mat;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
-		return 2.0/5.0*vol()*radius*radius;
+		return 2.0/5.0*(a*a+c*c);
 		ERROR("check this");
 		n.normalize();
 		return vol()*(n*scale_mat*n)/5.0;
 		}
 
 	double vol(){
-		return 4.0/3.0*M_PI*radius*radius*radius;
 		return 4.0/3.0*M_PI*a*b*c;
 		}
 
@@ -389,20 +386,22 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		radius*=scale;
 		}
 
-	double distance_to_plane(const CPlane &P)const{
-		CPlane p(!scale_mat*P.Xc, !scale_mat*P.n);
-		
-		//cerr<< scale_mat <<endl;	
-		vec v=p.normal_to_point(!scale_mat*Xc,0);
-		cerr<< v <<endl;
-		v-=v.normalized();
-		cerr<<(scale_mat*v).abs();
-		cerr<<"  "<<(P.normal_to_point(Xc,0)).abs()-radius<<endl;
+	vec point_to_plane(const CPlane &P)const{//FIXME need to be obtimized
+		double alpha;
+		alpha=(P.n*(!ellip_mat)*P.n);
+		cerr<< (!ellip_mat)*P.n<<endl;
+	
+		//cerr<< (!ellip_mat)<<endl;
+		alpha=1/sqrt(alpha);
+		double d1=P.normal_to_point((-alpha*(!ellip_mat)*P.n+Xc)).abs();
+		double d2=P.normal_to_point(( alpha*(!ellip_mat)*P.n+Xc)).abs();
+		if(d1<d2)return (-alpha*(!ellip_mat)*P.n+Xc);
+		else return (alpha*(!ellip_mat)*P.n+Xc);
 		}
 
 	void print(std::ostream &out)const{
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+0.0001<<"  ";
+		out<< Xc<< "  "<<radius+0.1<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
 		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
@@ -418,9 +417,9 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	Matrix scale_mat;
 	Matrix ellip_mat;
 	double a,b,c;
+	vec R;
 	vec orientation;
 	private:
-	static int N;
 	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
 	GeomObject<tellipsoid> ();
 	};
@@ -502,17 +501,21 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tellips
 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
-	static vec v;
-	static double d, dd;
+	static vec v, vp;
+	static double d, dd, dd2;
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
-		d=v.abs();
-		dd=p1->radius-d;
-		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
-		if(dd>0) {
-			ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
-			p1->distance_to_plane(*(b->face[i])) ;
-			}
+		//continue;
+		vp=p1->point_to_plane(*(b->face[i]));
+		v=b->face[i]->normal_to_point(vp, 0);
+		dd2=v.abs();
+		cerr<< b->face[i]->n <<endl;
+		if(v*b->face[i]->n <0)continue;
+		exit(0);
+		//cerr<< v <<"\t"<<vp <<endl;
+		//exit(0);
+		
+		//ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+		ovs.push_back( COverlapping(vp, -v) );
 		}
 	}
 
