@@ -138,8 +138,8 @@ void CParticle::calPos(double dt){
 	static Quaternion dq(0,0,0,0);
 
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
-	//wp=q.toBody(w(1));//FIXME make sure which should be used
-	wp=w(1);//this one seems to be correct
+	wp=q.toBody(w(1));//FIXME make sure which should be used
+	//wp=w(1);//this one seems to be correct
 	dq.u =    -q.v(0)*wp(0) - q.v(1)*wp(1) - q.v(2)*wp(2);
 	dq.v(0) =  q.u  * wp(0) - q.v(2)*wp(1) + q.v(1)*wp(2);
 	dq.v(1) =  q.v(2)*wp(0) + q.u *  wp(1) - q.v(0)*wp(2);

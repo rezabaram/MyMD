@@ -330,6 +330,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		for(int j=0; j<3; ++j){
 		  rotat_mat(i,j)= 0;
 		  scale_mat(i,j)=0;
+		  inert_mat(i,j)= 0;
 			}
 
 		  rotat_mat(0,0)= cos(beta);
@@ -342,8 +343,12 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  scale_mat(0,0)=1.0/(a*a);
 		  scale_mat(1,1)=1.0/(b*b);
 		  scale_mat(2,2)=1.0/(c*c);
+		  //angular moment of inertial
+		  inert_mat(0,0)=0.2*(b*b+c*c);
+		  inert_mat(1,1)=0.2*(a*a+c*c);
+		  inert_mat(2,2)=0.2*(a*a+b*b);
 
-		  ellip_mat=rotat_mat*scale_mat*~rotat_mat;
+		  ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		}
 
 	void moveto(const vec &v){
@@ -352,14 +357,15 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void rotateTo(const Quaternion &q){
 		quaternionToMatrix(q, rotat_mat);
-		ellip_mat=rotat_mat*scale_mat*~rotat_mat;
+		//Matrix temp=(rotat_mat*(~rotat_mat));
+		//cerr<< temp <<endl;
+		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
+		ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
-		return 2.0/5.0*(a*a+c*c);
-		ERROR("check this");
 		n.normalize();
-		return vol()*(n*scale_mat*n)/5.0;
+		return n*inert_mat*n;
 		}
 
 	double vol(){
@@ -379,20 +385,17 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		a*=scale;
 		b*=scale;
 		c*=scale;
-		scale_mat(0,0)=1.0/(a*a);
-		scale_mat(1,1)=1.0/(b*b);
-		scale_mat(2,2)=1.0/(c*c);
-		ellip_mat=rotat_mat*scale_mat*~rotat_mat;
 		radius*=scale;
+		setup();
 		}
 
 	vec point_to_plane(const CPlane &P)const{//FIXME need to be obtimized
 		double alpha;
 		alpha=(P.n*(!ellip_mat)*P.n);
-		cerr<< (!ellip_mat)*P.n<<endl;
 	
-		//cerr<< (!ellip_mat)<<endl;
+		assert(alpha>0);
 		alpha=1/sqrt(alpha);
+		
 		double d1=P.normal_to_point((-alpha*(!ellip_mat)*P.n+Xc)).abs();
 		double d2=P.normal_to_point(( alpha*(!ellip_mat)*P.n+Xc)).abs();
 		if(d1<d2)return (-alpha*(!ellip_mat)*P.n+Xc);
@@ -416,6 +419,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	Matrix rotat_mat;
 	Matrix scale_mat;
 	Matrix ellip_mat;
+	Matrix inert_mat;
 	double a,b,c;
 	vec R;
 	vec orientation;
@@ -504,17 +508,11 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipso
 	static vec v, vp;
 	static double d, dd, dd2;
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		//continue;
 		vp=p1->point_to_plane(*(b->face[i]));
 		v=b->face[i]->normal_to_point(vp, 0);
 		dd2=v.abs();
-		cerr<< b->face[i]->n <<endl;
 		if(v*b->face[i]->n <0)continue;
-		exit(0);
-		//cerr<< v <<"\t"<<vp <<endl;
-		//exit(0);
 		
-		//ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
 		ovs.push_back( COverlapping(vp, -v) );
 		}
 	}

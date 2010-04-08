@@ -1,9 +1,9 @@
-Gravity  0   0   -0
+Gravity  0   0   -10
 density  	.2
-outDt  		0.02
-timeStep 	0.0001
+outDt  		0.01
+timeStep 	0.00001
 particleSize 	0.15
 nParticle 	1
-maxTime		1.1
+maxTime		5.1
 stiffness  	7.32e+08
-damping		1e+04
+damping		1e+03
