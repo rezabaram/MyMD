@@ -1,0 +1,136 @@
+#ifndef ELLIPSOID_H
+#define ELLIPSOID_H 
+
+#include"matrix.h"
+#include"geombase.h"
+
+using namespace math;
+typedef matrix<double> Matrix;
+
+template<>
+class GeomObject<tellipsoid>: public GeomObjectBase{
+	public:	
+		
+	GeomObject(const vec &v,double _a, double _b, double _c):GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c), R(_a,_b,_c) {
+		identifier=5;
+		radius=tmax(a, tmax(b,c));
+		setup();
+		}
+	~GeomObject(){}
+
+	void setup(double beta=0){
+		//Elements of the rotational matrix
+
+		//double beta = M_PI/3.;
+		for(int i=0; i<3; ++i)
+		for(int j=0; j<3; ++j){
+		  rotat_mat(i,j)= 0;
+		  scale_mat(i,j)=0;
+		  inert_mat(i,j)= 0;
+			}
+
+		  rotat_mat(0,0)= cos(beta);
+		  rotat_mat(0,1)= -sin(beta);
+		  rotat_mat(1,0)= sin(beta);
+		  rotat_mat(1,1)= cos(beta);
+		  rotat_mat(2,2)= 1;
+
+		  //Elements of the scaling matrix
+		  scale_mat(0,0)=1.0/(a*a);
+		  scale_mat(1,1)=1.0/(b*b);
+		  scale_mat(2,2)=1.0/(c*c);
+
+		  inv_scale_vec(0)=(a*a);
+		  inv_scale_vec(1)=(b*b);
+		  inv_scale_vec(2)=(c*c);
+
+		  //angular moment of inertial
+		  inert_mat(0,0)=0.2*(b*b+c*c);
+		  inert_mat(1,1)=0.2*(a*a+c*c);
+		  inert_mat(2,2)=0.2*(a*a+b*b);
+
+		  ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		}
+
+	void moveto(const vec &v){
+		Xc=v;
+		}
+
+	void rotateTo(const Quaternion &q){
+		quaternionToMatrix(q, rotat_mat);
+		//Matrix temp=(rotat_mat*(~rotat_mat));
+		//cerr<< temp <<endl;
+		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
+		ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		}
+
+	double I(vec n){//FIXME only in special coordinate system
+		n.normalize();
+		return n*inert_mat*n;
+		}
+
+	double vol(){
+		return 4.0/3.0*M_PI*a*b*c;
+		}
+
+	void rotate(const vec& n , double alpha){//FIXME
+		//q.setRotation(n, alpha);
+		//orientation=q.rotate(orientation);
+		}
+
+	void shift(const vec& v){
+		Xc+=v;
+		}
+
+	void scale(double scale){
+		a*=scale;
+		b*=scale;
+		c*=scale;
+		radius*=scale;
+		setup();
+		}
+
+	vec point_to_plane(const CPlane &P)const{//FIXME need to be obtimized
+		double alpha;
+		alpha=(P.n*(!ellip_mat)*P.n);
+	
+		assert(alpha>0);
+		alpha=1/sqrt(alpha);
+		static vec m;
+		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*P.n))); //this more efficient form of m=(alpha*(!ellip_mat)*P.n);
+		double d1=P.normal_to_point(Xc+m).abs();
+		double d2=P.normal_to_point(Xc-m).abs();
+		if(d1<d2)return Xc+m;
+		else return Xc-m;
+		}
+
+	void print(std::ostream &out)const{
+		out<< identifier<< "   ";
+		out<< Xc<< "  "<<radius+0.1<<"  ";
+		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
+		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
+		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
+		out<<-1;
+		}
+	
+	void parse(std::istream &in){//FIXME
+			ERROR("not implemented");
+			//in>>identifier;
+			}
+
+	Matrix rotat_mat;
+	Matrix scale_mat;
+	Matrix ellip_mat;
+	Matrix inert_mat;
+	vec inv_scale_vec;
+
+	double a,b,c;
+	vec R;
+	vec orientation;
+	private:
+	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
+	GeomObject<tellipsoid> ();
+	};
+
+typedef GeomObject<tellipsoid> CEllipsoid;
+#endif /* ELLIPSOID_H */

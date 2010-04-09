@@ -1,17 +1,56 @@
 #ifndef BOX_H
 #define BOX_H 
+#include"geombase.h"
 
-
-class CBox {
+template<>
+class GeomObject<tbox>: public GeomObjectBase
+	{
 	public:
-	CBox(vec3d x1=vec3d(std::numeric_limits<double>::max()), vec3d x2=vec3d(0.0)):
-		corner(x1), L(x2) {};
+	virtual ~GeomObject(){};
+	GeomObject(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0)):
+		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L),
+		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
+		 {
+		identifier=6;
+		face[0]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u0));
+		face[1]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u1));
+		face[2]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u2));
 
-	vec3d top()const{return corner+L;}
+		face[3]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u0));
+		face[4]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u1));
+		face[5]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u2));
+		};
 
-	vec3d corner, L;
-	vector<GeomObject *> elems;
+	void shift(const vec &x){corner+=x;}
+	void rotate(const vec &n, double alpha){}//FIXME 
+	void scale(double scale){L*=scale;};
+	void print(std::ostream &out)const{//FIXME this is ad-hoc
+		out<< identifier<< "   "<<corner<<"  "<<corner+vec(1,0,0)<<"  "<<corner+vec(1,1,0)<<endl;
+		out<< identifier<< "   "<<corner<<"  "<<corner+vec(0,0,1)<<"  "<<corner+vec(0,1,1)<<endl;
+		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(0,0,1)<<"  "<<corner+vec(0,1,1)<<endl;
+		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(0,0,1)<<"  "<<corner+vec(1,0,1)<<endl;
+		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(1,0,0)<<"  "<<corner+L+vec(1,1,0)<<endl;
+		}
+
+	double vol(){return L(0)*L(1)*L(2);}
+	double I(vec n){
+		ERROR("Not implemented."); //FIXME
+		return 0;}
+
+	void parse(std::istream &in){
+		in>>identifier;
+		in>>corner>>L;
+		}
+
+	void scale(double s0, double s1, double s2){L(0)*=s0; L(1)*=s1; L(2)*=s2;}
+
+	vec top()const{return corner+L;}
+	vec corner, L;
+	auto_ptr<GeomObject<tplane> > face[6];
  	private:
+	GeomObject();
+	vec u0, u1, u2;
 	};
+
 
 #endif /* BOX_H */

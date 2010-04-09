@@ -3,6 +3,9 @@
 #include"common.h"
 #include"grid.h"
 #include"particle.h"
+#include"overlapping.h"
+
+typedef list<CParticle *> ParticleContainer;
 
 typedef GeomObjectBase * BasePtr;
 class CSys{
@@ -27,9 +30,8 @@ class CSys{
 	inline bool exist(int i);
 
 	double ke;//kinetic energy
-
 	double outDt, t;
-	vector<CParticle *> particles;
+	ParticleContainer particles;
 	GeomObject<tbox> box;
 	//CRecGrid *grid;
 	double maxr;
@@ -39,8 +41,9 @@ class CSys{
 	};
 
 CSys::~CSys(){
-	for(int i=0; i<particles.size(); i++){
-		delete particles.at(i);
+	ParticleContainer::iterator it;
+	for(it=particles.begin(); it!=particles.end(); ++it){
+		delete (*it);
 		}
 	//delete grid;
 	}
@@ -63,7 +66,7 @@ bool CSys::add(CParticle *p){
 	}
 
 void CSys::calForces(){
-	vector<CParticle *>::iterator it1, it2;
+	ParticleContainer::iterator it1, it2, ittemp;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->forces=G*((*it1)->get_mass());
@@ -71,7 +74,8 @@ void CSys::calForces(){
 		}
 	//interactions
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		for(it2=it1+1; it2!=particles.end(); ++it2){
+		ittemp=it1;++ittemp;
+		for(it2=ittemp; it2!=particles.end(); ++it2){
 			if((*it1)->frozen && (*it2)->frozen)continue;
 			if(interact(*it1, *it2)){ }
 				//rescale_ellipse_to_touch(*(static_cast<CEllipsoid*> ((*it1)->shape)), *(static_cast<CEllipsoid*> ((*it2)->shape)));
@@ -86,7 +90,7 @@ void CSys::forward(double dt){
 	static int count=0, outN=0,outPutN=outDt/dt;
 	double energy=0.0;
 	
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(!(*it)->frozen) (*it)->calPos(dt);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
@@ -136,7 +140,7 @@ void CSys::solve(double tMax, double dt){
 	}
 
 int CSys::write_packing(string outfilename){
-	vector<CParticle*>::iterator it;
+	ParticleContainer::iterator it;
 	ofstream out(outfilename.c_str());
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		out<<**it<<endl;
@@ -267,7 +271,7 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
 
 */
 bool CSys::exist(int i){
-	vector<CParticle *>::iterator it1;
+	ParticleContainer::iterator it1;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		if((*it1)->id==i)return true;
 		}
@@ -275,9 +279,10 @@ bool CSys::exist(int i){
 		}
 
 void CSys::overlappings(){
-	vector<CParticle *>::iterator it1, it2;
+	ParticleContainer::iterator it1, it2, ittemp;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-	for(it2=it1+1; it2!=particles.end(); ++it2){
+	ittemp=it1;++ittemp;
+	for(it2=ittemp; it2!=particles.end(); ++it2){
 		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->shape->radius - (*it2)->shape->radius;
 		if(d<0)cerr<< d<<" "<< (*it1)->id<<"  "<< (*it2)->id <<endl;
 		}
@@ -294,6 +299,7 @@ vec contactForce(const vec &dx, const vec &dv, double stiff, double damp){
 		if(ksi<0)ksi=0;
 		return -ksi*dx;//visco-elastic Hertz law
 		}
+
 inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 
 	vector<COverlapping> overlaps;

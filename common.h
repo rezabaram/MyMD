@@ -11,6 +11,8 @@
 #include<sstream>
 #include<ostream>
 #include<vector>
+#include<list>
+
 #include"vec3d.h"
 #include"quaternion.h"
 #include"matrix.h"
