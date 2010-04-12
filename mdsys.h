@@ -76,7 +76,7 @@ void CSys::calForces(){
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		ittemp=it1;++ittemp;
 		for(it2=ittemp; it2!=particles.end(); ++it2){
-			if((*it1)->frozen && (*it2)->frozen)continue;
+			//if((*it1)->frozen && (*it2)->frozen)continue;
 			if(interact(*it1, *it2)){ }
 				//rescale_ellipse_to_touch(*(static_cast<CEllipsoid*> ((*it1)->shape)), *(static_cast<CEllipsoid*> ((*it2)->shape)));
 				}
@@ -87,29 +87,38 @@ void CSys::calForces(){
 	};
 
 void CSys::forward(double dt){
-	static int count=0, outN=0,outPutN=outDt/dt;
 	double energy=0.0;
 	
+
+	bool allforwarded=false;
 	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		if(!(*it)->frozen) (*it)->calPos(dt);
+	//	if(!(*it)->frozen) 
+		(*it)->calPos(dt);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		//energy+=(*it)->rEnergy()+(*it)->kEnergy()+(*it)->pEnergy(G);
 		}
 	calForces();
+//	if(!allforwarded)foward(dt/2.0, 2);
+
 	ke=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		if(!(*it)->frozen) (*it)->calVel(dt);
+	//	if(!(*it)->frozen) 
+		(*it)->calVel(dt);
 		//vec dA=(it->forces/it->get_mass()-it->x(2));
 		//if(!it->frozen) it->x.gear_correct<5>(dt,dA);
 		if(0)if((*it)->x(1).abs()< epsFreeze  && (*it)->avgforces.abs()< epsFreeze ) {
-			(*it)->frozen=true;
+			//(*it)->frozen=true;
 			(*it)->material.color="0.5 0.5 0.5";
 			(*it)->x(1)=0.0;
 			}
 		ke+=(*it)->kEnergy();
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
+
+
+//output 
+	static int count=0, outN=0,outPutN=outDt/dt;
 	if(count%outPutN==0){
 			stringstream outname;
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;

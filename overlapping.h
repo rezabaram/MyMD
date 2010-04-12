@@ -2,13 +2,6 @@
 #define OVERLAPPING_H 
 #include"shapes.h"
 
-class CContact
-	{
-	public:
-	CContact(const vec &_x, const vec &_dx):x(_x), dx(_dx){};
-	vec x, dx;
- 	private:
-	};
 
 class COverlapping{
 	COverlapping();
@@ -17,6 +10,8 @@ class COverlapping{
 
 	static void overlaps(vector<COverlapping> &ovs, const GeomObjectBase *p1, const GeomObjectBase *p2);
 
+
+	//every new kind of particle needs to define two functions
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tsphere>     *p1, const GeomObject <tbox>        *b );
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tsphere>     *p1, const GeomObject <tsphere>     *p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );

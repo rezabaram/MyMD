@@ -38,10 +38,10 @@ for(double k=1-margin; k>margin; k-=margin){
 	x(1)=0.5;//i+size*drand48()/10; 
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
-	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
+	CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
 	GeomObject<tellipsoid> E(x, 1, 1, 0.45);
 	E.scale(size*(1+0.2*drand48()));
-	CParticle *p = new CParticle(E);
+//	CParticle *p = new CParticle(E);
 	vec axis(0.0);
 	axis(1)=30.0*drand48();
 	//axis(0)=axis(2);

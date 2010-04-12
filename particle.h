@@ -12,6 +12,7 @@
 #include"shapes.h"
 
 
+typedef enum {frozen, onhold, rejected, ready_to_go} tState;
 
 using namespace std;
 class CProperty
@@ -48,7 +49,7 @@ class CParticle{
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<GType shapeType>
-	CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
+	CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), state(ready_to_go){init();}
 	~CParticle(){
 		delete shape;
 		}
@@ -105,10 +106,10 @@ class CParticle{
 	vec forces, avgforces;
 	vec torques, avgtorque;
 	CProperty material;
-	CDFreedom<6> x, x0;//TranslationalDFreedom;
-	CDFreedom<6> w, w0;//Rotational;
+	CDFreedom<3> x, x0, x_p;//TranslationalDFreedom;
+	CDFreedom<3> w, w0, w_p;//Rotational;
 	int id;
-	bool frozen;
+	tState state;
 	vec test;
 	GeomObjectBase *shape;
 	Quaternion q;//orientation
@@ -127,11 +128,11 @@ double friction=1;
 
 //using beeman method
 void CParticle::calPos(double dt){
+
 	static const double c=1./6.0;
 	//translational degree
 	x(0) += x(1)*dt + x(2)*(dt*dt*4.0*c) - x0(2)*(dt*dt*c);
 	x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
-
 
 	//rotational degree
 	static vec wp;
