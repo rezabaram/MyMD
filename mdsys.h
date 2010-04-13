@@ -313,8 +313,6 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, p1->shape, p2->shape);
-	//cerr<< overlaps.size()<<endl;
-	//vec dv=p1->x(1)-p2->x(1);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
 	static double proj, ksi;
 	if(overlaps.size()==0)return false;
@@ -338,9 +336,6 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 
 		}
 
-/// ?????????????????? this is just a test
-	//force-=friction*dv;//FIXME
-/////////////////////////////
 	return true;
 	}
 
@@ -352,20 +347,15 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
-	//cerr<< p1->min(2)<< "    " <<p1->x(0) <<endl;
 	for(int i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
-		//cerr<< overlaps.at(i).x <<endl;
-		//exit(0);
 
 		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
-		//cerr<< torque<<endl;
 		p1->addtorque(torque);
-		//cerr<< p1->x(0)+r1 <<endl;
 
 		//tangent=(1.0-fabs(proj)/dv.abs()/overlaps.at(i).dx.abs())*dv;
 

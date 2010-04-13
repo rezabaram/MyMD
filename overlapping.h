@@ -124,15 +124,15 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, con
 
 // ------------------------------------------
 	static vec v;
-	static double d, dd;
+	static double d;
 	v=E0->displacement(E);//Xc2-Xc1
 	d=v.abs();
-	dd=E0->radius+E->radius-d;//FIXME can be put in the base class too
+	double dp=E0->radius+E->radius-d;//FIXME can be put in the base class too
 
-	if(dd<0) {return;
-		v*=((E->radius-dd/2.0)/d); //from center of p1 to contact point
+	if(dp<0) {//return;
+		v*=((E->radius-dp/2.0)/d); //from center of p1 to contact point
 		v.normalized();
-		ovs.push_back(COverlapping(E->getpos()+v, (dd)*v));
+		ovs.push_back(COverlapping(E->getpos()+v, (dp)*v));
 		}
 //------------------------------------
 	static vec R, R0, R12;
@@ -147,49 +147,56 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, con
 	invE=E->inv();
 	invE0=E0->inv();
 
-	int itermax=10000;
-	double lambda=0.5;
+	int itermax=1000;
+	double lambda=0.0;
+	double dx;
 	for(int loop=1;loop<=itermax;loop++){
+
+
+		for(lambda=-8; lambda<8; lambda+=0.001){
 
 		D=invE0+lambda*invE;	
 		invD=!D;
 	//these two lines can be optimized
-		double d=lambda*lambda*invE.Det()+lambda*((invE+invE0).Det()-invE.Det()-invE0.Det())+invE0.Det();
-		double dd=2*lambda*invE.Det()+((invE+invE0).Det()-invE.Det()-invE0.Det());
+		double d=lambda*lambda*(invE.Det())+lambda*((invE+invE0).Det()-invE.Det()-invE0.Det())+invE0.Det();
+		double dd=2*lambda*(invE.Det())+((invE+invE0).Det()-invE.Det()-invE0.Det());
 		
 		F=invE*invE0*invD;
 		A=invD*invE0*invD;
 		
 		B=2.0/d*(F-dd*A);
 
+		dx= (R12*A*R12 - 1.0)/(R12*B*R12);
+		cout<<lambda<<"   "<<(R12*A*R12 - 1.0)<<" vector ("<< invD*R12<<")   "<<invD.Det()<<endl;
+		}
+		exit(0);
 
-
-		double dx= (R*A*R)/(R*B*R);
-
-		double threshold=1e-3;
+		double threshold=1e-6;
 		static Matrix E12(3,3);
 		static vec rc;
 		static vec rE;
 		if(fabs(dx) < threshold){
 			//CVector rc;
-			E12=!(E->ellip_mat-(lambda*E0->ellip_mat));
+			E12=!(E->ellip_mat+(lambda*E0->ellip_mat));
 			rc=R0-E12*(E->ellip_mat*R12);
-			double s2=lambda*lambda*(R*(E0->ellip_mat*E12*E->ellip_mat*E12*E0->ellip_mat)*R);
+			double s2=lambda*lambda*(R12*(E0->ellip_mat*E12*E->ellip_mat*E12*E0->ellip_mat)*R12);
 			double s=sqrt(s2);
+			cerr<< s2 <<endl;
 			if(s>1){
-				cerr<< s <<endl;
 				break;//not overlapping
 				}
 			rE=(1-1/s)*rc+(1/s)*R;
 			//cerr<< s <<endl;
 			
-			//return CContact(rc-R, rE-R);
-			cerr<< E->radius<<"   x "<<(rc-R).abs()<<"  dx "<<rE-R <<endl;
-			ovs.push_back(COverlapping(rc, R-rE));
+//			//return CContact(rc-R, rE-R);
+			cerr<< dx<<"  "<<lambda <<endl;
+			cerr<< setprecision(10)<<R <<"   x "<<rc<<"  dx "<<rE <<endl;
+			//ovs.push_back(COverlapping(rc, R-rE));
 			return;
 			}
-		lambda -= dx;
+		lambda += dx;
 		}   
+//	cerr<< dx <<endl;
 
 	  return ;
 

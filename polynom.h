@@ -12,7 +12,7 @@ using namespace std;
 
 #define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 #define WARNING(x)  std::cerr<<"Warning: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
-double epsilon=1e-6;
+double epsilon=1e-8;
 
 inline 
 double myabs2(const complex<double> &c){
@@ -33,7 +33,6 @@ class CPolynom{
 	public:
   	CPolynom(const T a): solved(false){//just to enforce the first coefs be non-zero
 		if(fabs(a)<epsilon){
-			ERROR("Polynomial not created. The coefficent of highest term should not be zero. ");
 			
 			exit(1);//FIXME too hard. exception should be thrown
 			}
@@ -57,9 +56,9 @@ class CPolynom{
 		};
 
 	bool is_root(complex<double> x, double e=epsilon){
-		cout<<myabs((*this)(x))<<endl;
 		return (myabs2((*this)(x))<e);
 		}
+
 	bool check_roots(){
 		if(!solved)return false;
 		bool b=true;
