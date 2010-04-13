@@ -27,7 +27,7 @@ double time=0;
 vec x(0.0, 0.0, .0);
 
 double size=config.get_param<double>("particleSize");
-double margin=2.1*size;
+double margin=2.3*size;
 for(double i=margin; i<1-margin; i+=margin){
 for(double j=1-margin; j>margin; j-=margin){
 for(double k=1-margin; k>margin; k-=margin){
@@ -39,7 +39,7 @@ for(double k=1-margin; k>margin; k-=margin){
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 	CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
-	GeomObject<tellipsoid> E(x, 1, 1, 0.45);
+	GeomObject<tellipsoid> E(x, 1, 1, 1);
 	E.scale(size*(1+0.2*drand48()));
 //	CParticle *p = new CParticle(E);
 	vec axis(0.0);

@@ -68,20 +68,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 		}
 	}
 
-inline
-void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tellipsoid>  * p2){
-	static vec v;
-	static double d, dd;
-	v=p2->displacement(p1);//Xc2-Xc1
-	d=v.abs();
-	dd=p2->radius+p1->radius-d;//FIXME can be put in the base class too
-
-	if(dd>0) {
-		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
-		v.normalized();
-		ovs.push_back(COverlapping(p1->getpos()+v, (dd)*v));
-		}
-	}
 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
@@ -131,23 +117,37 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 	}
 
-typedef GeomObject<tellipsoid> CEllipsoid;
 
-vec rescale_ellipse_to_touch(const CEllipsoid &E, const CEllipsoid &E0){
+inline
+void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
 	//here we should if E will touch E0 or not;
 
+// ------------------------------------------
+	static vec v;
+	static double d, dd;
+	v=E0->displacement(E);//Xc2-Xc1
+	d=v.abs();
+	dd=E0->radius+E->radius-d;//FIXME can be put in the base class too
+
+	if(dd<0) {return;
+		v*=((E->radius-dd/2.0)/d); //from center of p1 to contact point
+		v.normalized();
+		ovs.push_back(COverlapping(E->getpos()+v, (dd)*v));
+		}
+//------------------------------------
 	static vec R, R0, R12;
-	R12=E0.Xc-E.Xc; 
-	R=E.Xc; //FIXME unnecessary, just not to modify the rest for the moment
-	R0=E0.Xc;
+	R12=E0->Xc-E->Xc; 
+	R=E->Xc; //FIXME unnecessary, just not to modify the rest for the moment
+	R0=E0->Xc;
 
 
 	// Begin of iteration for lambda
 	static Matrix D(3,3), invD(3,3), F(3,3), A(3,3), B(3,3);
 	static Matrix invE(3,3), invE0(3,3);
-	invE=!E.ellip_mat;
-	invE0=!E0.ellip_mat;
-	int itermax=1000;
+	invE=E->inv();
+	invE0=E0->inv();
+
+	int itermax=10000;
 	double lambda=0.5;
 	for(int loop=1;loop<=itermax;loop++){
 
@@ -166,26 +166,32 @@ vec rescale_ellipse_to_touch(const CEllipsoid &E, const CEllipsoid &E0){
 
 		double dx= (R*A*R)/(R*B*R);
 
-		double threshold=1e-4;
+		double threshold=1e-3;
 		static Matrix E12(3,3);
 		static vec rc;
 		static vec rE;
 		if(fabs(dx) < threshold){
 			//CVector rc;
-			E12=!(E.ellip_mat-(lambda*E0.ellip_mat));
-			rc=R0-E12*(E.ellip_mat*R12);
-			double s2=lambda*lambda*(R*(E0.ellip_mat*E12*E.ellip_mat*E12*E0.ellip_mat)*R);
+			E12=!(E->ellip_mat-(lambda*E0->ellip_mat));
+			rc=R0-E12*(E->ellip_mat*R12);
+			double s2=lambda*lambda*(R*(E0->ellip_mat*E12*E->ellip_mat*E12*E0->ellip_mat)*R);
 			double s=sqrt(s2);
-			if(s>1)break;//not overlapping
+			if(s>1){
+				cerr<< s <<endl;
+				break;//not overlapping
+				}
 			rE=(1-1/s)*rc+(1/s)*R;
 			//cerr<< s <<endl;
 			
 			//return CContact(rc-R, rE-R);
+			cerr<< E->radius<<"   x "<<(rc-R).abs()<<"  dx "<<rE-R <<endl;
+			ovs.push_back(COverlapping(rc, R-rE));
+			return;
 			}
 		lambda -= dx;
 		}   
 
-	  return E.Xc;   //NON Convergence.
+	  return ;
 
 }
 #endif /* OVERLAPPING_H */

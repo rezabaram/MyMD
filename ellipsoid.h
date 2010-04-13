@@ -26,6 +26,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		for(int j=0; j<3; ++j){
 		  rotat_mat(i,j)= 0;
 		  scale_mat(i,j)=0;
+		  inv_scale_mat(i,j)=0;
 		  inert_mat(i,j)= 0;
 			}
 
@@ -40,6 +41,10 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  scale_mat(1,1)=1.0/(b*b);
 		  scale_mat(2,2)=1.0/(c*c);
 
+		  inv_scale_mat(0,0)=(a*a);
+		  inv_scale_mat(1,1)=(b*b);
+		  inv_scale_mat(2,2)=(c*c);
+
 		  inv_scale_vec(0)=(a*a);
 		  inv_scale_vec(1)=(b*b);
 		  inv_scale_vec(2)=(c*c);
@@ -50,6 +55,10 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  inert_mat(2,2)=0.2*(a*a+b*b);
 
 		  ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		}
+
+	Matrix inv()const{
+		return (~rotat_mat*inv_scale_mat*rotat_mat); 
 		}
 
 	void moveto(const vec &v){
@@ -120,9 +129,11 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	Matrix rotat_mat;
 	Matrix scale_mat;
+	Matrix inv_scale_mat;
+	vec    inv_scale_vec;
+
 	Matrix ellip_mat;
 	Matrix inert_mat;
-	vec inv_scale_vec;
 
 	double a,b,c;
 	vec R;

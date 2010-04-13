@@ -4,11 +4,6 @@
 #include"common.h"
 #include"quaternion.h"
 
-using std::cerr; 
-using std::endl;
-using namespace std;
-
-
 #include"plane.h"
 #include"sphere.h"
 #include"composite.h"

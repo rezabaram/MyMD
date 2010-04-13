@@ -251,17 +251,17 @@ template<indexType Dim, class T>
 	return v;
 	};
 
-typedef CVector<4,double> vec4d;
-typedef CVector<3,double> vec3d;
-typedef CVector<2,double> vec2d;
+//typedef CVector<4,double> vec4d;
+//typedef CVector<3,double> vec3d;
+//typedef CVector<2,double> vec2d;
 
 //template<>
 //vec3d::CVector(double , double, double){}
 
-vec3d cross(const vec3d u, const vec3d v){
-	double crossprod[]={u(1)*v(2)-u(2)*v(1),u(2)*v(0)-u(0)*v(2),u(0)*v(1)-u(1)*v(0)};
-	return vec3d(crossprod);
-	}
+//vec3d cross(const vec3d u, const vec3d v){
+	//double crossprod[]={u(1)*v(2)-u(2)*v(1),u(2)*v(0)-u(0)*v(2),u(0)*v(1)-u(1)*v(0)};
+	//return vec3d(crossprod);
+	//}
 
 #endif
 
