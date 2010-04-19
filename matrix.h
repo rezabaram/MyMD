@@ -218,7 +218,7 @@ class matrix
 public:
    // Constructors
    matrix (const matrixT& m);
-   matrix (size_t row = 3, size_t col = 3);
+   matrix (size_t row = 4, size_t col = 4);
 
    // Destructor
    ~matrix ();

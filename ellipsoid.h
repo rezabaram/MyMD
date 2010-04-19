@@ -22,24 +22,29 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//Elements of the rotational matrix
 
 		//double beta = M_PI/3.;
-		for(int i=0; i<3; ++i)
-		for(int j=0; j<3; ++j){
-		  rotat_mat(i,j)= 0;
-		  scale_mat(i,j)=0;
-		  inv_scale_mat(i,j)=0;
-		  inert_mat(i,j)= 0;
+		double temp=0;
+		for(int i=0; i<4; ++i)
+		for(int j=0; j<4; ++j){
+		  if(i==j)temp=1.0;
+		  else temp=0;
+		  
+		  rotat_mat(i,j)= temp;
+		  scale_mat(i,j)=temp;
+		  inv_scale_mat(i,j)=temp;
+		  inert_mat(i,j)= temp;
+		  trans_mat(i,j)= temp;
 			}
 
 		  rotat_mat(0,0)= cos(beta);
 		  rotat_mat(0,1)= -sin(beta);
 		  rotat_mat(1,0)= sin(beta);
 		  rotat_mat(1,1)= cos(beta);
-		  rotat_mat(2,2)= 1;
 
 		  //Elements of the scaling matrix
 		  scale_mat(0,0)=1.0/(a*a);
 		  scale_mat(1,1)=1.0/(b*b);
 		  scale_mat(2,2)=1.0/(c*c);
+		  scale_mat(3,3)=-1;//in homogeneous formulation
 
 		  inv_scale_mat(0,0)=(a*a);
 		  inv_scale_mat(1,1)=(b*b);
@@ -61,8 +66,14 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		return (~rotat_mat*inv_scale_mat*rotat_mat); 
 		}
 
+	void update_tranlatione_mat(){
+		trans_mat(0,3)=Xc(0);
+		trans_mat(1,3)=Xc(1);
+		trans_mat(2,3)=Xc(2);
+		}
 	void moveto(const vec &v){
 		Xc=v;
+		update_tranlatione_mat();
 		}
 
 	void rotateTo(const Quaternion &q){
@@ -70,7 +81,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//Matrix temp=(rotat_mat*(~rotat_mat));
 		//cerr<< temp <<endl;
 		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
-		ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		//ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
@@ -89,6 +101,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void shift(const vec& v){
 		Xc+=v;
+		update_tranlatione_mat();
 		}
 
 	void scale(double scale){
@@ -128,6 +141,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 			}
 
 	Matrix rotat_mat;
+	Matrix trans_mat;
 	Matrix scale_mat;
 	Matrix inv_scale_mat;
 	vec    inv_scale_vec;

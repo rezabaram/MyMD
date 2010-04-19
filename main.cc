@@ -30,16 +30,16 @@ GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.3), 0.5, 1, 1);
 E.scale(0.2);
 CParticle *p = new CParticle(E);
 //p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
-sys.add(p);
+//sys.add(p);
 
 GeomObject<tellipsoid> E2(vec(0.5, 0.5, 0.8), 0.7, 1, 0.5);
 E2.scale(0.2);
 CParticle *p2 = new CParticle(E2);
 //p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
-sys.add(p2);
+//sys.add(p2);
 
-sys.solve(config.get_param<double>("maxTime"), Dt);
-return 0;
+//sys.solve(config.get_param<double>("maxTime"), Dt);
+//return 0;
 
 double size=config.get_param<double>("particleSize");
 
@@ -55,7 +55,7 @@ for(double k=1-margin; k>margin; k-=margin){
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
-	GeomObject<tellipsoid> E(x, 1, 1, 1);
+	GeomObject<tellipsoid> E(x, 1, 0.7, 0.5);
 	E.scale(size*(1+0.2*drand48()));
 	CParticle *p = new CParticle(E);
 	vec axis(0.0);
