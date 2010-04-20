@@ -17,6 +17,7 @@
 #include"quaternion.h"
 #include"matrix.h"
 #include"log.h"
+#include"polynom.h"
 
 #include"config.h"
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
@@ -94,4 +95,20 @@ vec operator *(const Matrix &M, const vec &v){
 		v(0)*M(2,0)+v(1)*M(2,1)+v(2)*M(2,2)
 		);
 	}
+
+//obtaining the polynomial | B + lambda A | = 0
+CQuartic characteristicPolynom(const Matrix &AB){
+
+    	return CQuartic(AB.Det() , 
+	AB(0,2)*AB(0,2)*AB(1,1) + AB(0,3)*AB(0,3)*AB(1,1) - 2*AB(0,1)*AB(0,2)*AB(1,2) + AB(0,0)*AB(1,2)*AB(1,2) - 
+    	2*AB(0,1)*AB(0,3)*AB(1,3) + AB(0,0)*AB(1,3)*AB(1,3) + AB(0,1)*AB(0,1)*AB(2,2) + AB(0,3)*AB(0,3)*AB(2,2) - AB(0,0)*AB(1,1)*AB(2,2) + 
+    	AB(1,3)*AB(1,3)*AB(2,2) - 2*AB(0,2)*AB(0,3)*AB(2,3) - 2*AB(1,2)*AB(1,3)*AB(2,3) + AB(0,0)*AB(2,3)*AB(2,3) + 
+    	AB(1,1)*AB(2,3)*AB(2,3) + AB(0,1)*AB(0,1)*AB(3,3) + AB(0,2)*AB(0,2)*AB(3,3) - AB(0,0)*AB(1,1)*AB(3,3) + AB(1,2)*AB(1,2)* AB(3,3) - 
+    	AB(0,0)*AB(2,2)*AB(3,3) - AB(1,1)*AB(2,2)*AB(3,3),  
+	-AB(0,1)*AB(0,1) - AB(0,2)*AB(0,2) - AB(0,3)*AB(0,3) + AB(0,0)*AB(1,1) - AB(1,2)*AB(1,2) - AB(1,3)*AB(1,3) + AB(0,0)*AB(2,2) + 
+	AB(1,1)*AB(2,2) - AB(2,3)*AB(2,3) + AB(0,0)*AB(3,3) + AB(1,1)*AB(3,3) + AB(2,2)*AB(3,3) ,
+	 -AB.Tr(),1);
+}
+
+
 #endif /* COMMON_H */

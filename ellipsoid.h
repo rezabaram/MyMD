@@ -66,14 +66,15 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		return (~rotat_mat*inv_scale_mat*rotat_mat); 
 		}
 
-	void update_tranlatione_mat(){
+	void update_tranlation_mat(){
 		trans_mat(0,3)=Xc(0);
 		trans_mat(1,3)=Xc(1);
 		trans_mat(2,3)=Xc(2);
+		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 	void moveto(const vec &v){
 		Xc=v;
-		update_tranlatione_mat();
+		update_tranlation_mat();
 		}
 
 	void rotateTo(const Quaternion &q){
@@ -101,7 +102,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void shift(const vec& v){
 		Xc+=v;
-		update_tranlatione_mat();
+		update_tranlation_mat();
 		}
 
 	void scale(double scale){
@@ -114,7 +115,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	vec point_to_plane(const CPlane &P)const{//FIXME need to be obtimized
 		double alpha;
-		alpha=(P.n*(!ellip_mat)*P.n);
+		alpha=(P.n*(this->inv())*P.n);
 	
 		assert(alpha>0);
 		alpha=1/sqrt(alpha);

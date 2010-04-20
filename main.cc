@@ -35,11 +35,15 @@ CParticle *p = new CParticle(E);
 GeomObject<tellipsoid> E2(vec(0.5, 0.5, 0.8), 0.7, 1, 0.5);
 E2.scale(0.2);
 CParticle *p2 = new CParticle(E2);
-//p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
+p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
+E2.rotateTo(p->q);
+E2.moveto(vec(1, 2,4.35));
+cerr<< E2.ellip_mat <<endl;
+characteristicPolynom(E2.ellip_mat).print(cout);
 //sys.add(p2);
 
 //sys.solve(config.get_param<double>("maxTime"), Dt);
-//return 0;
+return 0;
 
 double size=config.get_param<double>("particleSize");
 

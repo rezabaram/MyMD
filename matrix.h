@@ -258,6 +258,7 @@ public:
    matrixT Adj () _THROW_MATRIX_ERROR;
    matrixT Inv () _THROW_MATRIX_ERROR;
    T Det () const _THROW_MATRIX_ERROR;
+   T Tr () const _THROW_MATRIX_ERROR;
    T Norm () _NO_THROW;
    T Cofact (size_t row, size_t col) _THROW_MATRIX_ERROR;
    T Cond () _NO_THROW;
@@ -846,6 +847,23 @@ matrixT::pivot (size_t row)
   return 0;
 }
 
+// calculate the trace of a matrix
+MAT_TEMPLATE inline T
+matrixT::Tr() const _THROW_MATRIX_ERROR
+{
+   size_t k;
+
+   if (_m->Row != _m->Col)
+      REPORT_ERROR( "matrixT::Tr(): Trace of a non-square matrix!");
+   
+
+   T temp=0;
+   for (k=0; k < _m->Row; k++)
+   {
+   temp+=_m->Val[k][k];
+   }
+   return temp;
+}
 // calculate the determinant of a matrix
 MAT_TEMPLATE inline T
 matrixT::Det () const _THROW_MATRIX_ERROR
