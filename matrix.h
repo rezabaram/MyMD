@@ -101,6 +101,7 @@
 #  include <cstdio>
 #  include <cstdlib>
 #  include <string>
+#  include <iomanip>
 #  include <iostream>
 #endif
 
@@ -447,7 +448,7 @@ operator << (ostream& ostrm, const matrixT& m)
       for (size_t j=0; j < m.ColNo(); j++)
       {
          T x = m(i,j);
-         ostrm << x << '\t';
+         ostrm<<setprecision(12) << x << '\t';
       }
       ostrm << endl;
    }

@@ -99,15 +99,17 @@ vec operator *(const Matrix &M, const vec &v){
 //obtaining the polynomial | B + lambda A | = 0
 CQuartic characteristicPolynom(const Matrix &AB){
 
-    	return CQuartic(AB.Det() , 
+    	return CQuartic(
+	1,
+	 -AB.Tr(),
+	-AB(0,1)*AB(0,1) - AB(0,2)*AB(0,2) - AB(0,3)*AB(0,3) + AB(0,0)*AB(1,1) - AB(1,2)*AB(1,2) - AB(1,3)*AB(1,3) + AB(0,0)*AB(2,2) + 
+	AB(1,1)*AB(2,2) - AB(2,3)*AB(2,3) + AB(0,0)*AB(3,3) + AB(1,1)*AB(3,3) + AB(2,2)*AB(3,3) ,
 	AB(0,2)*AB(0,2)*AB(1,1) + AB(0,3)*AB(0,3)*AB(1,1) - 2*AB(0,1)*AB(0,2)*AB(1,2) + AB(0,0)*AB(1,2)*AB(1,2) - 
     	2*AB(0,1)*AB(0,3)*AB(1,3) + AB(0,0)*AB(1,3)*AB(1,3) + AB(0,1)*AB(0,1)*AB(2,2) + AB(0,3)*AB(0,3)*AB(2,2) - AB(0,0)*AB(1,1)*AB(2,2) + 
     	AB(1,3)*AB(1,3)*AB(2,2) - 2*AB(0,2)*AB(0,3)*AB(2,3) - 2*AB(1,2)*AB(1,3)*AB(2,3) + AB(0,0)*AB(2,3)*AB(2,3) + 
     	AB(1,1)*AB(2,3)*AB(2,3) + AB(0,1)*AB(0,1)*AB(3,3) + AB(0,2)*AB(0,2)*AB(3,3) - AB(0,0)*AB(1,1)*AB(3,3) + AB(1,2)*AB(1,2)* AB(3,3) - 
     	AB(0,0)*AB(2,2)*AB(3,3) - AB(1,1)*AB(2,2)*AB(3,3),  
-	-AB(0,1)*AB(0,1) - AB(0,2)*AB(0,2) - AB(0,3)*AB(0,3) + AB(0,0)*AB(1,1) - AB(1,2)*AB(1,2) - AB(1,3)*AB(1,3) + AB(0,0)*AB(2,2) + 
-	AB(1,1)*AB(2,2) - AB(2,3)*AB(2,3) + AB(0,0)*AB(3,3) + AB(1,1)*AB(3,3) + AB(2,2)*AB(3,3) ,
-	 -AB.Tr(),1);
+	AB.Det() ); 
 }
 
 

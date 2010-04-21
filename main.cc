@@ -39,7 +39,10 @@ p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,s
 E2.rotateTo(p->q);
 E2.moveto(vec(1, 2,4.35));
 cerr<< E2.ellip_mat <<endl;
+cerr<< E2.ellip_mat.Tr() <<endl;
 characteristicPolynom(E2.ellip_mat).print(cout);
+//characteristicPolynom(E2.ellip_mat).plot(cout,-100, 100, 0.01);
+characteristicPolynom(E2.ellip_mat).print_roots(cout);
 //sys.add(p2);
 
 //sys.solve(config.get_param<double>("maxTime"), Dt);
