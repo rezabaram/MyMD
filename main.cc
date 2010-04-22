@@ -32,19 +32,24 @@ CParticle *p = new CParticle(E);
 //p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
 //sys.add(p);
 
-GeomObject<tellipsoid> E2(vec(0.5, 0.5, 0.7), 1, 1, 2);
+GeomObject<tellipsoid> E2(vec(0.5, 0.5, 0.7), 1, 1, 0.5);
 E2.scale(0.2);
 CParticle *p2 = new CParticle(E2);
 p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
 //E2.rotateTo(p->q);
 //E2.moveto(vec(1, 2,4.35));
+
+//Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
 Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
 cerr<< M <<endl;
 cerr<< "Det= "<<M.Det() <<endl;
 CQuartic quart=characteristicPolynom(M);
+M+=1;// (quart.root(0)).real();
+cerr<< M <<endl;
+cerr<< "Det= "<<M.Det() <<endl;
 //CQuartic quart=CQuartic(1., - 468.562 ,  - 939.125, - 468.563  ,1);
 quart.print(cerr);
-quart.plot(cout,-3, 500, 0.01);
+//quart.plot(cout,-3, 500, 0.01);
 quart.print_roots(cerr);
 //sys.add(p2);
 

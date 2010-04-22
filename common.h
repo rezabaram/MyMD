@@ -96,6 +96,15 @@ vec operator *(const Matrix &M, const vec &v){
 		);
 	}
 
+Matrix & operator +=(Matrix &M, const double d){
+	assert(M.RowNo() == M.ColNo());
+	for(int i=0; i<M.RowNo(); ++i){
+	M(i,i)+=d;
+	}
+
+	return M;
+	}
+
 //obtaining the polynomial | B + lambda A | = 0
 CQuartic characteristicPolynom(const Matrix &AB){
 
