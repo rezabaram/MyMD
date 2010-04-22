@@ -443,15 +443,24 @@ operator >> (istream& istrm, matrixT& m)
 MAT_TEMPLATE inline ostream&
 operator << (ostream& ostrm, const matrixT& m)
 {
+       ostrm<<"{";
    for (size_t i=0; i < m.RowNo(); i++)
    {
+      if(i!=0) ostrm<<" ";
+         ostrm<<"{";
       for (size_t j=0; j < m.ColNo(); j++)
       {
-         T x = m(i,j);
-         ostrm<<setprecision(12) << x << '\t';
+        T x = m(i,j);
+      if(j!=0) ostrm<<" ";
+	ostrm<<setprecision(12) << x;
+    	if(j!=m.ColNo()-1) ostrm<< ", ";
       }
-      ostrm << endl;
+    if(i!=m.RowNo()-1){
+       ostrm<<"},";
+       ostrm << endl;
+	}
    }
+       ostrm<<"}}";
    return ostrm;
 }
 

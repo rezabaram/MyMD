@@ -111,6 +111,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		c*=scale;
 		radius*=scale;
 		setup();
+		update_tranlation_mat();
 		}
 
 	vec point_to_plane(const CPlane &P)const{//FIXME need to be obtimized
