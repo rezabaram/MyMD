@@ -1,5 +1,5 @@
 #ifndef QUARTIC_H
-#define QUARTIC_h 
+#define QUARTIC_H 
 #include<assert.h>
 #include<fstream>
 #include<iomanip>
@@ -12,7 +12,6 @@ using namespace std;
 
 #define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 #define WARNING(x)  std::cerr<<"Warning: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
-double epsilon=1e-8;
 
 inline 
 double myabs2(const complex<double> &c){
@@ -27,6 +26,8 @@ double myabs(const complex<double> &c){
 
 //this is just to impose an interface and to reuse common features. 
 //but not to make all polynomials accessible via a common pointer (which is usually the goal of polymorphism)
+
+const double epsilon=1e-8;
 
 template<int order, typename T=double>
 class CPolynom{

@@ -121,5 +121,25 @@ AB(0,2)*AB(1,1)*AB(2,0) - AB(0,1)*AB(1,2)*AB(2,0) - AB(0,2)*AB(1,0)*AB(2,1) + AB
 		AB.Det() ); 
 }
 
+inline
+Matrix  GaussEliminate (Matrix M, vec v){
+
+	double Mkj, Mik;
+	for(int k=0; k<M.RowNo()-1; ++k){
+		if(fabs(M(k,k))<epsilon)continue;
+	//for(int k=0; k<1; ++k){
+	for(int i=k+1; i<M.RowNo(); ++i){
+		Mik=M(i,k);
+		v(i)=Mik*v(k)-M(k,k)*v(i);
+	for(int j=0; j<M.ColNo(); ++j){
+		Mkj=M(k,j);
+		M(i,j)=Mik*Mkj-M(k,k)*M(i,j);
+		}
+		}
+	}
+	cerr<< v <<endl;
+	return M;
+	
+}
 
 #endif /* COMMON_H */
