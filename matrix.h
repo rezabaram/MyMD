@@ -246,6 +246,8 @@ public:
    matrixT& operator *= (const T& c) _NO_THROW;
    matrixT& operator /= (const T& c) _NO_THROW;
    matrixT& operator ^= (const size_t& pow) _THROW_MATRIX_ERROR;
+   void swapRow(const size_t& row1, const size_t& row2) _THROW_MATRIX_ERROR;
+   void swapCol(const size_t& col1, const size_t& col2) _THROW_MATRIX_ERROR;
 
    // Miscellaneous -methods
    void Null (const size_t& row, const size_t& col) _NO_THROW;
@@ -1084,6 +1086,41 @@ matrixT::IsLowerTriangular () _NO_THROW
 	    return false;
 
    return true;
+}
+
+///////////////// by me (reza)
+// swap two rows 
+MAT_TEMPLATE void
+matrixT::swapRow(const size_t& row1, const size_t& row2) _THROW_MATRIX_ERROR
+{
+    if (row1 >= _m->Row || row2 >= _m->Row
+    or row1 < 0 || row2 < 0)
+	REPORT_ERROR("Indeces out of bound!");
+
+    static double temp;
+    for (size_t j=0; j < _m->Col; j++){
+	    temp=_m->Val[row1][j];
+	    _m->Val[row1][j]=_m->Val[row2][j];
+	    _m->Val[row2][j]=temp;
+	}
+    return;
+}
+
+// swap two columns
+MAT_TEMPLATE void
+matrixT::swapCol(const size_t& col1, const size_t& col2) _THROW_MATRIX_ERROR
+{
+    if (col1 >= _m->Col || col2>= _m->Col
+    or col2< 0 || col2< 0)
+	REPORT_ERROR("Indeces out of bound!");
+
+    static double temp;
+    for (size_t j=0; j < _m->Col; j++){
+	    temp=_m->Val[j][col1];
+	    _m->Val[j][col1]=_m->Val[j][col2];
+	    _m->Val[j][col2]=temp;
+	}
+    return;
 }
 
 #ifndef _NO_NAMESPACE

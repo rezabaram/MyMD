@@ -121,25 +121,55 @@ AB(0,2)*AB(1,1)*AB(2,0) - AB(0,1)*AB(1,2)*AB(2,0) - AB(0,2)*AB(1,0)*AB(2,1) + AB
 		AB.Det() ); 
 }
 
-inline
-Matrix  GaussEliminate (Matrix M, vec v){
 
-	double Mkj, Mik;
-	for(int k=0; k<M.RowNo()-1; ++k){
-		if(fabs(M(k,k))<epsilon)continue;
-	//for(int k=0; k<1; ++k){
-	for(int i=k+1; i<M.RowNo(); ++i){
-		Mik=M(i,k);
-		v(i)=Mik*v(k)-M(k,k)*v(i);
-	for(int j=0; j<M.ColNo(); ++j){
-		Mkj=M(k,j);
-		M(i,j)=Mik*Mkj-M(k,k)*M(i,j);
-		}
-		}
+Matrix  GaussEliminate (Matrix M, Matrix &v){
+size_t i = 0, j = 0, maxi;
+size_t m = M.RowNo(), n = M.ColNo();
+
+while (i < m and j < n) {
+  //Find pivot in column j, starting in row i:
+  maxi = i;
+  for (int k = i+1; k<m; ++k){
+    if (fabs(M(k,j)) > fabs(M(maxi,j))){
+      	maxi = k;
 	}
-	cerr<< v <<endl;
-	return M;
-	
+	}
+  if( fabs(M(maxi,j)) > epsilon){
+    M.swapRow(i, maxi);
+    v.swapRow(i, maxi);
+    //divide each entry in row i by M[i,j]
+    double Mij=M(i,j);
+    for(int jj=0; jj<n; ++jj){
+	M(i,jj)/=Mij;
+	v(i,0)/=Mij;
+	}
+
+    for(int u = i+1; u< m; ++u){
+     // subtract A[u,j] * row i from row u
+      double Muj=M(u,j);
+      for(int jj=0; jj<n; ++jj){
+			M(u,jj)=M(u,jj)-Muj*M(i,jj);
+			}
+		v(u,0)=v(u,0)-Muj*v(i,0);
+	}
+	++i;
+	}
+	++j;
+
+}
+/*
+for(int k=m-1; k<m; ++k){
+	if(M(k,k)
+      for(int jj=0; jj<n; ++jj){
+		M(u,jj)=M(u,jj)-Muj*M(i,jj);
+		}
+	v(u,0)=v(u,0)-Muj*v(i,0);
+	}
+*/
+
+
+return M;
+
 }
 
 #endif /* COMMON_H */

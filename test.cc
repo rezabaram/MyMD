@@ -44,22 +44,28 @@ void listtest(){
 
 	}
 void gaussElimTest(){
-	Matrix M(3,3);
+	drand48();
+	const size_t N=4;
+	Matrix M(N,N);
+	Matrix v(N,1);
 	
-	M(0,0)=0;
-	M(0,1)=1;
-	M(0,2)=-1;
-	M(1,0)=-3;
-	M(1,1)=-1;
-	M(1,2)=2;
-	M(2,0)=-2;
-	M(2,1)=1;
-	M(2,2)=2;
-	vec v(8, -11, -3);
+	int k=0;
+	for(int i=0; i<N; ++i){
+		v(i,0)=+(int)(3*(1-2*drand48()));
+	for(int j=0; j<N; ++j){
+		M(i,j)=+(int)(5*(1-2*drand48()));
+		++k;
+		//M(i,j)=k;
+		}
+		}
 
+	cerr<< M.Det() <<endl;
 	cerr<< M <<endl;
-	M=GaussEliminate(M, v);
+	M=GaussEliminate(M,v);
+	//M=GaussEliminate(~M,v);
 	cerr<< M <<endl;
+	cerr<< v <<endl;
+	
 	}
 
 int main(int argc, char **argv){
