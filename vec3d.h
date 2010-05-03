@@ -16,7 +16,7 @@ class vec3d{
 		x[i]=vec[i];
 		}
 	};
-   vec3d(T x0, T x1, T x2){
+   vec3d(const T &x0, const T &x1, const T &x2){
 	x[0]=x0; x[1]=x1; x[2]=x2;
 	}
 

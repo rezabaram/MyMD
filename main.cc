@@ -27,34 +27,41 @@ sys.G=config.get_param<vec>("Gravity");
 double time=0;
 vec x(0.0, 0.0, .0);
 
-GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.3), 1, 1, 1);
+GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.3), 1, 1, 0.5);
 E.scale(0.2);
 CParticle *p = new CParticle(E);
 //p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
 //sys.add(p);
 
-GeomObject<tellipsoid> E2(vec(0.1, 0.3, 0.72), 0.2, 0.3, 1);
+GeomObject<tellipsoid> E2(vec(0.5, 0.5, 0.79), 1, 1, 0.8);
 E2.scale(0.2);
 CParticle *p2 = new CParticle(E2);
 //p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
+
 //E2.rotateTo(p->q);
 //E2.moveto(vec(1, 2,4.35));
+ofstream out("outtest");
+//out<< *p2 <<endl;
+//out<< *p <<endl;
+
+
 
 //Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
 Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
-eigens(M);
-cerr<< "Det= "<<M.Det() <<endl;
-CQuartic quart=characteristicPolynom(~M);
-quart.print_roots(cerr);
-M.add_diag((-quart.root(3)).real());
+//eigens(M);
 
-//CQuartic quart=CQuartic(1., - 468.562 ,  - 939.125, - 468.563  ,1);
-quart.print(cerr);
-//quart.plot(cout,-3, 500, 0.01);
-quart.print_roots(cerr);
-//sys.add(p2);
+vector<double> eigenvals;
+vector<vec> eigenvecs;
+cerr<< M <<endl;
+eigens(M, eigenvals, eigenvecs);
 
-//sys.solve(config.get_param<double>("maxTime"), Dt);
+if(eigenvals.size() ==2){
+cerr<< eigenvecs[0] <<endl;
+cerr<< eigenvecs[1] <<endl;
+(CCylinder(eigenvecs.at(0),eigenvecs.at(1), 0.01)).print(out);;
+out<<endl;
+}
+
 return 0;
 
 double size=config.get_param<double>("particleSize");

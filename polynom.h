@@ -35,7 +35,7 @@ class CPolynom{
   	CPolynom(const T a): solved(false){//just to enforce the first coefs be non-zero
 		if(fabs(a)<epsilon){
 			
-			exit(1);//FIXME too hard. exception should be thrown
+			ERROR("the leading coefficient cannot be zero");
 			}
 		coefs.push_back(a);
 		for(size_t i=0; i<order; ++i){
@@ -46,11 +46,9 @@ class CPolynom{
   	CPolynom(const vector<T> _coefs): solved(false){
 		if(_coefs.size()!=order+1){
 			ERROR("Polynomial not created. The number of coefficents does not correspond the order.")
-			exit(1);//FIXME too hard. exception should be thrown
 			};
 		if(fabs(_coefs.at(0))<epsilon){
 			ERROR("Polynomial not created. The coefficent of highest term should not be zero. ");
-			exit(1);//FIXME too hard. exception should be thrown
 			}
 
 		coefs=_coefs;
@@ -142,7 +140,6 @@ inline
 complex<double> CPolynom<order, T>::root(int i){
 	if(!solved and !solve()){
 		ERROR("The polynomial has no roots;");//FIXME write the correct error message
-		exit(1);
 		}
 
 	assert(i<=roots.size());

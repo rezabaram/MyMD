@@ -2,7 +2,7 @@
 #include<ostream>
 #include"vec3d.h"
 
-typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid} GType;
+typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid, tcylinder} GType;
 
 class GeomObjectBase
 	{

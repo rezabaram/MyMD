@@ -76,7 +76,40 @@ void gaussElimTest(){
 	
 	}
 
+
+void mysort(int val[], int ind[] , int n){
+
+//const int N=100;
+//int ind[N];//for holding indeces 
+//int val[N];//for holding indeces 
+//for(int i=0; i<N; ++i){
+	//ind[i]=i;
+	//val[i]=100*drand48();
+	//}
+
+	bool swapped;
+
+	do{
+		swapped = false;
+		for(int i=0; i<n-1; ++i){
+		      if (val[ind[i]] > val[ind[i+1]]){
+			swap( ind[i], ind[i+1] );
+			swapped = true;
+			}
+			}
+		--n;
+	}while (swapped);
+
+
+//	for(int i=0; i<N; ++i){
+//	cerr<< val[ind[i]] <<endl;
+//	}
+
+}
+
+
 int main(int argc, char **argv){
-eigentest();
+
 return 0;
 }
+

@@ -187,7 +187,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, con
 			rE=(1-1/s)*rc+(1/s)*R;
 			//cerr<< s <<endl;
 			
-//			//return CContact(rc-R, rE-R);
+			//return CContact(rc-R, rE-R);
 			cerr<< dx<<"  "<<lambda <<endl;
 			cerr<< setprecision(10)<<R <<"   x "<<rc<<"  dx "<<rE <<endl;
 			//ovs.push_back(COverlapping(rc, R-rE));

@@ -12,7 +12,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
 	GeomObject(const vec &v,double _a, double _b, double _c):GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c), R(_a,_b,_c) {
-		identifier=5;
+		identifier=14;
 		radius=tmax(a, tmax(b,c));
 		setup();
 		}

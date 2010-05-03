@@ -13,7 +13,8 @@
 #include<vector>
 #include<list>
 
-#include"vec3d.h"
+//#include"vec3d.h"
+#include"vec3d_policy.h"
 #include"quaternion.h"
 #include"matrix.h"
 #include"log.h"

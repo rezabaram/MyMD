@@ -9,6 +9,7 @@
 #include"composite.h"
 #include"ellipsoid.h"
 #include"box.h"
+#include"cylinder.h"
 
 
 
