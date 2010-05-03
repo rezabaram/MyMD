@@ -2,6 +2,7 @@
 using namespace std;
 #include"polynom.h"
 #include"group.h"
+#include"eigen.h"
 #include"common.h"
 
 void polytest(){
@@ -45,30 +46,37 @@ void listtest(){
 	}
 void gaussElimTest(){
 	drand48();
-	const size_t N=4;
-	Matrix M(N,N);
-	Matrix v(N,1);
+	const size_t N=15, M=15;
+	Matrix A(N,M);
+	Matrix v(M,1);
 	
 	int k=0;
 	for(int i=0; i<N; ++i){
-		v(i,0)=+(int)(3*(1-2*drand48()));
-	for(int j=0; j<N; ++j){
-		M(i,j)=+(int)(5*(1-2*drand48()));
+		v(i,0)=+(int)(5*(1-2*drand48()));
+	for(int j=0; j<M; ++j){
+		A(i,j)=+(int)(50*(drand48()));
+		if(j==3)A(i,j)=0;
 		++k;
-		//M(i,j)=k;
+		//A(i,j)=k;
 		}
 		}
 
-	cerr<< M.Det() <<endl;
-	cerr<< M <<endl;
-	M=GaussEliminate(M,v);
-	//M=GaussEliminate(~M,v);
-	cerr<< M <<endl;
+	Matrix B=A;
+	cerr<< A <<endl;
+	cerr<< "--------" <<endl;
+	//cerr<< !A*v <<endl;
+	//A=GaussEliminate2(A,v);
+ 	to_reduced_row_echelon_form(A,v);
+	//A.swapRow(2,3);
+	//v.swapRow(2,3);
+	cerr<< "--------" <<endl;
+	cerr<< A <<endl;
+	cerr<< "--------" <<endl;
 	cerr<< v <<endl;
 	
 	}
 
 int main(int argc, char **argv){
-gaussElimTest();
+eigentest();
 return 0;
 }

@@ -3,7 +3,7 @@ run: a.out
 	time ./run.sh
 
 a.out:	*.cc *h
-	g++  main.cc 
+	g++  main.cc -Ig++ -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
 
 animate: test.avi
 	#feh *jpg

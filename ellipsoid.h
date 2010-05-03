@@ -59,7 +59,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  inert_mat(1,1)=0.2*(a*a+c*c);
 		  inert_mat(2,2)=0.2*(a*a+b*b);
 
-		  ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		//  ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 
 	Matrix inv()const{

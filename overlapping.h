@@ -117,7 +117,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 	}
 
-
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
 	//here we should if E will touch E0 or not;

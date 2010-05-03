@@ -127,36 +127,39 @@ size_t i = 0, j = 0, maxi;
 size_t m = M.RowNo(), n = M.ColNo();
 
 while (i < m and j < n) {
-  //Find pivot in column j, starting in row i:
-  maxi = i;
-  for (int k = i+1; k<m; ++k){
-    if (fabs(M(k,j)) > fabs(M(maxi,j))){
-      	maxi = k;
-	}
-	}
-  if( fabs(M(maxi,j)) > epsilon){
-    M.swapRow(i, maxi);
-    v.swapRow(i, maxi);
-    //divide each entry in row i by M[i,j]
-    double Mij=M(i,j);
-    for(int jj=0; jj<n; ++jj){
-	M(i,jj)/=Mij;
-	v(i,0)/=Mij;
-	}
-
-    for(int u = i+1; u< m; ++u){
-     // subtract A[u,j] * row i from row u
-      double Muj=M(u,j);
-      for(int jj=0; jj<n; ++jj){
-			M(u,jj)=M(u,jj)-Muj*M(i,jj);
+	//Find pivot in column j, starting in row i:
+	maxi = i;
+	for (int k = i+1; k<m; ++k){
+		if (fabs(M(k,j)) > fabs(M(maxi,j))){
+			maxi = k;
 			}
-		v(u,0)=v(u,0)-Muj*v(i,0);
-	}
-	++i;
-	}
+		}
+
+	if( fabs(M(maxi,j)) > epsilon){
+		M.swapRow(i, maxi);
+		v.swapRow(i, maxi);
+		//divide each entry in row i by M[i,j]
+		double Mij=M(i,j);
+		for(int jj=0; jj<n; ++jj){
+			M(i,jj)/=Mij;
+			v(i,0)/=Mij;
+			}
+
+		for(int u = i+1; u< m; ++u){
+			// subtract A[u,j] * row i from row u
+			double Muj=M(u,j);
+			for(int jj=0; jj<n; ++jj){
+				M(u,jj)-=Muj*M(i,jj);
+				}
+			v(u,0)-=Muj*v(i,0);
+			}
+		++i;
+		}
 	++j;
 
+if(i>1)return M;
 }
+
 /*
 for(int k=m-1; k<m; ++k){
 	if(M(k,k)
@@ -167,9 +170,51 @@ for(int k=m-1; k<m; ++k){
 	}
 */
 
-
 return M;
 
 }
 
+//function ToReducedRowEchelonForm(Matrix M) is
+
+void to_reduced_row_echelon_form(Matrix& A, Matrix &v) {
+ 
+  typedef size_t index_type;
+size_t max_row = A.RowNo()-1, max_column = A.ColNo()-1;
+
+  index_type lead = 0;
+ 
+  for (index_type row = 0; row <= max_row; ++row)
+  {
+    if (lead > max_column)
+      return;
+    index_type i = row;
+    while (fabs(A (i, lead)) <epsilon)
+    {
+      ++i;
+      if (i > max_row)
+      {
+        i = row;
+        ++lead;
+        if (lead >max_column)
+          return;
+      }
+    }
+
+    A.swapRow(i, row);
+    v.swapRow(i, row);
+    double Mrl=A(row, lead);
+    A.multiply_row( row, 1/Mrl);
+    v.multiply_row( row, 1/Mrl);
+    for (i = 0; i <= max_row; ++i) {
+      if (i != row){
+	double Mil=-A(i, lead);
+	for (size_t col = 0; col <=max_column; ++col) A (i, col) += Mil * A(row, col);
+	//A(i,lead)=0;
+	v (i, 0) += Mil * v(row, 0);
+	}
+        //add_multiple_row(A, i, row, -mt.element(A, i, lead));
+    }
+  }
+}
+ 
 #endif /* COMMON_H */

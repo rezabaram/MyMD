@@ -252,7 +252,7 @@ CQuartic::CQuartic (double _a, double _b, double _c, double _d, double _e)
 
 inline
 bool CQuartic::solve(){//returning the number of real roots;
-	if(solved)return roots.size();
+	if(solved)return true;
 
 	//solution from wiki, Ferrari's method: http://en.wikipedia.org/wiki/Quartic_function#Solving_a_quartic_equation
 	double ap=1.0/coefs.at(0);
@@ -273,8 +273,15 @@ bool CQuartic::solve(){//returning the number of real roots;
 
 	double f = c - (3*b2/8); 
 	double g = d + (b3 / 8) - (b*c/2); //  d + (b3 / 8) - (b*c/2)
-
 	double h = e - (3*b4/256.0) + (b2 * c/16.0) - (b*d/4);
+
+	if(fabs(f) < epsilon and fabs(g) < epsilon and fabs(h)<epsilon){//this happens for (x-a)^4=0
+		roots.push_back(-b/4);
+		roots.push_back(-b/4);
+		roots.push_back(-b/4);
+		roots.push_back(-b/4);
+		return true;
+		}
 
 	// Y3 + (f/2)*Y2 + ((f2 -4*h)/16)*Y -g2/64 = 0
 	CCubic cube(1,(f/2),(f*f -4*h)/16, -g*g/64);
@@ -298,7 +305,9 @@ bool CQuartic::solve(){//returning the number of real roots;
 		p=sqrt(cube.root(2));
 		i1=2;
 		}
-	else assert(false); //it should not reach here
+	else {
+		assert(false); //it should not reach here
+		}
 
 	if(myabs(cube.root(0))>0 and i1!=0){
 		q=sqrt(cube.root(0));

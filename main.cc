@@ -1,6 +1,7 @@
 #include<iostream>
 #include<stdlib.h>
 #include"mdsys.h"
+#include"eigen.h"
 using namespace std;
 
 
@@ -26,27 +27,27 @@ sys.G=config.get_param<vec>("Gravity");
 double time=0;
 vec x(0.0, 0.0, .0);
 
-GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.3), 1, 1, 0.5);
+GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.3), 1, 1, 1);
 E.scale(0.2);
 CParticle *p = new CParticle(E);
 //p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
 //sys.add(p);
 
-GeomObject<tellipsoid> E2(vec(0.5, 0.5, 0.7), 1, 1, 0.5);
+GeomObject<tellipsoid> E2(vec(0.1, 0.3, 0.72), 0.2, 0.3, 1);
 E2.scale(0.2);
 CParticle *p2 = new CParticle(E2);
-p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
+//p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
 //E2.rotateTo(p->q);
 //E2.moveto(vec(1, 2,4.35));
 
 //Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
 Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
-cerr<< M <<endl;
+eigens(M);
 cerr<< "Det= "<<M.Det() <<endl;
-CQuartic quart=characteristicPolynom(M);
-M+=1;// (quart.root(0)).real();
-cerr<< M <<endl;
-cerr<< "Det= "<<M.Det() <<endl;
+CQuartic quart=characteristicPolynom(~M);
+quart.print_roots(cerr);
+M.add_diag((-quart.root(3)).real());
+
 //CQuartic quart=CQuartic(1., - 468.562 ,  - 939.125, - 468.563  ,1);
 quart.print(cerr);
 //quart.plot(cout,-3, 500, 0.01);

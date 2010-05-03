@@ -248,6 +248,9 @@ public:
    matrixT& operator ^= (const size_t& pow) _THROW_MATRIX_ERROR;
    void swapRow(const size_t& row1, const size_t& row2) _THROW_MATRIX_ERROR;
    void swapCol(const size_t& col1, const size_t& col2) _THROW_MATRIX_ERROR;
+   void multiply_row (size_t j, const T& c) _NO_THROW;
+   void add_multiply_row (size_t j, const T& c) _NO_THROW;
+   void add_diag(const T& c) _NO_THROW;
 
    // Miscellaneous -methods
    void Null (const size_t& row, const size_t& col) _NO_THROW;
@@ -514,6 +517,7 @@ matrixT::operator -= (const matrixT& m) _THROW_MATRIX_ERROR
 	 _m->Val[i][j] -= m._m->Val[i][j];
    return *this;
 }
+
 
 // combined scalar multiplication and assignment operator
 MAT_TEMPLATE inline matrixT&
@@ -1097,11 +1101,8 @@ matrixT::swapRow(const size_t& row1, const size_t& row2) _THROW_MATRIX_ERROR
     or row1 < 0 || row2 < 0)
 	REPORT_ERROR("Indeces out of bound!");
 
-    static double temp;
     for (size_t j=0; j < _m->Col; j++){
-	    temp=_m->Val[row1][j];
-	    _m->Val[row1][j]=_m->Val[row2][j];
-	    _m->Val[row2][j]=temp;
+	    std::swap(_m->Val[row1][j],_m->Val[row2][j]);
 	}
     return;
 }
@@ -1114,13 +1115,28 @@ matrixT::swapCol(const size_t& col1, const size_t& col2) _THROW_MATRIX_ERROR
     or col2< 0 || col2< 0)
 	REPORT_ERROR("Indeces out of bound!");
 
-    static double temp;
     for (size_t j=0; j < _m->Col; j++){
-	    temp=_m->Val[j][col1];
-	    _m->Val[j][col1]=_m->Val[j][col2];
-	    _m->Val[j][col2]=temp;
+	    std::swap(_m->Val[j][col1],_m->Val[j][col2]);
 	}
     return;
+}
+
+MAT_TEMPLATE inline 
+void matrixT::multiply_row (size_t j, const T& c) _NO_THROW
+{
+   if (_m->Refcnt > 1) clone();
+    for (size_t i=0; i < _m->Col; i++)
+	    _m->Val[j][i] *= c;
+    return ;
+}
+
+MAT_TEMPLATE inline 
+void matrixT::add_diag(const T& c) _NO_THROW
+{
+   if (_m->Refcnt > 1) clone();
+    for (size_t i=0; i < _m->Col; i++)
+	    _m->Val[i][i] += c;
+    return ;
 }
 
 #ifndef _NO_NAMESPACE
