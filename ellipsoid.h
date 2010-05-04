@@ -59,7 +59,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  inert_mat(1,1)=0.2*(a*a+c*c);
 		  inert_mat(2,2)=0.2*(a*a+b*b);
 
-		//  ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		 // ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		update_tranlation_mat();
 		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 
@@ -68,9 +69,9 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	void update_tranlation_mat(){
-		trans_mat(0,3)=Xc(0);
-		trans_mat(1,3)=Xc(1);
-		trans_mat(2,3)=Xc(2);
+		trans_mat(0,3)=-Xc(0);
+		trans_mat(1,3)=-Xc(1);
+		trans_mat(2,3)=-Xc(2);
 		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 	void moveto(const vec &v){

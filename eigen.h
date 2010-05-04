@@ -63,16 +63,14 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec3d<double> > &eigenv
 		}
 	mysort(eval, ind, N);
 ///
-       
        { 
          for (int i = 0; i < N; i++)
            {
-	     
              gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);
-	     if(abs(GSL_IMAG(eval_i)) > epsilon) continue; //only real eigen values 
+	     if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) < epsilon) continue; //only real eigen values 
              gsl_vector_complex_view evec_i = gsl_matrix_complex_column (evec, ind[i]);
 			eigenvals.push_back((GSL_REAL(eval_i), GSL_IMAG(eval_i))); 
-			double w=-GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
+			double w=GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
 			assert(fabs(w)>epsilon);
 			eigenvecs.push_back(
 				vec3d<double > (
@@ -81,7 +79,6 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec3d<double> > &eigenv
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 2))/w
 					)
 				); 
-
 			//eigenvecs.push_back(vec3d<complex<double> > (
 			 	//complex<double> (GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0)), GSL_IMAG(gsl_vector_complex_get (&evec_i.vector, 0))), 
 			 	//complex<double> (GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 1)), GSL_IMAG(gsl_vector_complex_get (&evec_i.vector, 1))), 
