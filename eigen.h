@@ -26,7 +26,7 @@ void mysort(gsl_vector_complex *eval, int ind[] , int n){
 
 }
 
-void eigens(Matrix &M, vector<double> &eigenvals, vector<vec3d<double> > &eigenvecs)
+void eigens(Matrix &M, vector<double> &eigenvals, vector<vec> &eigenvecs)
      {
      
 
@@ -73,7 +73,7 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec3d<double> > &eigenv
 			double w=GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
 			assert(fabs(w)>epsilon);
 			eigenvecs.push_back(
-				vec3d<double > (
+				vec(
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0))/w,
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 1))/w,
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 2))/w

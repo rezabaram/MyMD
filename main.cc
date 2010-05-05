@@ -41,17 +41,18 @@ CParticle *p2 = new CParticle(E2);
 //E2.rotateTo(p->q);
 //E2.moveto(vec(1, 2,4.35));
 ofstream out("outtest");
-out<< *p2 <<endl;
-out<< *p <<endl;
+//out<< *p2 <<endl;
+//out<< *p <<endl;
 
 
 
 //Matrix M=(-(!E2.ellip_mat)*E.ellip_mat);
 Matrix M=(-(!E.ellip_mat)*E2.ellip_mat);
 CQuartic q=characteristicPolynom(M);
+cerr<< M <<endl;
 //q.plot(cout, -7.1, 5, 0.05);
 q.print_roots(cerr);
-//q.print(cerr);
+q.print(cerr);
 //eigens(M);
 
 
@@ -65,10 +66,15 @@ cerr<< eigenvecs[0] <<endl;
 cerr<< eigenvecs[1] <<endl;
 CRay ray(eigenvecs.at(0),eigenvecs.at(1));
 vec X=E2.inv()*ray.n;
+//ray.print(out);
 cerr<< X <<endl;
 }
 
-return 0;
+CQuadratic q2(2,3,14);
+q2.print_roots(cerr);
+
+
+//return 0;
 
 double size=config.get_param<double>("particleSize");
 

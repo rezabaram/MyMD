@@ -108,8 +108,7 @@ class CPolynom{
 	};
 
 template<int order, typename T>
-inline 
-T CPolynom<order, T>::operator() (T x)const{
+inline T CPolynom<order, T>::operator() (T x)const{
 	static double xx, term, result;
 	result=0;
 	xx=1.0;
@@ -122,8 +121,7 @@ T CPolynom<order, T>::operator() (T x)const{
 	}
 
 template<int order, typename T>
-inline 
-complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
+inline complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
 	static complex<double> xx, term, result;
 	result=0;
 	xx=1.0;
@@ -136,8 +134,7 @@ complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
 	}
 
 template<int order, typename T>
-inline 
-complex<double> CPolynom<order, T>::root(int i){
+inline complex<double> CPolynom<order, T>::root(int i){
 	if(!solved and !solve()){
 		ERROR("The polynomial has no roots;");//FIXME write the correct error message
 		}
@@ -154,6 +151,61 @@ void CPolynom<order, T>::plot(ostream &out, T min, T max, T dx)const{
 		}
 	}
 
+
+//-------------------- Cubic polynomial--------
+
+class CQuadratic: public CPolynom<2, double> {
+	public:
+  	CQuadratic(const vector<double> _coefs)
+		:CPolynom<2,double>(_coefs)
+		{}
+	CQuadratic(double _a, double _b, double _c);
+
+	double max_root();
+	bool solve();
+	private:
+	};
+
+CQuadratic::CQuadratic(double _a, double _b, double _c)
+	:CPolynom<2,double>(_a){
+		coefs.at(0)=_a;
+		coefs.at(1)=_b;
+		coefs.at(2)=_c;
+		}
+
+inline
+bool CQuadratic::solve(){//returning the number of real roots;
+	if(solved)return true;
+	static double delta;
+	static double a, b, c;
+	a=coefs.at(0);
+	b=coefs.at(1);
+	c=coefs.at(2);
+
+	delta = b*b - 4.0*a*c;
+
+        if(delta>=0){// two real roots.
+		roots.push_back(complex<double> ( (-b-sqrt(delta))/2/a, 0));
+		roots.push_back(complex<double> ( (-b+sqrt(delta))/2/a, 0));
+	  	}
+
+	else{//two complex roots
+		roots.push_back(complex<double> (-b/2/a,-sqrt(-delta)/2/a));
+		roots.push_back(complex<double> (-b/2/a,sqrt(-delta)/2/a));
+		}
+	
+	solved=true;
+	return true;
+	}
+inline
+double CQuadratic::max_root(){
+	if(!solved)solve();
+
+	if( fabs(roots.back().imag() > epsilon)){
+		WARNING("Returning only real part of a complex root.");
+		}
+	return roots.back().real();
+	}
 
 //-------------------- Cubic polynomial--------
 

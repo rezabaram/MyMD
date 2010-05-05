@@ -1,6 +1,5 @@
 #ifndef GEOMBASE_H
 #include<ostream>
-#include"vec3d.h"
 
 typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid, tcylinder} GType;
 

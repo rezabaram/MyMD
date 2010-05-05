@@ -7,7 +7,6 @@
 #include<math.h>
 
 
-typedef unsigned short indexType;
 template<class T>
 class vec3d{
  public:

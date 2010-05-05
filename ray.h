@@ -1,6 +1,5 @@
 #ifndef RAY_H
 #define RAY_H 
-#include"vec3d_policy.h"
 
 class CRay 
 	{

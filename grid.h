@@ -1,6 +1,7 @@
 #ifndef GRID_H
 #define GRID_H
 #include "common.h"
+#include "vec3d.h"
 #include "particle.h"
 
 enum {
@@ -39,10 +40,8 @@ class CCoord : public vec3d<int>
 	public:
 	CCoord(){};
 	CCoord(const int i, const int j, const int k)
-		:vec3d<int>()
-		{
-		(*this)(0)=i; (*this)(1)=j; (*this)(2)=k;
-		}
+		:vec3d<int>(i,j,k)
+		{}
 	};
 
 

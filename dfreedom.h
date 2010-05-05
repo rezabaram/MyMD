@@ -1,13 +1,11 @@
 #ifndef DFREEDOM_H
 #define DFREEDOM_H 
-#include"vec3d.h"
 
-typedef unsigned short indexType;
 template<indexType depth=5>//number of derivatives, i.e., r, v, a, j, etc ...
 class CDFreedom {
 	public:
-	vec3d<double> &operator()(indexType i){return x[i];}
-	const vec3d<double> &operator()(indexType i)const{return x[i];}
+	vec &operator()(indexType i){return x[i];}
+	const vec &operator()(indexType i)const{return x[i];}
 	template<short order>
 	void gear_predict(double dt){
 		if(depth<order){
@@ -28,7 +26,7 @@ class CDFreedom {
 		}
 
 	template<short order>
-	void gear_correct(double dt, const vec3d<double> &dA){
+	void gear_correct(double dt, const vec &dA){
 		if(order<4 || order>6){
 			ERROR("Only gear schemes of order 4, 5, and 6 are implemented.");
 			exit(1);
@@ -52,7 +50,7 @@ class CDFreedom {
 			}
 		}
  	private:
-	vec3d<double> x[depth];
+	vec x[depth];
 	};
 
 #endif /* DFREEDOM_H */

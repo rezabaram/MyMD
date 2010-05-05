@@ -14,16 +14,22 @@
 #include<list>
 
 //#include"vec3d.h"
-#include"vec3d_policy.h"
+typedef size_t indexType;
+//#include"vec.h"
+//typedef Vec<3,double> vec;
+//#include"vec3d_policy.h"
+#include"vec3d.h"
+typedef vec3d<double> vec;
+
 #include"quaternion.h"
 #include"matrix.h"
 #include"log.h"
 #include"polynom.h"
-
 #include"config.h"
+
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
 
-typedef vec3d<double> vec;
+//typedef vec3d<double> vec;
 
 double aG[]={0.0, 0, -2.0};
 vec G(aG);
@@ -77,6 +83,8 @@ void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
 return;
 }
 
+
+
 inline
 vec operator *(const vec &v, const Matrix &M){
 
@@ -86,6 +94,7 @@ vec operator *(const vec &v, const Matrix &M){
 		v(0)*M(0,2)+v(1)*M(1,2)+v(2)*M(2,2)
 		);
 	}
+
 
 inline
 vec operator *(const Matrix &M, const vec &v){

@@ -33,7 +33,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  inv_scale_mat(i,j)=temp;
 		  inert_mat(i,j)= temp;
 		  trans_mat(i,j)= temp;
-			}
+		  ellip_mat(i,j)=temp;
+		}
 
 		  rotat_mat(0,0)= cos(beta);
 		  rotat_mat(0,1)= -sin(beta);
@@ -132,7 +133,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void print(std::ostream &out)const{
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+0.1<<"  ";
+		return ;
+		out<< Xc<< "  "<<radius<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
 		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";

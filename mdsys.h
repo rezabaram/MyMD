@@ -300,11 +300,10 @@ void CSys::overlappings(){
 		}
 
 inline
-vec contactForce(const vec &dx, const vec &dv, double stiff, double damp){
-		static double proj, ksi;
-		proj=(dv*dx.normalized());
-		ksi=dx.abs();
-		ksi=(stiff*ksi+damp*proj)*sqrt(ksi); //to eliminate artifical attractions
+vec contactForce(const vec dx, const vec dv, double stiff, double damp){
+		double proj=(dv*dx.normalized());
+		double ksi=dx.abs();
+		ksi=(stiff*ksi+damp*proj);//*sqrt(ksi); //to eliminate artifical attractions
 		if(ksi<0)ksi=0;
 		return -ksi*dx;//visco-elastic Hertz law
 		}
