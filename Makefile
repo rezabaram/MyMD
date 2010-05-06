@@ -1,12 +1,14 @@
 
+CC='g++'
+
 run: a.out
 	time ./run.sh
 
 a.out:	*.cc *h
-	g++  main.cc  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
+	$(CC)  main.cc -Wall  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
 
 test:	test.cc 
-	g++  test.cc  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
+	$(CC)  test.cc  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
 
 animate: test.avi
 	feh *jpg
@@ -16,7 +18,7 @@ test.avi:
 	sh genFrames.sh out* > /dev/null 2>&1
 
 clean:
-	rm -rf  out* test.avi
+	rm -rf a.out out* test.avi
 
 aclean:
 	rm -rf test.avi *jpg

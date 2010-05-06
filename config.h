@@ -90,8 +90,7 @@ class CConfig {
 		//const CParamBase  *pp=params[name];
 	      if(!isValid(name)){
 			cerr<< "Warning: "<<name<<" is not a valid parameter or keyword" <<endl;
-			T dummy;
-			return dummy;
+			return T();
 			}
 		CParam<T> * const p=static_cast< CParam<T>* > (params[name]);//i dont know if there is a better solution, i like this tough
 

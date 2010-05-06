@@ -123,7 +123,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	
 		assert(alpha>0);
 		alpha=1/sqrt(alpha);
-		static vec m;
+		static vec m(0.0);
 		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*P.n))); //this more efficient form of m=(alpha*(!ellip_mat)*P.n);
 		double d1=P.normal_to_point(Xc+m).abs();
 		double d2=P.normal_to_point(Xc-m).abs();
@@ -157,7 +157,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	double a,b,c;
 	vec R;
-	vec orientation;
 	private:
 	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
 	GeomObject<tellipsoid> ();

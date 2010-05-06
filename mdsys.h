@@ -10,7 +10,7 @@ typedef list<CParticle *> ParticleContainer;
 typedef GeomObjectBase * BasePtr;
 class CSys{
 	public:
-	CSys():t(0), outDt(0.01),epsFreeze(1.0e-12), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)){};
+	CSys():t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)),epsFreeze(1.0e-12){};
 	~CSys();
 
 	void solve(double tMax, double dt);
@@ -23,14 +23,14 @@ class CSys{
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
-	int write_packing(string infilename);
+	void write_packing(string infilename);
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
 	inline bool exist(int i);
 
 	double ke;//kinetic energy
-	double outDt, t;
+	double t, outDt;
 	ParticleContainer particles;
 	GeomObject<tbox> box;
 	//CRecGrid *grid;
@@ -87,10 +87,8 @@ void CSys::calForces(){
 	};
 
 void CSys::forward(double dt){
-	double energy=0.0;
-	
-
-	bool allforwarded=false;
+	//double energy=0.0;
+	//bool allforwarded=false;
 	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
@@ -148,9 +146,10 @@ void CSys::solve(double tMax, double dt){
 		}
 	}
 
-int CSys::write_packing(string outfilename){
+void CSys::write_packing(string outfilename){
 	ParticleContainer::iterator it;
 	ofstream out(outfilename.c_str());
+	assert(!out);
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		out<<**it<<endl;
 		}
@@ -313,9 +312,9 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
-	static double proj, ksi;
+	//static double proj, ksi;
 	if(overlaps.size()==0)return false;
-	for(int i=0; i<overlaps.size(); i++){
+	for(size_t i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		r2=overlaps.at(i).x-p2->x(0);
 		v1=p1->x(1)+cross(r1, p1->w(1));
@@ -346,7 +345,7 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
-	for(int i=0; i<overlaps.size(); i++){
+	for(size_t i=0; i<overlaps.size(); i++){
 		r1=overlaps.at(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
 

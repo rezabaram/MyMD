@@ -17,7 +17,7 @@
 //#include"vec3d.h"
 typedef size_t indexType;
 #include"vec.h"
-typedef Vec<3,double> vec;
+
 //#include"vec3d_policy.h"
 //#include"vec3d.h"
 //typedef vec3d<double> vec;
@@ -45,7 +45,7 @@ void define_parameters()
 	config.add_param<double>("particleSize", 0.05); 
 	config.add_param<double>("timeStep", 0.00001); 
 	config.add_param<double>("maxTime", 4.0); 
-	config.add_param<int>("nParticle", 5); 
+	config.add_param<size_t>("nParticle", 5); 
 }
 
 template <class T>
@@ -109,7 +109,7 @@ vec operator *(const Matrix &M, const vec &v){
 
 Matrix & operator +=(Matrix &M, const double d){
 	assert(M.RowNo() == M.ColNo());
-	for(int i=0; i<M.RowNo(); ++i){
+	for(indexType i=0; i<M.RowNo(); ++i){
 	M(i,i)+=d;
 	}
 
@@ -140,7 +140,7 @@ size_t m = M.RowNo(), n = M.ColNo();
 while (i < m and j < n) {
 	//Find pivot in column j, starting in row i:
 	maxi = i;
-	for (int k = i+1; k<m; ++k){
+	for (indexType k = i+1; k<m; ++k){
 		if (fabs(M(k,j)) > fabs(M(maxi,j))){
 			maxi = k;
 			}
@@ -151,15 +151,15 @@ while (i < m and j < n) {
 		v.swapRow(i, maxi);
 		//divide each entry in row i by M[i,j]
 		double Mij=M(i,j);
-		for(int jj=0; jj<n; ++jj){
+		for(indexType jj=0; jj<n; ++jj){
 			M(i,jj)/=Mij;
 			v(i,0)/=Mij;
 			}
 
-		for(int u = i+1; u< m; ++u){
+		for(indexType u = i+1; u< m; ++u){
 			// subtract A[u,j] * row i from row u
 			double Muj=M(u,j);
-			for(int jj=0; jj<n; ++jj){
+			for(indexType jj=0; jj<n; ++jj){
 				M(u,jj)-=Muj*M(i,jj);
 				}
 			v(u,0)-=Muj*v(i,0);
@@ -172,7 +172,7 @@ if(i>1)return M;
 }
 
 /*
-for(int k=m-1; k<m; ++k){
+for(indexType k=m-1; k<m; ++k){
 	if(M(k,k)
       for(int jj=0; jj<n; ++jj){
 		M(u,jj)=M(u,jj)-Muj*M(i,jj);

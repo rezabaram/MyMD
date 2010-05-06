@@ -1,12 +1,14 @@
 #ifndef RAY_H
 #define RAY_H 
+#include"vec.h"
 
+template<typename T=vec>
 class CRay 
 	{
 	public:
-	CRay(const vec &_x1, const vec &_x2):x1(_x1),x2(_x2), n((_x2-_x1).normalize()){};
+	CRay(const T &_x1, const T &_x2):x1(_x1),x2(_x2), n((_x2-_x1).normalize()){};
 
-	vec operator()(double t){
+	T operator()(double t){
 		return x1+t*n;
 		}
 
@@ -16,7 +18,7 @@ class CRay
 		out<< x2<< "  "<<0.005<<endl;
 		};
 
-	vec x1, x2, n;
+	T x1, x2, n;
  	private:
 	
 	};

@@ -68,7 +68,7 @@ explicit vec3d(T a){
   T abs()const;
   T distance(const vec3d<T> p)const;
   vec3d<T> & normalize();
-  vec3d<T> & normalized()const;
+  vec3d<T>  normalized()const;
 
   template<class U>
   friend std::ostream & operator<< (std::ostream &out, const vec3d<U> &v);
@@ -95,14 +95,14 @@ template<class T>
 
 template<class T>
 vec3d<T> vec3d<T>::operator^(const vec3d<T> &p)const{
-	return vec3d<T>(x[0]*p.x[0], x[1]*p.x[1], x[2]*p.x[2]);
+	return vec3d<T>(x[0]*p[0], x[1]*p[1], x[2]*p[2]);
 	}
 
 template<class T>
 inline
   T vec3d<T>::operator*(const vec3d<T> &p)const{
 	T prod;
-	prod=x[0]*p.x[0]+ x[1]*p.x[1]+x[2]*p.x[2];
+	prod=x[0]*p[0]+ x[1]*p[1]+x[2]*p[2];
 	return prod;
 	}
 
@@ -141,18 +141,18 @@ inline
 template<class T>
 inline
   vec3d<T> &vec3d<T>::operator+=(const vec3d<T> &p){
-	x[0]+=p.x[0];
-	x[1]+=p.x[1];
-	x[2]+=p.x[2];
+	x[0]+=p[0];
+	x[1]+=p[1];
+	x[2]+=p[2];
 	return *this;
 	}
 
 template<class T>
 inline
   vec3d<T> &vec3d<T>::operator-=(const vec3d<T> &p){
-	x[0]-=p.x[0];
-	x[1]-=p.x[1];
-	x[2]-=p.x[2];
+	x[0]-=p[0];
+	x[1]-=p[1];
+	x[2]-=p[2];
 	return *this;
 	}
 
@@ -211,7 +211,7 @@ inline
 	}
 template<class T>
 inline
-  vec3d<T> & vec3d<T>::normalized()const{
+  vec3d<T>  vec3d<T>::normalized()const{
 	return vec3d<T> (*this).normalize();
 	}
 

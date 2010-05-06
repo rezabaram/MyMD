@@ -15,8 +15,8 @@ class GeomObject<tcylinder>: public GeomObjectBase{
 	void shift(const vec&){};
 	void rotate(const vec& n, double alpha){ };
 	void rotateTo(const Quaternion &q){};
-	double vol(){};
-	double I(vec n){};
+	double vol(){return 1;};
+	double I(vec n){return 1;};
 
 	void scale(double){};
 	void print(std::ostream &out)const{

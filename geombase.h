@@ -35,11 +35,10 @@ class GeomObjectBase
 		return (Xc-p->Xc);
 		};
 
-	GType type;
 	double radius;
-	
 	vec Xc, Xc0; //center 
 	int identifier;
+	GType type;
 	protected:
  	private:
 	};

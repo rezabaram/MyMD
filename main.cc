@@ -24,19 +24,18 @@ sys.G=config.get_param<vec>("Gravity");
 
 
 
-double time=0;
 vec x(0.0, 0.0, .0);
 
 GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.6), 1, .5, .5);
 E.scale(.2);
-CParticle *p = new CParticle(E);
+//CParticle *p = new CParticle(E);
 //p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
 //sys.add(p);
 
 GeomObject<tellipsoid> E2(vec(0.3, 0.5, 0.2), .3,.2,.4);
 E2.scale(.4);
 
-CParticle *p2 = new CParticle(E2);
+//CParticle *p2 = new CParticle(E2);
 //p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
 //E2.rotateTo(p->q);
 //E2.moveto(vec(1, 2,4.35));
@@ -58,13 +57,13 @@ q.print(cerr);
 
 
 vector<double> eigenvals;
-vector<vec> eigenvecs;
+vector<vec4d> eigenvecs;
 eigens(M, eigenvals, eigenvecs);
 
 if(eigenvals.size() ==2){
 cerr<< eigenvecs[0] <<endl;
 cerr<< eigenvecs[1] <<endl;
-CRay ray(eigenvecs.at(0),eigenvecs.at(1));
+CRay<vec4d> ray(eigenvecs.at(0),eigenvecs.at(1));
 ray.print(out);
 vec X=E2.inv()*ray.n;
 //ray.print(out);
@@ -84,14 +83,14 @@ for(double i=margin; i<1-margin; i+=margin){
 for(double j=1-margin; j>margin; j-=margin){
 for(double k=1-margin; k>margin; k-=margin){
 
-	if(sys.particles.size()==config.get_param<int>("nParticle")) {
+	if(sys.particles.size()==config.get_param<size_t>("nParticle")) {
 				break;
 				}
 	x(1)=0.5;//i+size*drand48()/10; 
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
-	GeomObject<tellipsoid> E(x, 1, 0.7, 0.5);
+	GeomObject<tellipsoid> E(x, 1, 0.9, 0.6);
 	E.scale(size*(1+0.2*drand48()));
 	CParticle *p = new CParticle(E);
 	vec axis(0.0);

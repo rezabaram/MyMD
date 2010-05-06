@@ -92,7 +92,7 @@ class CPolynom{
 
 	T operator()(T x)const;
 	complex<double> operator()(complex<double> x)const;
-	complex<double> root(int i);
+	complex<double> root(size_t i);
 	virtual bool solve(){
 		ERROR("Solve method not implemented for this polynomial.");
 		return -1;
@@ -134,7 +134,7 @@ inline complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
 	}
 
 template<int order, typename T>
-inline complex<double> CPolynom<order, T>::root(int i){
+inline complex<double> CPolynom<order, T>::root(size_t i){
 	if(!solved and !solve()){
 		ERROR("The polynomial has no roots;");//FIXME write the correct error message
 		}
@@ -305,9 +305,9 @@ bool CQuartic::solve(){//returning the number of real roots;
 
 	//solution from wiki, Ferrari's method: http://en.wikipedia.org/wiki/Quartic_function#Solving_a_quartic_equation
 	double ap=1.0/coefs.at(0);
-	double ap2=ap*ap;
-	double ap3=ap2*ap;
-	double ap4=ap2*ap2;
+	//double ap2=ap*ap;
+	//double ap3=ap2*ap;
+	//double ap4=ap2*ap2;
 	static double a, b, c, d, e;
 	a=coefs.at(0);
 	b=coefs.at(1)/a;

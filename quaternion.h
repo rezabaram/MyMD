@@ -62,15 +62,10 @@ friend std::ostream &operator<<(std::ostream & out, const Quaternion &q);
 };
 
 
-inline Quaternion::Quaternion(){
-u=1;
+inline Quaternion::Quaternion():u(1.0), v(vec(0.0)){
 }
 
-inline Quaternion::Quaternion(double _u,double _x,double _y,double _z){
-u=_u;  
-v(0)=_x; 
-v(1)=_y;
-v(2)=_z;
+inline Quaternion::Quaternion(double _u,double _x,double _y,double _z):u(_u), v(vec(_x,_y, _z)){
 }
 
 inline void Quaternion::set(double _u,double _x,double _y,double _z){
@@ -86,12 +81,10 @@ u=_a;
 v=_V;
 }
 
-inline Quaternion::Quaternion(  const vec &_V, double _a){
-set(_a,_V);
+inline Quaternion::Quaternion(const vec &_V, double _a):u(_a), v(_V){
 }
 
-inline Quaternion::Quaternion( double _a, const vec &_V){
-set(_a,_V);
+inline Quaternion::Quaternion(double _a, const vec &_V):u(_a),v(_V){
 }
 
 inline void Quaternion::setRotation(const vec &_V, double _a){

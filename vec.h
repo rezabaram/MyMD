@@ -40,34 +40,20 @@ class Vec{
 	
         explicit Vec(const T &x0, const T &x1, const T &x2, const T &x3=(T)0){
 
-		if(dim>0){
-			x[0]=x0; 
-			}
-		else{
-			return;
-			}	
-		if(dim>1){
-			x[1]=x1; 
-			}
-		else{
-			return;
-			}	
-		if(dim>2){
-			x[2]=x2; 
-			}
-		else{
-			return;
-			}	
-		if(dim>3){
-			x[3]=x3; 
-			}
-		else{
-			return;
-			}	
+		if(dim>0) x[0]=x0; 
+		else return;
 
-		for(indexType i=4; i<dim; i++){
-			x[i]=(T)0;
-			}
+		if(dim>1) x[1]=x1; 
+		else return;
+
+		if(dim>2) x[2]=x2; 
+		else return;
+
+		if(dim>3) x[3]=x3; 
+		else return;
+
+		for(indexType i=4; i<dim; i++) x[i]=(T)0;
+
 		}
 
 	  explicit Vec(const T &a=(T)0){
@@ -101,34 +87,34 @@ class Vec{
 	  T operator*(const Vec<_dim, T, policy> &p)const;
 	  Vec<_dim, T, policy> operator^(const Vec<_dim, T, policy> &p)const;
 	  //const Vec<_dim, T, policy> operator*(T a)const ;
-	  Vec<_dim, T, policy> &operator=(T a);
-	  Vec<_dim, T, policy> &operator*=(T a);
-	  Vec<_dim, T, policy> &operator/=(T a);
-	  Vec<_dim, T, policy> &operator+=(T a);
-	  Vec<_dim, T, policy> &operator-=(T a);
-	  Vec<_dim, T, policy> &operator+=(const Vec<_dim, T, policy> &p);
-	  Vec<_dim, T, policy> &operator-=(const Vec<_dim, T, policy> &p);
-	  Vec<_dim, T, policy> operator*(T a)const ;
-	  Vec<_dim, T, policy> operator/(T a)const ;
-	  Vec<_dim, T, policy> operator+(const Vec<_dim, T, policy> &p)const ;
-	  Vec<_dim, T, policy> operator-(const Vec<_dim, T, policy> &p)const ;
+	  Vec &operator=(T a);
+	  Vec &operator*=(T a);
+	  Vec &operator/=(T a);
+	  Vec &operator+=(T a);
+	  Vec &operator-=(T a);
+	  Vec &operator+=(const Vec &p);
+	  Vec &operator-=(const Vec &p);
+	  Vec operator*(T a)const ;
+	  Vec operator/(T a)const ;
+	  Vec operator+(const Vec &p)const ;
+	  Vec operator-(const Vec &p)const ;
 	  T abs2()const;
 	  T abs()const;
-	  T distance(const Vec<_dim, T, policy> p)const;
-	  Vec<_dim, T, policy> & normalize();
-	  Vec<_dim, T, policy> & normalized()const;
+	  T distance(const Vec p)const;
+	  Vec & normalize();
+	  Vec normalized()const;
 
 	  template<indexType _dim2, class U, class p >
 	  friend std::ostream & operator<< (std::ostream &out, const Vec<_dim2, U, p> &v);
 	  template<indexType _dim2, class U, class p>
 	  friend std::istream & operator>>(std::istream &in, Vec<_dim2, U, p> &v);
-	static const unsigned int dim;
+	static const indexType dim;
 	private:
 	  T x[_dim];
 	};
 	
 	template<indexType _dim, class T, class policy>
-	const unsigned int Vec<_dim, T, policy>::dim=_dim;
+	const indexType Vec<_dim, T, policy>::dim=_dim;
 
 
 
@@ -136,7 +122,7 @@ class Vec{
 	inline
 	  std::ostream & operator<< (std::ostream &out, const Vec<_dim, T, policy> &v){
 		out<<v.x[0];
-		for(int i=1; i<v.dim; i++){
+		for(indexType i=1; i<v.dim; i++){
 			out<<"  "<<v.x[i];
 			}
 		return out;
@@ -144,7 +130,7 @@ class Vec{
 
 	template<indexType _dim, class T, class policy>
 	  std::istream & operator>>(std::istream &in, Vec<_dim, T, policy> &v){
-		for(int i=0; i<v.dim; i++){
+		for(indexType i=0; i<v.dim; i++){
 			in>>v.x[i];
 			}
 		return in;
@@ -152,14 +138,19 @@ class Vec{
 
 	template<indexType _dim, class T, class policy>
 	Vec<_dim, T, policy> Vec<_dim, T, policy>::operator^(const Vec<_dim, T, policy> &p)const{
-	//	return Vec<_dim, T, policy>(p.x);
+		//cerr<<"Not implemented. File: "<<__FILE__<<"  Line: "<< __LINE__ <<endl;
+		static Vec<_dim, T, policy> v(0.0);
+		for(size_t i=0; i<dim; i++){
+			v(i)=x[i]*p[i];
+			}
+		return v;
 		}
 
 	template<indexType _dim, class T, class policy>
 	inline
 	  T Vec<_dim, T, policy>::operator*(const Vec<_dim, T, policy> &p)const{
 		T prod=(T)0;
-		for(int i=0; i<dim; i++){
+		for(indexType i=0; i<dim; i++){
 			prod+=policy::mul(x[i],p.x[i]);
 			}
 		return prod;
@@ -168,7 +159,7 @@ class Vec{
 	template<indexType _dim, class T, class policy>
 	inline
 	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator=(T a){
-		for(int i=0; i<dim; i++){
+		for(indexType i=0; i<dim; i++){
 			x[i]=a; 
 			}
 		return *this;
@@ -177,24 +168,28 @@ class Vec{
 	template<indexType _dim, class T, class policy>
 	inline
 	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator*=(T a){
-		for(int i=0; i<dim; i++){
+		for(indexType i=0; i<dim; i++){
 			x[i]*=a; 
 			}
 		return *this;
 		}
 	template<indexType _dim, class T, class policy>
 	inline
-	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator/=(T a){
+	Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator/=(T a){
+		if(a==0){
+			throw 0;
+			}
 		assert(a!=0);
-		for(int i=0; i<dim; i++){
+
+		for(indexType i=0; i<dim; i++){
 			x[i]/=a; 
 			}
 		return *this;
 		}
 	template<indexType _dim, class T, class policy>
 	inline
-	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator+=(T a){
-		for(int i=0; i<dim; i++){
+	Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator+=(T a){
+		for(indexType i=0; i<dim; i++){
 			x[i]+=a; 
 			}
 		return *this;
@@ -202,7 +197,7 @@ class Vec{
 	template<indexType _dim, class T, class policy>
 	inline
 	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator-=(T a){
-		for(int i=0; i<dim; i++){
+		for(indexType i=0; i<dim; i++){
 			x[i]-=a; 
 			}
 		return *this;
@@ -211,7 +206,7 @@ class Vec{
 	template<indexType _dim, class T, class policy>
 	inline
 	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator+=(const Vec<_dim, T, policy> &p){
-		for(int i=0; i<dim; i++){
+		for(indexType i=0; i<dim; i++){
 			x[i]+=p.x[i];
 			}
 		return *this;
@@ -220,7 +215,7 @@ class Vec{
 	template<indexType _dim, class T, class policy>
 	inline
 	  Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator-=(const Vec<_dim, T, policy> &p){
-		for(int i=0; i<dim; i++){
+		for(indexType i=0; i<dim; i++){
 			x[i]-=p.x[i];
 			}
 		return *this;
@@ -284,7 +279,7 @@ class Vec{
 		}
 	template<indexType _dim, class T, class policy>
 	inline
-	  Vec<_dim, T, policy> & Vec<_dim, T, policy>::normalized()const{
+	  Vec<_dim, T, policy> Vec<_dim, T, policy>::normalized()const{
 		return Vec<_dim, T, policy> (*this).normalize();
 		}
 
@@ -313,5 +308,7 @@ class Vec{
 		return Vec<_dim, T, policy> (policy::mul(u(1),v(2))-policy::mul(u(2),v(1)),policy::mul(u(2),v(0))-policy::mul(u(0),v(2)),policy::mul(u(0),v(1))-policy::mul(u(1),v(0)));
 	}
 
+typedef Vec<3,double> vec;
+typedef Vec<4,double> vec4d;
 #endif
 

@@ -5,14 +5,14 @@
 #include <gsl/gsl_eigen.h>
 #include "common.h"
 
-void mysort(gsl_vector_complex *eval, int ind[] , int n){
+void mysort(gsl_vector_complex *eval, indexType ind[] , indexType n){
 
 	bool swapped;
 
 	double val1, val2;
 	do{
 		swapped = false;
-		for(int i=0; i<n-1; ++i){
+		for(indexType i=0; i<n-1; ++i){
                          val1=GSL_REAL(gsl_vector_complex_get (eval, ind[i]));
                          val2=GSL_REAL(gsl_vector_complex_get (eval, ind[i+1]));
 		      if (val1> val2){
@@ -26,7 +26,7 @@ void mysort(gsl_vector_complex *eval, int ind[] , int n){
 
 }
 
-void eigens(Matrix &M, vector<double> &eigenvals, vector<vec> &eigenvecs)
+void eigens(Matrix &M, vector<double> &eigenvals, vector<vec4d > &eigenvecs)
      {
      
 
@@ -37,8 +37,8 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec> &eigenvecs)
 
 	double *data=new double[N*N];
 	assert(data);
-	for(int i=0; i<N; i++){
-		for(int j=0; j<N; j++){
+	for(indexType i=0; i<N; i++){
+		for(indexType j=0; j<N; j++){
 			data[i*N+j]=M(i,j);
 			}
 		}
@@ -57,14 +57,14 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec> &eigenvecs)
 	
 
 ///     sorting the eigenvalues 
-	int ind[N];//for holding sorted indeces 
-	for(int i=0; i<N; ++i){
+	indexType ind[N];//for holding sorted indeces 
+	for(indexType i=0; i<N; ++i){
 		ind[i]=i;
 		}
 	mysort(eval, ind, N);
 ///
        { 
-         for (int i = 0; i < N; i++)
+         for (indexType i = 0; i < N; i++)
            {
              gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);
 	     if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) < epsilon) continue; //only real eigen values 
@@ -73,10 +73,11 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec> &eigenvecs)
 			double w=GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
 			assert(fabs(w)>epsilon);
 			eigenvecs.push_back(
-				vec(
+				vec4d(
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0))/w,
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 1))/w,
-					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 2))/w
+					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 2))/w,
+					1
 					)
 				); 
 			//eigenvecs.push_back(vec3d<complex<double> > (

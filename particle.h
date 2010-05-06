@@ -19,7 +19,7 @@ class CProperty
 	{
 	public:
 	CProperty():
-	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")), color(" 1"), density(paramsDouble("density")){
+	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")), density(paramsDouble("density")), color(" 1"){
 		};
 	~CProperty(){}
 	double stiffness, damping;
@@ -49,7 +49,7 @@ class CParticle{
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<GType shapeType>
-	CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), state(ready_to_go){init();}
+	CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1), q(1.0, 0.0, 0.0, 0.0),  forces(vec(0.0)), state(ready_to_go){init();}
 	~CParticle(){
 		delete shape;
 		}
@@ -103,16 +103,16 @@ class CParticle{
 	void calPos(double dt);
 	void calVel(double dt);
 
-	vec forces, avgforces;
-	vec torques, avgtorque;
+	GeomObjectBase *shape;
 	CProperty material;
 	CDFreedom<3> x, x0, x_p;//TranslationalDFreedom;
 	CDFreedom<3> w, w0, w_p;//Rotational;
 	int id;
-	tState state;
 	vec test;
-	GeomObjectBase *shape;
 	Quaternion q;//orientation
+	vec forces, avgforces;
+	vec torques, avgtorque;
+	tState state;
 	protected:
 	double mass, Ixx, Iyy, Izz;
  	private:
@@ -122,6 +122,7 @@ class CParticle{
 ostream &operator <<(ostream &out, const CParticle &p){
 	p.shape->print(out);
 	//out<<"  "<<p.x(1);
+	return out;
 	}
 
 double friction=1;

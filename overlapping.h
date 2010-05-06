@@ -72,7 +72,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 	static vec v, vp;
-	static double d, dd2;
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		if(b->face[i]->normal_to_point(p1->Xc).abs()-p1->radius > 0) continue;
 		vp=p1->point_to_plane(*(b->face[i]));
@@ -92,8 +91,8 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
 
-	for(int i=0; i< (p1->elems.size()); ++i){
-	for(int j=0; j< (p2->elems.size()); ++j){
+	for(indexType i=0; i< (p1->elems.size()); ++i){
+	for(indexType j=0; j< (p2->elems.size()); ++j){
 		overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
 		}
 		}
@@ -103,7 +102,7 @@ inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	static double d;
 	bool need_to_check=false;
-	for(int i=0; i<6; ++i){
+	for(indexType i=0; i<6; ++i){
 		d=(b->face[i]->normal_to_point(p1->Xc,0.0)).abs2() - p1->radius*p1->radius;
 		if(d<0){
 			need_to_check=true;
@@ -112,7 +111,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 //	if(!need_to_check)return;
 
-	for(int i=0; i<p1->elems.size(); ++i){
+	for(indexType i=0; i<p1->elems.size(); ++i){
 		overlaps(ovs, p1->elems.at(i), b);
 		}
 	}

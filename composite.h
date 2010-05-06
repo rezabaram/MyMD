@@ -5,7 +5,7 @@ template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	
 	GeomObject<tcomposite> (const GeomObject<tcomposite> & p):GeomObjectBase(p.Xc,tcomposite){
-		for(int i=0; i<p.elems.size(); i++){
+		for(indexType i=0; i<p.elems.size(); i++){
 			elems.push_back(new CSphere(*(p.elems.at(i))));
 			}
 		radius=p.radius;
@@ -53,14 +53,14 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		//elems.push_back(s2);
 
 		Xc=v;
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			elems.at(i)->Xc=Xc+elems.at(i)->Xc0;
 			}
 		}
 
 	
 	~GeomObject<tcomposite>(){
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			delete elems.at(i);
 			elems.at(i)=NULL;
 			}
@@ -68,7 +68,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 
 	void moveto(const vec &v){
 		vec dx = v-Xc;
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			elems.at(i)->Xc+=dx;
 			}
 		Xc+=dx;
@@ -76,7 +76,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 
 	double vol(){
 		double v=0;
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			v+=elems.at(i)->vol();
 			}
 		return v;
@@ -85,7 +85,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	double I(vec n){//FIXME this works only when the elements are on the axes
 		n.normalize();
 		double II=0;
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			II+=elems.at(i)->I(n)+elems.at(i)->vol()*(elems.at(i)->Xc0-(elems.at(i)->Xc0*n)*n).abs2();
 			}
 		return II;
@@ -93,13 +93,13 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 
 	double min(size_t j){
 		double miny=10;
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			if((elems.at(i)->Xc)(j)-elems.at(i)->radius < miny) miny=((elems.at(i)->Xc)(j)-elems.at(i)->radius);
 			}
 		return miny;
 		};
 	void rotateTo(const Quaternion &q){
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			elems.at(i)->Xc=Xc+q.rotate(elems.at(i)->Xc0);
 			}
 		};
@@ -107,7 +107,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	void rotate(const vec& n , double alpha){//FIXME
 		ERROR("check this");
 		//q.setRotation(n, alpha);
-		for(int i=0; i<elems.size(); i++){
+		for(indexType i=0; i<elems.size(); i++){
 			//elems.at(i)->Xc0=q.rotate(elems.at(i)->Xc0);
 			}
 		};
@@ -116,7 +116,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	void scale(double scale){};//FIXME
 
 	void print(std::ostream &out)const{
-		for(int i=0; i<elems.size()-1; i++){
+		for(indexType i=0; i<elems.size()-1; i++){
 			elems.at(i)->print(out);
 			out<< endl;
 			}
