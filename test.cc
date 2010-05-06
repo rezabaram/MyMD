@@ -3,6 +3,8 @@ using namespace std;
 #include"polynom.h"
 #include"group.h"
 #include"eigen.h"
+#include"vec.h"
+#include"vec3d.h"
 #include"common.h"
 
 void polytest(){
@@ -107,9 +109,17 @@ void mysort(int val[], int ind[] , int n){
 
 }
 
+void vectest(){
+	Vec<3, double>  v1(1,2,3), u1(2,3,4), w1(2);
+	vec3d<double> v2(1,2,3), u2(2,3,4), w2(2);
+	
+	cerr<< w1 <<"   "<< w2 <<endl;
+	}
+
 
 int main(int argc, char **argv){
 
+vectest();
 return 0;
 }
 

@@ -65,6 +65,7 @@ if(eigenvals.size() ==2){
 cerr<< eigenvecs[0] <<endl;
 cerr<< eigenvecs[1] <<endl;
 CRay ray(eigenvecs.at(0),eigenvecs.at(1));
+ray.print(out);
 vec X=E2.inv()*ray.n;
 //ray.print(out);
 cerr<< X <<endl;

@@ -1,8 +1,8 @@
 //=======================================================================
 //======  Class Vec Template  =====================================
 //=======================================================================
-#ifndef CVec_H
-#define CVec_H
+#ifndef CVEC_H
+#define CVEC_H
 #include<ostream>
 #include<math.h>
 #include<assert.h>
@@ -38,7 +38,7 @@ class Vec{
 		}
 	};
 	
-        explicit Vec(const T &x0, const T &x1=(T)0, const T &x2=(T)0, const T &x3=(T)0){
+        explicit Vec(const T &x0, const T &x1, const T &x2, const T &x3=(T)0){
 
 		if(dim>0){
 			x[0]=x0; 
@@ -70,9 +70,9 @@ class Vec{
 			}
 		}
 
-	  Vec(){
+	  explicit Vec(const T &a=(T)0){
 		for(indexType i=0; i<dim; i++){
-			x[i]=(T)0;
+			x[i]=a;
 			}
 		};
 

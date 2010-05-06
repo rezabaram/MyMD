@@ -4,6 +4,7 @@
 #define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 #define WARNING(x)  std::cerr<<"Warning: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 //#include"matrix.h"
+
 #include<assert.h>
 #include<memory>
 #include<limits>
@@ -15,11 +16,11 @@
 
 //#include"vec3d.h"
 typedef size_t indexType;
-//#include"vec.h"
-//typedef Vec<3,double> vec;
+#include"vec.h"
+typedef Vec<3,double> vec;
 //#include"vec3d_policy.h"
-#include"vec3d.h"
-typedef vec3d<double> vec;
+//#include"vec3d.h"
+//typedef vec3d<double> vec;
 
 #include"quaternion.h"
 #include"matrix.h"

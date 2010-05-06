@@ -133,12 +133,12 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void print(std::ostream &out)const{
 		out<< identifier<< "   ";
-		return ;
 		out<< Xc<< "  "<<radius<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
 		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
 		out<<-1;
+		return ;
 		}
 	
 	void parse(std::istream &in){//FIXME
