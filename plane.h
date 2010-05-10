@@ -25,7 +25,7 @@ class GeomObject<tplane> : public GeomObjectBase
 			}
 	double vol(){return 0;}
 	double I(vec n){
-		ERROR("Not implemented."); //FIXME
+		ERROR(true, "Not implemented."); //FIXME
 		return 0;}
 	
 	vec n;//normal

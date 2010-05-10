@@ -24,7 +24,8 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		s3=new CSphere(vec(2*r/3, 0.0, 0.0), r/3);
 		s3->identifier=1;
 
-		if(s1==NULL || s2==NULL){ERROR("error in memory allocation"); exit(1);}
+		ERROR(s1==NULL || s2==NULL, "Improper memory allocation");
+
 		elems.push_back(s1);
 		elems.push_back(s2);
 		elems.push_back(s3);
@@ -105,7 +106,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		};
 
 	void rotate(const vec& n , double alpha){//FIXME
-		ERROR("check this");
+		ERROR(true, "check this");
 		//q.setRotation(n, alpha);
 		for(indexType i=0; i<elems.size(); i++){
 			//elems.at(i)->Xc0=q.rotate(elems.at(i)->Xc0);
@@ -122,7 +123,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 			}
 			elems.back()->print(out);
 		}
-	void parse(std::istream &in){ERROR("check this.");};
+	void parse(std::istream &in){ERROR(true, "check this.");}
 	
 	vector<CSphere *> elems;
 	private:

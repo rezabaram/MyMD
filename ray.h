@@ -8,7 +8,7 @@ class CRay
 	public:
 	CRay(const T &_x1, const T &_x2):x1(_x1),x2(_x2), n((_x2-_x1).normalize()){};
 
-	T operator()(double t){
+	T operator()(double t)const{
 		return x1+t*n;
 		}
 

@@ -1,9 +1,8 @@
 #ifndef SHAPES_H
 #define SHAPES_H 
-#include"geombase.h"
-#include"common.h"
 #include"quaternion.h"
 
+#include"geombase.h"
 #include"plane.h"
 #include"sphere.h"
 #include"composite.h"

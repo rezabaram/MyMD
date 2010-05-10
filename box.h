@@ -34,7 +34,7 @@ class GeomObject<tbox>: public GeomObjectBase
 
 	double vol(){return L(0)*L(1)*L(2);}
 	double I(vec n){
-		ERROR("Not implemented."); //FIXME
+		ERROR(true, "Not implemented."); //FIXME
 		return 0;}
 
 	void parse(std::istream &in){

@@ -7,11 +7,12 @@
 #include<math.h>
 #include<assert.h>
 #include<complex>
+#include"exception.h"
 
 #define check_index
 
 #ifdef check_index
-#define CHECK_INDEX(i, D) assert(0<=i and i< D)
+#define CHECK_INDEX(i, D) ERROR((i<0 or i>= D), "Index out of range");
 #endif 
 
 using namespace std;
@@ -176,10 +177,7 @@ class Vec{
 	template<indexType _dim, class T, class policy>
 	inline
 	Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator/=(T a){
-		if(a==0){
-			throw 0;
-			}
-		assert(a!=0);
+		ERROR(a==0,"Devided by zero");
 
 		for(indexType i=0; i<dim; i++){
 			x[i]/=a; 
@@ -271,7 +269,7 @@ class Vec{
 	inline
 	  Vec<_dim, T, policy> & Vec<_dim, T, policy>::normalize(){
 		T d=abs();
-		assert(d!=0);
+		ERROR(d==0, "Normalizing a vector with zero lenth" );
 		d=1/d;
 		
 		(*this)*=d;

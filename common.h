@@ -1,8 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H 
 
-#define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
-#define WARNING(x)  std::cerr<<"Warning: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
+//#define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 //#include"matrix.h"
 
 #include<assert.h>
@@ -13,6 +12,8 @@
 #include<ostream>
 #include<vector>
 #include<list>
+#include"exception.h"
+#include"config.h"
 
 //#include"vec3d.h"
 typedef size_t indexType;
@@ -26,7 +27,7 @@ typedef size_t indexType;
 #include"matrix.h"
 #include"log.h"
 #include"polynom.h"
-#include"config.h"
+#include"shapes.h"
 
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
 
@@ -57,64 +58,14 @@ string stringify(T x, int width=15, const char ch=' ')
    return o.str();
  }
 
-template<typename T>
-inline
-T tmax(const T &a, const T &b){
-	if(a>b)return a;
-	return b;
-	}
-
 using namespace math;
-typedef matrix<double> Matrix;
-void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
-	double Nq = q.abs2();
-	static double s;
-	if( Nq > 0.0) s = 2.0/Nq; else s = 0.0;
-	double X = q.v(0)*s,   Y = q.v(1)*s,  Z = q.v(2)*s;
 
-	double wX = q.u*X,    wY = q.u*Y,    wZ = q.u*Z;
-	double xX = q.v(0)*X, xY = q.v(0)*Y, xZ = q.v(0)*Z;
-	double yY = q.v(1)*Y, yZ = q.v(1)*Z, zZ = q.v(2)*Z;
-
-	M(0,0)=1.0-(yY+zZ); M(1,0)=xY-wZ ;       M(2,0)= xZ+wY;
-	M(0,1)= xY+wZ;      M(1,1)=1.0-(xX+zZ);  M(2,1)=yZ-wX;
-	M(0,2)=xZ-wY;       M(1,2)= yZ+wX;       M(2,2)=1.0-(xX+yY);
-	
-
-return;
+CQuadratic intersect (const CRay<Vec<4> > &ray, const CEllipsoid &E){
+	double a=ray.n*E.ellip_mat*ray.n;
+	double b=ray(0)*E.ellip_mat*ray.n+ray.n*E.ellip_mat*ray(0);
+	double c=ray(0)*E.ellip_mat*ray(0);
+	return CQuadratic(a, b, c);
 }
-
-
-
-inline
-vec operator *(const vec &v, const Matrix &M){
-
-	return vec(
-		v(0)*M(0,0)+v(1)*M(1,0)+v(2)*M(2,0),
-		v(0)*M(0,1)+v(1)*M(1,1)+v(2)*M(2,1),
-		v(0)*M(0,2)+v(1)*M(1,2)+v(2)*M(2,2)
-		);
-	}
-
-
-inline
-vec operator *(const Matrix &M, const vec &v){
-
-	return vec(
-		v(0)*M(0,0)+v(1)*M(0,1)+v(2)*M(0,2),
-		v(0)*M(1,0)+v(1)*M(1,1)+v(2)*M(1,2),
-		v(0)*M(2,0)+v(1)*M(2,1)+v(2)*M(2,2)
-		);
-	}
-
-Matrix & operator +=(Matrix &M, const double d){
-	assert(M.RowNo() == M.ColNo());
-	for(indexType i=0; i<M.RowNo(); ++i){
-	M(i,i)+=d;
-	}
-
-	return M;
-	}
 
 //obtaining the polynomial | B + lambda A | = 0
 CQuartic characteristicPolynom(const Matrix &AB){

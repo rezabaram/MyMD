@@ -142,11 +142,11 @@ CRecGrid::CRecGrid(const vec & _corner, const vec & _L, double _d):
 
 	nodes=(CNode3D *)NULL;
 	top_nodes=(int *)NULL;
-	if(N(0)==0||N(1)==0){ERROR("No grid will be created.") return;}
+	ERROR(N(0)==0||N(1)==0, "No grid will be created.");
 	nodes=new CNode3D[N(0)*N(1)*N(2)];
 	assert(nodes);
 	top_nodes=new int[N(0)*N(1)];
-	if(nodes==NULL || top_nodes==NULL){ERROR("No grid will be created.") return;}
+	ERROR(nodes==NULL || top_nodes==NULL, "No grid will be created.");
 
 	setup_neighs();
 	for(int i=0; i<N(0)*N(1); i++){

@@ -5,7 +5,7 @@
 using namespace std;
 
 
-int main(){
+void Run(){
 define_parameters();
 config.parse("config");
 
@@ -28,20 +28,20 @@ vec x(0.0, 0.0, .0);
 
 GeomObject<tellipsoid> E(vec(0.5, 0.5, 0.6), 1, .5, .5);
 E.scale(.2);
-//CParticle *p = new CParticle(E);
-//p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
+CParticle *p = new CParticle(E);
+p->q=Quaternion(cos(M_PI/7.),sin(M_PI/7.),0,0 )*Quaternion(cos(M_PI/15.),0,0,sin(M_PI/15.) );
 //sys.add(p);
 
 GeomObject<tellipsoid> E2(vec(0.3, 0.5, 0.2), .3,.2,.4);
 E2.scale(.4);
 
-//CParticle *p2 = new CParticle(E2);
-//p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
+CParticle *p2 = new CParticle(E2);
+p->q=Quaternion(cos(M_PI/18.),sin(M_PI/18.),0,0 )*Quaternion(cos(M_PI/13.),0,0,sin(M_PI/13.) );
 //E2.rotateTo(p->q);
 //E2.moveto(vec(1, 2,4.35));
 ofstream out("outtest");
-//out<< *p2 <<endl;
-//out<< *p <<endl;
+out<< *p2 <<endl;
+out<< *p <<endl;
 
 
 
@@ -60,21 +60,13 @@ vector<double> eigenvals;
 vector<vec4d> eigenvecs;
 eigens(M, eigenvals, eigenvecs);
 
-if(eigenvals.size() ==2){
-cerr<< eigenvecs[0] <<endl;
-cerr<< eigenvecs[1] <<endl;
-CRay<vec4d> ray(eigenvecs.at(0),eigenvecs.at(1));
-ray.print(out);
-vec X=E2.inv()*ray.n;
-//ray.print(out);
-cerr<< X <<endl;
-}
-
-CQuadratic q2(2,3,14);
-q2.print_roots(cerr);
-
-
-//return 0;
+if(eigenvals.size()==2){
+	CRay<vec4d> ray(eigenvecs.at(0),eigenvecs.at(1));
+	CQuadratic q(intersect(ray, E));
+	CQuadratic q2(intersect(ray, E2));
+	out<< 5<<"  "<<ray(q.root(0).real()) <<"  "<< ray(q2.root(0).real())  <<endl;
+	}
+return;
 
 double size=config.get_param<double>("particleSize");
 
@@ -84,8 +76,8 @@ for(double j=1-margin; j>margin; j-=margin){
 for(double k=1-margin; k>margin; k-=margin){
 
 	if(sys.particles.size()==config.get_param<size_t>("nParticle")) {
-				break;
-				}
+		break;
+		}
 	x(1)=0.5;//i+size*drand48()/10; 
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
@@ -107,6 +99,18 @@ for(double k=1-margin; k>margin; k-=margin){
 	}
 	}
 	sys.solve(config.get_param<double>("maxTime"), Dt);
+}
 
+int main(){
+	try {
+	//Initialize();
+	Run();
+	//Shutdown();
+	return 0;
+	} catch(CException e)
+	{
+	e.Report();
+	return 1;
+	}
 return 0;
 }

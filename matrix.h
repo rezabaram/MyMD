@@ -270,16 +270,16 @@ public:
    T Cond () _NO_THROW;
 
    // Type of matrices
-   bool IsSquare () _NO_THROW { return (_m->Row == _m->Col); } 
-   bool IsSingular () _NO_THROW;
-   bool IsDiagonal () _NO_THROW;
-   bool IsScalar () _NO_THROW;
-   bool IsUnit () _NO_THROW;
-   bool IsNull () _NO_THROW;
-   bool IsSymmetric () _NO_THROW;
-   bool IsSkewSymmetric () _NO_THROW;
-   bool IsUpperTriangular () _NO_THROW;
-   bool IsLowerTriangular () _NO_THROW;
+   bool IsSquare ()const _NO_THROW { return (_m->Row == _m->Col); } 
+   bool IsSingular ()const _NO_THROW;
+   bool IsDiagonal ()const _NO_THROW;
+   bool IsScalar ()const _NO_THROW;
+   bool IsUnit ()const _NO_THROW;
+   bool IsNull ()const _NO_THROW;
+   bool IsSymmetric ()const _NO_THROW;
+   bool IsSkewSymmetric ()const _NO_THROW;
+   bool IsUpperTriangular ()const _NO_THROW;
+   bool IsLowerTriangular ()const _NO_THROW;
 
 private:
     struct base_mat
@@ -985,7 +985,7 @@ matrixT::Adj () _THROW_MATRIX_ERROR
 
 // Determine if the matrix is singular
 MAT_TEMPLATE inline bool
-matrixT::IsSingular () _NO_THROW
+matrixT::IsSingular ()const _NO_THROW
 {
    if (_m->Row != _m->Col)
       return false;
@@ -994,7 +994,7 @@ matrixT::IsSingular () _NO_THROW
 
 // Determine if the matrix is diagonal
 MAT_TEMPLATE inline bool
-matrixT::IsDiagonal () _NO_THROW
+matrixT::IsDiagonal ()const _NO_THROW
 {
    if (_m->Row != _m->Col)
       return false;
@@ -1007,7 +1007,7 @@ matrixT::IsDiagonal () _NO_THROW
 
 // Determine if the matrix is scalar
 MAT_TEMPLATE inline bool
-matrixT::IsScalar () _NO_THROW
+matrixT::IsScalar ()const _NO_THROW
 {
    if (!IsDiagonal())
      return false;
@@ -1020,7 +1020,7 @@ matrixT::IsScalar () _NO_THROW
 
 // Determine if the matrix is a unit matrix
 MAT_TEMPLATE inline bool
-matrixT::IsUnit () _NO_THROW
+matrixT::IsUnit ()const _NO_THROW
 {
    if (IsScalar() && _m->Val[0][0] == T(1))
      return true;
@@ -1029,7 +1029,7 @@ matrixT::IsUnit () _NO_THROW
 
 // Determine if this is a null matrix
 MAT_TEMPLATE inline bool
-matrixT::IsNull () _NO_THROW
+matrixT::IsNull ()const _NO_THROW
 {
    for (size_t i=0; i < _m->Row; i++)
       for (size_t j=0; j < _m->Col; j++)
@@ -1040,7 +1040,7 @@ matrixT::IsNull () _NO_THROW
 
 // Determine if the matrix is symmetric
 MAT_TEMPLATE inline bool
-matrixT::IsSymmetric () _NO_THROW
+matrixT::IsSymmetric ()const _NO_THROW
 {
    if (_m->Row != _m->Col)
       return false;
@@ -1053,7 +1053,7 @@ matrixT::IsSymmetric () _NO_THROW
 	   
 // Determine if the matrix is skew-symmetric
 MAT_TEMPLATE inline bool
-matrixT::IsSkewSymmetric () _NO_THROW
+matrixT::IsSkewSymmetric ()const _NO_THROW
 {
    if (_m->Row != _m->Col)
       return false;
@@ -1066,7 +1066,7 @@ matrixT::IsSkewSymmetric () _NO_THROW
    
 // Determine if the matrix is upper triangular
 MAT_TEMPLATE inline bool
-matrixT::IsUpperTriangular () _NO_THROW
+matrixT::IsUpperTriangular ()const _NO_THROW
 {
    if (_m->Row != _m->Col)
       return false;
@@ -1079,7 +1079,7 @@ matrixT::IsUpperTriangular () _NO_THROW
 
 // Determine if the matrix is lower triangular
 MAT_TEMPLATE inline bool
-matrixT::IsLowerTriangular () _NO_THROW
+matrixT::IsLowerTriangular ()const _NO_THROW
 {
    if (_m->Row != _m->Col)
       return false;

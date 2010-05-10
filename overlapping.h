@@ -51,7 +51,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObjectBase *p1,
 			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tellipsoid)//FIXME
 			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tellipsoid> *>(p2));
-		else ERROR("Not Implemented");
+		else ERROR(true, "Not Implemented");
 		};
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
@@ -85,10 +85,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipso
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
 
-	if(p1==p2){
-		ERROR("A particle is checked against itself for overlapping.")
-		return;
-		}
+	ERROR(p1==p2, "A particle is checked against itself for overlapping.")
 	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
 
 	for(indexType i=0; i< (p1->elems.size()); ++i){

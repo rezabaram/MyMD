@@ -8,10 +8,8 @@ class CDFreedom {
 	const vec &operator()(indexType i)const{return x[i];}
 	template<short order>
 	void gear_predict(double dt){
-		if(depth<order){
-			ERROR("Number of derivatives cannot be less than order of gear integration.");
-			exit(1);
-			}
+		ERROR(depth<order, "Number of derivatives cannot be less than order of gear integration.");
+
 		double ddt=1.0;
 		for(int i=0; i<order-1; i++){
 			ddt=1.0;
@@ -27,14 +25,9 @@ class CDFreedom {
 
 	template<short order>
 	void gear_correct(double dt, const vec &dA){
-		if(order<4 || order>6){
-			ERROR("Only gear schemes of order 4, 5, and 6 are implemented.");
-			exit(1);
-			}
-		if(depth<order){
-			ERROR("Number of derivatives cannot be less than order of gear integration.");
-			exit(1);
-			}
+		ERROR(order<4 || order>6, "Only gear schemes of order 4, 5, and 6 are implemented.");
+		ERROR(depth<order, "Number of derivatives cannot be less than order of gear integration.");
+
 		static const double c4[] ={ 1.0/6.0,  5.0/6.0,  1.0, 1.0/3.0};//forth order
 		static const double c5[] ={ 19.0/90.0,  3.0/4.0,  1.0, 1.0/2.0, 1./12.0};//fifth order
 		static const double c6[] ={ 3.0/16.0,  251.0/360.0,  1.0, 11.0/18.0, 1./6.0, 1./60.0};//6th order

@@ -7,6 +7,70 @@
 using namespace math;
 typedef matrix<double> Matrix;
 
+template<typename T>
+inline
+T tmax(const T &a, const T &b){
+	if(a>b)return a;
+	return b;
+	}
+
+typedef matrix<double> Matrix;
+void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
+	double Nq = q.abs2();
+	static double s;
+	if( Nq > 0.0) s = 2.0/Nq; else s = 0.0;
+	double X = q.v(0)*s,   Y = q.v(1)*s,  Z = q.v(2)*s;
+
+	double wX = q.u*X,    wY = q.u*Y,    wZ = q.u*Z;
+	double xX = q.v(0)*X, xY = q.v(0)*Y, xZ = q.v(0)*Z;
+	double yY = q.v(1)*Y, yZ = q.v(1)*Z, zZ = q.v(2)*Z;
+
+	M(0,0)=1.0-(yY+zZ); M(1,0)=xY-wZ ;       M(2,0)= xZ+wY;
+	M(0,1)= xY+wZ;      M(1,1)=1.0-(xX+zZ);  M(2,1)=yZ-wX;
+	M(0,2)=xZ-wY;       M(1,2)= yZ+wX;       M(2,2)=1.0-(xX+yY);
+return;
+}
+
+template <size_t dim>
+inline
+Vec<dim> operator *(const Matrix &M, const Vec<dim> &v){
+	assert(M.RowNo()>=v.dim);
+	assert(M.IsSquare());
+	Vec<dim> u;
+	
+	for(size_t i=0; i<v.dim; i++){
+		u(i)=0;
+		for(size_t j=0; j<v.dim; j++)
+			u(i)+=v(j)*M(i,j);
+		}
+	return u;
+	}
+
+template <size_t dim>
+inline
+Vec<dim> operator *(const Vec<dim> &v, const Matrix &M){
+	assert(M.RowNo()>=v.dim);
+	assert(M.IsSquare());
+	Vec<dim> u;
+	
+	for(size_t i=0; i<v.dim; i++){
+		u(i)=0;
+		for(size_t j=0; j<v.dim; j++)
+			u(i)+=v(j)*M(j,i);
+		}
+	return u;
+	}
+
+template <class T>
+Matrix & operator +=(Matrix &M, const double d){
+	assert(M.RowNo() == M.ColNo());
+	for(indexType i=0; i<M.RowNo(); ++i){
+		M(i,i)+=d;
+		}
+	return M;
+	}
+
+
 template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
@@ -121,7 +185,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		double alpha;
 		alpha=(P.n*(this->inv())*P.n);
 	
-		assert(alpha>0);
+		ERROR(alpha<0, "Impossible happened");
+
 		alpha=1/sqrt(alpha);
 		static vec m(0.0);
 		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*P.n))); //this more efficient form of m=(alpha*(!ellip_mat)*P.n);
@@ -142,7 +207,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 	
 	void parse(std::istream &in){//FIXME
-			ERROR("not implemented");
+			ERROR(true,"not implemented");
 			//in>>identifier;
 			}
 

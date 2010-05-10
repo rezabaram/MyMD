@@ -1,17 +1,15 @@
 #ifndef QUARTIC_H
 #define QUARTIC_H 
-#include<assert.h>
 #include<fstream>
 #include<iomanip>
 #include<math.h>
 #include<vector>
 #include<math.h>
 #include<complex>
+#include"exception.h"
 
 using namespace std;
 
-#define ERROR(x)  std::cerr<<"Error: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
-#define WARNING(x)  std::cerr<<"Warning: In file " __FILE__<<" line "<<__LINE__<<":  "<<x<<std::endl;
 
 inline 
 double myabs2(const complex<double> &c){
@@ -33,10 +31,7 @@ template<int order, typename T=double>
 class CPolynom{
 	public:
   	CPolynom(const T a): solved(false){//just to enforce the first coefs be non-zero
-		if(fabs(a)<epsilon){
-			
-			ERROR("the leading coefficient cannot be zero");
-			}
+		ERROR(fabs(a)<epsilon, "The leading coefficient cannot be zero");
 		coefs.push_back(a);
 		for(size_t i=0; i<order; ++i){
 			coefs.push_back(T(0.0));
@@ -44,12 +39,8 @@ class CPolynom{
 		}
 		
   	CPolynom(const vector<T> _coefs): solved(false){
-		if(_coefs.size()!=order+1){
-			ERROR("Polynomial not created. The number of coefficents does not correspond the order.")
-			};
-		if(fabs(_coefs.at(0))<epsilon){
-			ERROR("Polynomial not created. The coefficent of highest term should not be zero. ");
-			}
+		ERROR(_coefs.size()!=order+1, "Polynomial not created. The number of coefficents does not correspond the order.")
+		ERROR(fabs(_coefs.at(0))<epsilon, "Polynomial not created. The coefficent of highest term should not be zero. ");
 
 		coefs=_coefs;
 		};
@@ -77,7 +68,7 @@ class CPolynom{
 		out<<coefs.back()<<"]\n";
 		}
 
-	void print_roots(ostream &out){
+	void print_roots(ostream &out=std::cerr){
 		if(!solved and !solve()){
 			WARNING("No root to print out; Polynomial has not been solved.")
 			return;
@@ -94,7 +85,7 @@ class CPolynom{
 	complex<double> operator()(complex<double> x)const;
 	complex<double> root(size_t i);
 	virtual bool solve(){
-		ERROR("Solve method not implemented for this polynomial.");
+		ERROR(true, "Solve method not implemented for this polynomial.");
 		return -1;
 		};
 
@@ -135,11 +126,9 @@ inline complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
 
 template<int order, typename T>
 inline complex<double> CPolynom<order, T>::root(size_t i){
-	if(!solved and !solve()){
-		ERROR("The polynomial has no roots;");//FIXME write the correct error message
-		}
+	ERROR(!solved and !solve(), "The polynomial has no roots;");//FIXME write the correct error message
+	ERROR(i>=roots.size(), "Index out of range.");
 
-	assert(i<=roots.size());
 	return roots.at(i);
 	}
 
@@ -354,9 +343,8 @@ bool CQuartic::solve(){//returning the number of real roots;
 		p=sqrt(cube.root(2));
 		i1=2;
 		}
-	else {
-		assert(false); //it should not reach here
-		}
+	else ERROR(true, "Impossible happened");
+		
 
 	if(myabs(cube.root(0))>0 and i1!=0){
 		q=sqrt(cube.root(0));
@@ -367,7 +355,7 @@ bool CQuartic::solve(){//returning the number of real roots;
 	else if(myabs(cube.root(2))>0 and i1!=2){
 		q=sqrt(cube.root(2));
 		}
-	else assert(false); //it should not reach here
+	else  ERROR(true, "Impossible happened");
 
 	complex<double> r= -g/(8.0*p*q);
 	complex<double> s= ap*coefs.at(1)/4;
