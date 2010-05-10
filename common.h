@@ -60,12 +60,13 @@ string stringify(T x, int width=15, const char ch=' ')
 
 using namespace math;
 
-CQuadratic intersect (const CRay<Vec<4> > &ray, const CEllipsoid &E){
+CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E){
 	double a=ray.n*E.ellip_mat*ray.n;
 	double b=ray(0)*E.ellip_mat*ray.n+ray.n*E.ellip_mat*ray(0);
 	double c=ray(0)*E.ellip_mat*ray(0);
 	return CQuadratic(a, b, c);
 }
+
 
 //obtaining the polynomial | B + lambda A | = 0
 CQuartic characteristicPolynom(const Matrix &AB){

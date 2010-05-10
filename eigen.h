@@ -26,7 +26,7 @@ void mysort(gsl_vector_complex *eval, indexType ind[] , indexType n){
 
 }
 
-void eigens(Matrix &M, vector<double> &eigenvals, vector<vec4d > &eigenvecs)
+void eigens(Matrix &M, vector<double> &eigenvals, vector<HomVec > &eigenvecs)
      {
      
 
@@ -69,11 +69,12 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<vec4d > &eigenvecs)
              gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);
 	     if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) < epsilon) continue; //only real eigen values 
              gsl_vector_complex_view evec_i = gsl_matrix_complex_column (evec, ind[i]);
-			eigenvals.push_back((GSL_REAL(eval_i), GSL_IMAG(eval_i))); 
+			//eigenvals.push_back((GSL_REAL(eval_i), GSL_IMAG(eval_i))); 
+			eigenvals.push_back(GSL_REAL(eval_i));
 			double w=GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
 			assert(fabs(w)>epsilon);
 			eigenvecs.push_back(
-				vec4d(
+				HomVec(
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0))/w,
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 1))/w,
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 2))/w,

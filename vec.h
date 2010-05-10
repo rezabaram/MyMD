@@ -308,5 +308,16 @@ class Vec{
 
 typedef Vec<3,double> vec;
 typedef Vec<4,double> vec4d;
+
+class HomVec: public vec4d{
+	public:
+        HomVec(const double &x0, const double &x1, const double &x2, const double &x3=(double)0):vec4d(x0, x1, x2, x3){}
+        HomVec(const vec4d &v):vec4d(v){}
+        HomVec():vec4d(0,0,0,1){}
+	vec get3d()const{
+		return vec((*this)(0), (*this)(1), (*this)(2));
+		}
+	};
+
 #endif
 

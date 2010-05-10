@@ -2,7 +2,7 @@
 #define RAY_H 
 #include"vec.h"
 
-template<typename T=vec>
+template<typename T>
 class CRay 
 	{
 	public:

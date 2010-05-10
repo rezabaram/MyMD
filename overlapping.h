@@ -1,6 +1,7 @@
 #ifndef OVERLAPPING_H
 #define OVERLAPPING_H 
 #include"shapes.h"
+#include"eigen.h"
 
 
 class COverlapping{
@@ -113,10 +114,37 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 	}
 
+CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
+	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
+	CQuartic q=characteristicPolynom(M);
+
+	vector<double> eigenvals;
+	vector<HomVec> eigenvecs;
+	eigens(M, eigenvals, eigenvecs);
+
+	if(eigenvals.size()==2){
+		CRay<HomVec> ray(eigenvecs.at(1),eigenvecs.at(0));
+		CQuadratic q1(intersect(ray, E1));
+		CQuadratic q2(intersect(ray, E2));
+		//the roots are sorted ascending
+		HomVec X1= ray(q1.root(1).real()); //on the surface of E1
+		HomVec X2= ray(q2.root(0).real()); //on the surface of E2
+		vec n1=HomVec(E1.ellip_mat*X1).get3d();
+		vec n2=HomVec(E2.ellip_mat*X2).get3d();
+		CPlane p1(X1.get3d(),n1);
+		CPlane p2(X2.get3d(),n2);
+		p1.print(cerr);
+		}
+	}
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
+	separatingPlane(*E, *E0);
+	ERROR(1, "stopped");
+	//ERROR(1,"Stopped here");
+	}
+inline
+void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
 	//here we should if E will touch E0 or not;
-
 // ------------------------------------------
 	static vec v;
 	static double d;
@@ -146,7 +174,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, con
 	double lambda=0.0;
 	double dx;
 	for(int loop=1;loop<=itermax;loop++){
-
 
 		for(lambda=-8; lambda<8; lambda+=0.001){
 

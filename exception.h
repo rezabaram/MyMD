@@ -2,19 +2,18 @@
 #define EXCEPTION_H 
 #include<iostream>
 #include<sstream>
-using namespace std;
 
 class CException
 	{
-	string message;
-	string file;
-	string function;
+	std::string message;
+	std::string file;
+	std::string function;
 	long line;
 	CException(){};
 	public:
-	CException(const string &m="Unknown", const string &f="UnknownFile", const string &func="UnknownFunction", long i=0):message(m), file(f), function(func), line(i) {};
+	CException(const std::string &m="Unknown", const std::string &f="UnknownFile", const std::string &func="UnknownFunction", long i=0):message(m), file(f), function(func), line(i) {};
 	void Report(){
-		cerr<<"Error: "<<file<<":"<<line<<":"<<function<<": "<< message <<endl;
+		std::cerr<<"Error: "<<file<<":"<<line<<": "<<function<<": "<< message <<std::endl;
 		}
 	};
 

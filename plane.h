@@ -6,7 +6,7 @@ template<>
 class GeomObject<tplane> : public GeomObjectBase
 	{
 	public:
-		GeomObject(const vec &x0, const vec &n0):GeomObjectBase(x0, tplane), n(n0){n.normalize();};
+		GeomObject(const vec &x0, const vec &n0):GeomObjectBase(x0, tplane), n(n0){identifier=6; n.normalize();};
 		virtual ~GeomObject(){};
 		void shift(const vec & v){Xc+=v;};
 		void rotate(const vec &_n, double alpha){};//FIXME

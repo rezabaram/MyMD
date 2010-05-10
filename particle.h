@@ -27,9 +27,10 @@ class CProperty
 	string color;
  	private:
 	};
-/*
-template<typename T1, typename T2>
-class CContact: public vector<COverlapping>
+
+class CParticle;
+template<typename T1=CParticle, typename T2=CParticle>
+class CContact
 	{
 	public:
 	CContact(){};
@@ -39,7 +40,6 @@ class CContact: public vector<COverlapping>
 	//bool (CParticle *_p1, CParticle *_p1){}
  	private:
 	};
-*/
 
 //#define shapeType tcomposite
 //#define shapeType tsphere
@@ -107,7 +107,7 @@ class CParticle{
 	CProperty material;
 	CDFreedom<3> x, x0, x_p;//TranslationalDFreedom;
 	CDFreedom<3> w, w0, w_p;//Rotational;
-	int id;
+	long id;
 	vec test;
 	Quaternion q;//orientation
 	vec forces, avgforces;

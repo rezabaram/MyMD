@@ -33,6 +33,7 @@ class CSys{
 	double t, outDt;
 	ParticleContainer particles;
 	GeomObject<tbox> box;
+	CPlane *sp;
 	//CRecGrid *grid;
 	double maxr;
 	vec G;
