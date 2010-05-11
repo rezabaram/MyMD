@@ -18,6 +18,7 @@ class COverlapping{
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tellipsoid>  *p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tcomposite>  *p2);
+	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tbox>        *b );
 
 	vec x, dx;
@@ -71,15 +72,20 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
+void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
 	static vec v, vp;
+	if(plane->normal_to_point(p1->Xc).abs()-p1->radius > 0) return;
+	vp=p1->point_to_plane(*(plane));
+	v=plane->normal_to_point(vp, 0);
+	if(v*plane->n <0)return;
+	ovs.push_back( COverlapping(vp, -v) );
+	return;
+	}
+
+inline
+void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		if(b->face[i]->normal_to_point(p1->Xc).abs()-p1->radius > 0) continue;
-		vp=p1->point_to_plane(*(b->face[i]));
-		v=b->face[i]->normal_to_point(vp, 0);
-		if(v*b->face[i]->n <0)continue;
-		
-		ovs.push_back( COverlapping(vp, -v) );
+		overlaps(ovs, p1, b->face[i]);
 		}
 	}
 
@@ -133,13 +139,46 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 		vec n2=HomVec(E2.ellip_mat*X2).get3d();
 		CPlane p1(X1.get3d(),n1);
 		CPlane p2(X2.get3d(),n2);
-		p1.print(cerr);
+
+		return CPlane((X1.get3d()+X2.get3d())*.5, (n1-n2)*.5);
 		}
+	ERROR(1, "no separating plane");
 	}
+
+void append(vector<COverlapping> &v, vector<COverlapping> &v2){
+	for(size_t i=0; i<v2.size(); i++){
+		v.push_back(v2.at(i));	
+		}
+
+	return;
+	}
+#define XOR(p, q) ( ((p) || (q)) && !((p) && (q)) ) 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
-	separatingPlane(*E, *E0);
-	ERROR(1, "stopped");
+	static CPlane *p=NULL;
+	static bool collide=false;
+	static vector<COverlapping> ovtest1;
+	static vector<COverlapping> ovtest2;
+	ovtest1.clear();
+	ovtest2.clear();
+
+	if(p==NULL and !collide){
+		p= new CPlane(separatingPlane(*E, *E0));
+		}
+	overlaps(ovtest1, E, p);
+	overlaps(ovtest2, E0, p);
+	if(ovtest1.size()>0 and ovtest2.size()>0){
+		append(ovs, ovtest1);
+		collide=true;
+		p->print(cerr);
+		cerr<<endl;
+		}
+	if(XOR(ovtest1.size()>0 , ovtest2.size()>0) and !collide){
+		 *p= separatingPlane(*E, *E0);//update the plane
+		
+		}
+	
+	//ERROR(1, "stopped");
 	//ERROR(1,"Stopped here");
 	}
 inline

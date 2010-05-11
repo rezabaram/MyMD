@@ -12,13 +12,13 @@ class GeomObject<tbox>: public GeomObjectBase
 		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
 		identifier=6;
-		face[0]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u0));
-		face[1]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u1));
-		face[2]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner,u2));
+		face[0]=new GeomObject<tplane> (corner,u0);
+		face[1]=new GeomObject<tplane> (corner,u1);
+		face[2]=new GeomObject<tplane> (corner,u2);
 
-		face[3]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u0));
-		face[4]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u1));
-		face[5]=auto_ptr<GeomObject<tplane> >(new GeomObject<tplane> (corner+L,-u2));
+		face[3]=new GeomObject<tplane> (corner+L,-u0);
+		face[4]=new GeomObject<tplane> (corner+L,-u1);
+		face[5]=new GeomObject<tplane> (corner+L,-u2);
 		};
 
 	void shift(const vec &x){corner+=x;}
@@ -46,7 +46,7 @@ class GeomObject<tbox>: public GeomObjectBase
 
 	vec top()const{return corner+L;}
 	vec corner, L;
-	auto_ptr<GeomObject<tplane> > face[6];
+	GeomObject<tplane> * face[6];
  	private:
 	GeomObject();
 	vec u0, u1, u2;

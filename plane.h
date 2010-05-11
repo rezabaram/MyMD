@@ -15,6 +15,16 @@ class GeomObject<tplane> : public GeomObjectBase
 			out<< identifier<< "   ";
 			out<< Xc<< "  "<<n;
 			}
+
+
+		void rasterprint(std::ostream &out){
+			vec n2(drand48(), drand48(), drand48());
+			n2.normalize();
+			n2=cross(n,n2);
+			vec n3=cross(n,n2);
+			out<< identifier<< "   "<<Xc<<"  "<<Xc+n2<<"  "<<Xc+n3<<endl;
+			}
+
 		void parse(std::istream &in){
 			in>>identifier;
 			in>>Xc>>n;

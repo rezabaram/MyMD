@@ -178,6 +178,7 @@ class Vec{
 	inline
 	Vec<_dim, T, policy> &Vec<_dim, T, policy>::operator/=(T a){
 		ERROR(a==0,"Devided by zero");
+		//if(a==0)throw 1;
 
 		for(indexType i=0; i<dim; i++){
 			x[i]/=a; 
