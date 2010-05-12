@@ -126,7 +126,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		 // ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		update_tranlation_mat();
-		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 
 	Matrix inv()const{
@@ -137,8 +136,10 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		trans_mat(0,3)=-Xc(0);
 		trans_mat(1,3)=-Xc(1);
 		trans_mat(2,3)=-Xc(2);
+		trans_mat(3,3)=1;
 		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
+
 	void moveto(const vec &v){
 		Xc=v;
 		update_tranlation_mat();
@@ -150,6 +151,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//cerr<< temp <<endl;
 		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
 		//ellip_mat=~rotat_mat*scale_mat*rotat_mat;
+		update_tranlation_mat();
 		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 
@@ -190,8 +192,9 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		alpha=1/sqrt(alpha);
 		static vec m(0.0);
 		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*P.n))); //this more efficient form of m=(alpha*(!ellip_mat)*P.n);
-		double d1=P.normal_to_point(Xc+m).abs();
-		double d2=P.normal_to_point(Xc-m).abs();
+		double d1=P.normal_from_point(Xc+m).abs();
+		double d2=P.normal_from_point(Xc-m).abs();
+
 		if(d1<d2)return Xc+m;
 		else return Xc-m;
 		}

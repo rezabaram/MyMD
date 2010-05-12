@@ -60,7 +60,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 	static vec v;
 	static double d, dd;
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		v=b->face[i]->normal_to_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
+		v=b->face[i]->normal_from_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
 		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
@@ -74,9 +74,9 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
 	static vec v, vp;
-	if(plane->normal_to_point(p1->Xc).abs()-p1->radius > 0) return;
+	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
 	vp=p1->point_to_plane(*(plane));
-	v=plane->normal_to_point(vp, 0);
+	v=plane->normal_from_point(vp, 0);
 	if(v*plane->n <0)return;
 	ovs.push_back( COverlapping(vp, -v) );
 	return;
@@ -96,9 +96,9 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
 
 	for(indexType i=0; i< (p1->elems.size()); ++i){
-	for(indexType j=0; j< (p2->elems.size()); ++j){
-		overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
-		}
+		for(indexType j=0; j< (p2->elems.size()); ++j){
+			overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
+			}
 		}
 	}
 
@@ -107,7 +107,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	static double d;
 	bool need_to_check=false;
 	for(indexType i=0; i<6; ++i){
-		d=(b->face[i]->normal_to_point(p1->Xc,0.0)).abs2() - p1->radius*p1->radius;
+		d=(b->face[i]->normal_from_point(p1->Xc,0.0)).abs2() - p1->radius*p1->radius;
 		if(d<0){
 			need_to_check=true;
 			break;
@@ -128,6 +128,7 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 	vector<HomVec> eigenvecs;
 	eigens(M, eigenvals, eigenvecs);
 
+	cerr<< eigenvals.size() <<endl;
 	if(eigenvals.size()==2){
 		CRay<HomVec> ray(eigenvecs.at(1),eigenvecs.at(0));
 		CQuadratic q1(intersect(ray, E1));
@@ -168,14 +169,14 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, con
 	overlaps(ovtest1, E, p);
 	overlaps(ovtest2, E0, p);
 	if(ovtest1.size()>0 and ovtest2.size()>0){
-		append(ovs, ovtest1);
+		//append(ovs, ovtest1);
+		throw 1;
 		collide=true;
 		p->print(cerr);
 		cerr<<endl;
 		}
 	if(XOR(ovtest1.size()>0 , ovtest2.size()>0) and !collide){
 		 *p= separatingPlane(*E, *E0);//update the plane
-		
 		}
 	
 	//ERROR(1, "stopped");

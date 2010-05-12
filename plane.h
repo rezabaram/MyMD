@@ -31,6 +31,10 @@ class GeomObject<tplane> : public GeomObjectBase
 			}
 
 		vec normal_to_point(const vec & p, double shift=0)const{
+			return ((p-Xc)*n-shift)*n;
+			}
+
+		vec normal_from_point(const vec & p, double shift=0)const{
 			return ((Xc-p)*n-shift)*n;
 			}
 	double vol(){return 0;}

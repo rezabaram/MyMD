@@ -67,7 +67,12 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<HomVec > &eigenvecs)
          for (indexType i = 0; i < N; i++)
            {
              gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);
-	     if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) < epsilon) continue; //only real eigen values 
+	     if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) <= 0){
+	     
+		//printf("%g %g\n", GSL_IMAG(eval_i)  , GSL_REAL(eval_i) );
+		
+		 continue; //only real eigen values 
+		}
              gsl_vector_complex_view evec_i = gsl_matrix_complex_column (evec, ind[i]);
 			//eigenvals.push_back((GSL_REAL(eval_i), GSL_IMAG(eval_i))); 
 			eigenvals.push_back(GSL_REAL(eval_i));
