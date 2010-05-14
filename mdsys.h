@@ -114,8 +114,6 @@ void CSys::forward(double dt){
 		ke+=(*it)->kEnergy();
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
-
-
 //output 
 	static int count=0, outN=0,outPutN=outDt/dt;
 	if(count%outPutN==0){
@@ -123,6 +121,8 @@ void CSys::forward(double dt){
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			ofstream out(outname.str().c_str());
 			box.print(out);
+			gout=&out;
+			cerr<< 1<< "  "<<gout <<endl;
 			for(it=particles.begin(); it!=particles.end(); ++it){
 				out<<**it<<endl;
 				}

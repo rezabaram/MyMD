@@ -152,7 +152,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
 		//ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		update_tranlation_mat();
-		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system

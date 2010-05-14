@@ -122,15 +122,20 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 
 CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
-	CQuartic q=characteristicPolynom(M);
+	//CQuartic q=characteristicPolynom(M);
+	static int ii=0;
 
-	vector<double> eigenvals;
+	vector<complex<double> > eigenvals;
 	vector<HomVec> eigenvecs;
 	eigens(M, eigenvals, eigenvecs);
 
-	cerr<< eigenvals.size() <<endl;
-	if(eigenvals.size()==2){
-		CRay<HomVec> ray(eigenvecs.at(1),eigenvecs.at(0));
+		cout<<ii++<<"  "<< (E1.Xc-E2.Xc).abs()-E1.c-E2.c<<"  ";
+		for(int i=0; i<4; i++){
+			cout<< eigenvals.at(i).real()<<"  "<<eigenvals.at(i).imag()<<"  ";
+		}
+		cout<<endl;
+	if(eigenvals.size()==4){
+		CRay<HomVec> ray(eigenvecs.at(3),eigenvecs.at(2));
 		CQuadratic q1(intersect(ray, E1));
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
@@ -140,9 +145,16 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 		vec n2=HomVec(E2.ellip_mat*X2).get3d();
 		CPlane p1(X1.get3d(),n1);
 		CPlane p2(X2.get3d(),n2);
+		//CSphere S((X1.get3d()+X2.get3d())*.5, 0.001);
+		//S.print(*gout);
+		//(*gout)<<endl;
+		//cerr<< (X1-X2).abs() <<endl;
 
 		return CPlane((X1.get3d()+X2.get3d())*.5, (n1-n2)*.5);
 		}
+	
+	
+
 	ERROR(1, "no separating plane");
 	}
 

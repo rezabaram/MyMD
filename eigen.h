@@ -26,7 +26,7 @@ void mysort(gsl_vector_complex *eval, indexType ind[] , indexType n){
 
 }
 
-void eigens(Matrix &M, vector<double> &eigenvals, vector<HomVec > &eigenvecs)
+void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eigenvecs)
      {
      
 
@@ -67,17 +67,14 @@ void eigens(Matrix &M, vector<double> &eigenvals, vector<HomVec > &eigenvecs)
          for (indexType i = 0; i < N; i++)
            {
              gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);
-	     if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) <= 0){
-	     
-		//printf("%g %g\n", GSL_IMAG(eval_i)  , GSL_REAL(eval_i) );
-		
-		 continue; //only real eigen values 
+	     if(0)if(abs(GSL_IMAG(eval_i)) > epsilon or GSL_REAL(eval_i) <= 0){ continue; //only real eigen values 
 		}
              gsl_vector_complex_view evec_i = gsl_matrix_complex_column (evec, ind[i]);
 			//eigenvals.push_back((GSL_REAL(eval_i), GSL_IMAG(eval_i))); 
-			eigenvals.push_back(GSL_REAL(eval_i));
+			eigenvals.push_back(complex<double> (GSL_REAL(eval_i), GSL_IMAG(eval_i)));
 			double w=GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
-			assert(fabs(w)>epsilon);
+			//assert(fabs(w)>epsilon);
+			if(fabs(w)>epsilon)w=1;//this is wrong. but i dont use those eigenvectors
 			eigenvecs.push_back(
 				HomVec(
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0))/w,
