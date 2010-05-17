@@ -43,7 +43,8 @@ for(double k=1-margin; k>margin; k-=margin){
 	axis(1)=30.0*drand48();
 	//axis(0)=axis(2);
 	//axis(0)=2.0*drand48();
-	//p->q=Quaternion(cos(M_PI/8.),sin(M_PI/8.),0,0 )*Quaternion(cos(M_PI/8.),0,0,sin(M_PI/8.) );
+	double alpha=drand48()*M_PI;
+	p->q=Quaternion(cos(alpha),sin(alpha),0,0 )*Quaternion(cos(alpha),0,0,sin(alpha) );
 	//p->w(1)=axis;
 	p->x(1)(2)=1;
 	//p->rotate(vec(1.0), drand48()*3.14);

@@ -129,11 +129,12 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 	vector<HomVec> eigenvecs;
 	eigens(M, eigenvals, eigenvecs);
 
-		cout<<ii++<<"  "<< (E1.Xc-E2.Xc).abs()-E1.c-E2.c<<"  ";
+		cout<< (E1.Xc-E2.Xc).abs()-E1.c-E2.c<<"  ";
 		for(int i=0; i<4; i++){
 			cout<< eigenvals.at(i).real()<<"  "<<eigenvals.at(i).imag()<<"  ";
 		}
 		cout<<endl;
+
 	if(eigenvals.size()==4){
 		CRay<HomVec> ray(eigenvecs.at(3),eigenvecs.at(2));
 		CQuadratic q1(intersect(ray, E1));
@@ -145,9 +146,14 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 		vec n2=HomVec(E2.ellip_mat*X2).get3d();
 		CPlane p1(X1.get3d(),n1);
 		CPlane p2(X2.get3d(),n2);
-		//CSphere S((X1.get3d()+X2.get3d())*.5, 0.001);
-		//S.print(*gout);
-		//(*gout)<<endl;
+		CSphere S((X1.get3d()+X2.get3d())*.5, 0.01);
+		CRay<vec> nr(S.Xc, S.Xc+0.05*(n1-n2));
+		if(gout!=NULL and gout->is_open()){
+			S.print(*gout);
+			(*gout)<<endl;
+			
+			nr.print(*gout);
+			}
 		//cerr<< (X1-X2).abs() <<endl;
 
 		return CPlane((X1.get3d()+X2.get3d())*.5, (n1-n2)*.5);
@@ -187,6 +193,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, con
 		p->print(cerr);
 		cerr<<endl;
 		}
+		 *p= separatingPlane(*E, *E0);//update the plane
 	if(XOR(ovtest1.size()>0 , ovtest2.size()>0) and !collide){
 		 *p= separatingPlane(*E, *E0);//update the plane
 		}

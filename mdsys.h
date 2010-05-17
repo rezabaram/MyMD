@@ -88,9 +88,24 @@ void CSys::calForces(){
 	};
 
 void CSys::forward(double dt){
+	static int count=0, outN=0,outPutN=outDt/dt;
+	static ofstream out;
+
+	ParticleContainer::iterator it;
+	if(count%outPutN==0){
+			stringstream outname;
+			outname<<"out"<<setw(5)<<setfill('0')<<outN;
+			out.open(outname.str().c_str());
+			box.print(out);
+			gout=&out;
+			for(it=particles.begin(); it!=particles.end(); ++it){
+				out<<**it<<endl;
+				}
+			count=0;
+			outN++;
+			}
 	//double energy=0.0;
 	//bool allforwarded=false;
-	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
@@ -115,21 +130,8 @@ void CSys::forward(double dt){
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
 //output 
-	static int count=0, outN=0,outPutN=outDt/dt;
-	if(count%outPutN==0){
-			stringstream outname;
-			outname<<"out"<<setw(5)<<setfill('0')<<outN;
-			ofstream out(outname.str().c_str());
-			box.print(out);
-			gout=&out;
-			cerr<< 1<< "  "<<gout <<endl;
-			for(it=particles.begin(); it!=particles.end(); ++it){
-				out<<**it<<endl;
-				}
-			count=0;
-			outN++;
-			}
 	count++;
+	if(out.is_open())out.close();
 	}
 
 void CSys::solve(double tMax, double dt){

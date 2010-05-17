@@ -29,7 +29,7 @@ typedef size_t indexType;
 #include"polynom.h"
 #include"shapes.h"
 
-ofstream *gout;
+ofstream *gout=NULL;
 
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
 

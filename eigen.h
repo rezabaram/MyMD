@@ -74,7 +74,7 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
 			eigenvals.push_back(complex<double> (GSL_REAL(eval_i), GSL_IMAG(eval_i)));
 			double w=GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 3));
 			//assert(fabs(w)>epsilon);
-			if(fabs(w)>epsilon)w=1;//this is wrong. but i dont use those eigenvectors
+			if(fabs(w)<epsilon)w=1;//this is wrong. but i dont use those eigenvectors
 			eigenvecs.push_back(
 				HomVec(
 					GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0))/w,
