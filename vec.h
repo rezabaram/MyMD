@@ -9,6 +9,8 @@
 #include<complex>
 #include"exception.h"
 
+typedef size_t indexType;
+
 #define check_index
 
 #ifdef check_index
@@ -39,7 +41,7 @@ class Vec{
 		}
 	};
 	
-        explicit Vec(const T &x0, const T &x1, const T &x2, const T &x3=(T)0){
+        explicit Vec(const T &x0, const T &x1, const T &x2=(T)0, const T &x3=(T)0){
 
 		if(dim>0) x[0]=x0; 
 		else return;
@@ -307,7 +309,9 @@ class Vec{
 		return Vec<_dim, T, policy> (policy::mul(u(1),v(2))-policy::mul(u(2),v(1)),policy::mul(u(2),v(0))-policy::mul(u(0),v(2)),policy::mul(u(0),v(1))-policy::mul(u(1),v(0)));
 	}
 
+typedef Vec<2,double> vec2d;
 typedef Vec<3,double> vec;
+typedef Vec<3,double> vec3d;
 typedef Vec<4,double> vec4d;
 
 class HomVec: public vec4d{
