@@ -49,7 +49,7 @@ class CParticle{
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<GType shapeType>
-	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1), q(1.0, 0.0, 0.0, 0.0),  forces(vec(0.0)), state(ready_to_go){init();}
+	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go){init();}
 	~CParticle(){
 		delete shape;
 		}
@@ -109,7 +109,7 @@ class CParticle{
 	CDFreedom<3> w, w0, w_p;//Rotational;
 	long id;
 	vec test;
-	Quaternion q;//orientation
+	//Quaternion q;//orientation
 	vec forces, avgforces;
 	vec torques, avgtorque;
 	tState state;
@@ -140,17 +140,18 @@ void CParticle::calPos(double dt){
 	static Quaternion dq(0,0,0,0);
 
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
-	wp=q.toBody(w(1));//FIXME make sure which should be used
+	wp=shape->q.toBody(w(1));//FIXME make sure which should be used
 	//wp=w(1);//this one seems to be correct
-	dq.u =    -q.v(0)*wp(0) - q.v(1)*wp(1) - q.v(2)*wp(2);
-	dq.v(0) =  q.u  * wp(0) - q.v(2)*wp(1) + q.v(1)*wp(2);
-	dq.v(1) =  q.v(2)*wp(0) + q.u *  wp(1) - q.v(0)*wp(2);
-	dq.v(2) = -q.v(1)*wp(0) + q.v(0)*wp(1) + q.u *  wp(2);
+	dq.u =    -shape->q.v(0)*wp(0) - shape->q.v(1)*wp(1) - shape->q.v(2)*wp(2);
+	dq.v(0) =  shape->q.u  * wp(0) - shape->q.v(2)*wp(1) + shape->q.v(1)*wp(2);
+	dq.v(1) =  shape->q.v(2)*wp(0) + shape->q.u *  wp(1) - shape->q.v(0)*wp(2);
+	dq.v(2) = -shape->q.v(1)*wp(0) + shape->q.v(0)*wp(1) + shape->q.u *  wp(2);
 
-	q+=dq*dt*0.5;
-	q.normalize();
+	shape->q+=dq*dt*0.5;
+	shape->q.normalize();
 	
-	shape->rotateTo(q);
+	
+	shape->rotateTo(shape->q);
 	shape->moveto(x(0));
 	}
 
@@ -162,13 +163,13 @@ void CParticle::calVel(double dt){
 	
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
-	torquep=q.toBody(torques);
+	torquep=shape->q.toBody(torques);
 
-	wp=q.toBody(w(1));
+	wp=shape->q.toBody(w(1));
 	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
 	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;
 	wwp(2)=(torquep(2)+wp(0)*wp(1)*(Ixx-Iyy))/Izz;
-	w(2)=q.toWorld(wwp);
+	w(2)=shape->q.toWorld(wwp);
 
 
 	w(1)+=w(2)*(dt*2*c);

@@ -1,12 +1,13 @@
 #ifndef GEOMBASE_H
 #include<ostream>
+#include"quaternion.h"
 
 typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid, tcylinder} GType;
 
 class GeomObjectBase
 	{
 	public:
-	GeomObjectBase(const vec &v, GType t):Xc(v),Xc0(v),type(t){identifier=1;};
+	GeomObjectBase(const vec &v, GType t, const Quaternion &_q=Quaternion(1,0,0,0)):Xc(v),Xc0(v),type(t), q(_q){identifier=1;};
 	virtual ~GeomObjectBase(){};
 	virtual void shift(const vec&)=0;
 	virtual void rotate(const vec& n, double alpha){//maybe overriden by derived class
@@ -39,6 +40,7 @@ class GeomObjectBase
 	vec Xc, Xc0; //center 
 	int identifier;
 	GType type;
+	Quaternion q;
 	protected:
  	private:
 	};

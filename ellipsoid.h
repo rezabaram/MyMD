@@ -83,15 +83,24 @@ template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
-	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c), R(_a,_b,_c), P(HomVec(0,0,0,1)) {
+	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c), R(_a,_b,_c), P(HomVec(0,0,0,1)) {
 		identifier=14;
 		radius=tmax(a, tmax(b,c));
 		a*=_r;
 		b*=_r;
 		c*=_r;
 		radius*=_r;
-		rotateTo(q);
 		setup();
+		//put a point on the surface of the ellipse	
+		
+		CRay<HomVec> ray(HomVec(Xc(0), Xc(1), Xc(2), 1) , HomVec(Xc(0), Xc(1), Xc(2)+1, 1) );
+		CQuadratic quartic(intersect(ray, *this));
+		//the roots are sorted ascending
+		P0= ray(quartic.root(0).real()); //on the surface of E1
+		CRay<vec> ray2(Xc, P0.get3d());
+		//ray2.print(cerr);
+		cerr<< q <<endl;
+		rotateTo(q);
 		}
 	~GeomObject(){}
 
@@ -142,12 +151,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		//put a point on the surface of the ellipse	
 		
-		CRay<HomVec> ray(HomVec(Xc(0), Xc(1), Xc(2), 1) , HomVec(Xc(0), Xc(1), Xc(2)+1, 1) );
-		CQuadratic q(intersect(ray, *this));
-		//the roots are sorted ascending
-		P0= ray(q.root(0).real()); //on the surface of E1
-		CRay<vec> ray2(Xc, P0.get3d());
-		ray2.print(cerr);
 		}
 
 	Matrix inv()const{
