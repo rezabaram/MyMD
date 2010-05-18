@@ -4,6 +4,14 @@
 #include"matrix.h"
 #include"geombase.h"
 
+////FIXME added interaction between classes. this is not so good. make a better struture
+#include"eigen.h"
+#include"polynom.h"
+#include"ray.h"
+typedef GeomObject<tellipsoid> CEllipsoid;
+CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E);
+////
+
 using namespace math;
 typedef matrix<double> Matrix;
 
@@ -75,9 +83,14 @@ template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
-	GeomObject(const vec &v,double _a, double _b, double _c):GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c), R(_a,_b,_c) {
+	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid), a(_a), b(_b), c(_c), R(_a,_b,_c), P(HomVec(0,0,0,1)) {
 		identifier=14;
 		radius=tmax(a, tmax(b,c));
+		a*=_r;
+		b*=_r;
+		c*=_r;
+		radius*=_r;
+		rotateTo(q);
 		setup();
 		}
 	~GeomObject(){}
@@ -126,6 +139,15 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		 // ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		update_tranlation_mat();
+
+		//put a point on the surface of the ellipse	
+		
+		CRay<HomVec> ray(HomVec(Xc(0), Xc(1), Xc(2), 1) , HomVec(Xc(0), Xc(1), Xc(2)+1, 1) );
+		CQuadratic q(intersect(ray, *this));
+		//the roots are sorted ascending
+		P0= ray(q.root(0).real()); //on the surface of E1
+		CRay<vec> ray2(Xc, P0.get3d());
+		ray2.print(cerr);
 		}
 
 	Matrix inv()const{
@@ -138,6 +160,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		trans_mat(2,3)=-Xc(2);
 		trans_mat(3,3)=1;
 		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
+		//P=ellip_mat*P;
+		P=P0;
 		}
 
 	void moveto(const vec &v){
@@ -152,6 +176,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
 		//ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		update_tranlation_mat();
+		//P=ellip_mat*P0;
+		P=P0;
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
@@ -179,7 +205,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		c*=scale;
 		radius*=scale;
 		setup();
-		update_tranlation_mat();
 		}
 
 	vec point_to_plane(const CPlane &P)const{//FIXME need to be obtimized
@@ -199,6 +224,12 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	void print(std::ostream &out)const{
+		//FIXME temporary 
+		CSphere S(P.get3d(), 0.01);
+		S.print(out);
+		out<<endl;
+		///
+
 		out<< identifier<< "   ";
 		out<< Xc<< "  "<<radius<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
@@ -224,10 +255,18 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	double a,b,c;
 	vec R;
+	HomVec P, P0;
 	private:
 	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
 	GeomObject<tellipsoid> ();
 	};
 
-typedef GeomObject<tellipsoid> CEllipsoid;
+////FIXME added interaction between classes. this is not so good. make a better struture
+CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E){
+	double a=ray.n*E.ellip_mat*ray.n;
+	double b=ray(0)*E.ellip_mat*ray.n+ray.n*E.ellip_mat*ray(0);
+	double c=ray(0)*E.ellip_mat*ray(0);
+	return CQuadratic(a, b, c);
+}
+//----------------
 #endif /* ELLIPSOID_H */

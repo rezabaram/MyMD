@@ -36,15 +36,14 @@ for(double k=1-margin; k>margin; k-=margin){
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
-	GeomObject<tellipsoid> E(x, 1, 1-0.4*drand48(), 0.6);
-	E.scale(size*(1+0.2*drand48()));
+	double alpha=drand48()*M_PI;
+	Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0 )*Quaternion(cos(alpha),0,0,sin(alpha) );
+	GeomObject<tellipsoid> E(x, 1, 1-0.4*drand48(), 0.6, size*(1+0.2*drand48()), q);
 	CParticle *p = new CParticle(E);
 	vec axis(0.0);
 	axis(1)=30.0*drand48();
 	//axis(0)=axis(2);
 	//axis(0)=2.0*drand48();
-	double alpha=drand48()*M_PI;
-	p->q=Quaternion(cos(alpha),sin(alpha),0,0 )*Quaternion(cos(alpha),0,0,sin(alpha) );
 	//p->w(1)=axis;
 	p->x(1)(2)=1;
 	//p->rotate(vec(1.0), drand48()*3.14);

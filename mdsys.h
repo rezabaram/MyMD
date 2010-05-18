@@ -1,7 +1,7 @@
 #ifndef MDSYS_H
 #define MDSYS_H 
 #include"common.h"
-#include"grid.h"
+//#include"grid.h"
 #include"particle.h"
 #include"overlapping.h"
 

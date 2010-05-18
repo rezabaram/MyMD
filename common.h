@@ -25,6 +25,8 @@ typedef size_t indexType;
 
 #include"quaternion.h"
 #include"matrix.h"
+using namespace math;
+typedef matrix<double> Matrix;
 #include"log.h"
 #include"polynom.h"
 #include"shapes.h"
@@ -61,13 +63,6 @@ string stringify(T x, int width=15, const char ch=' ')
  }
 
 using namespace math;
-
-CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E){
-	double a=ray.n*E.ellip_mat*ray.n;
-	double b=ray(0)*E.ellip_mat*ray.n+ray.n*E.ellip_mat*ray(0);
-	double c=ray(0)*E.ellip_mat*ray(0);
-	return CQuadratic(a, b, c);
-}
 
 
 //obtaining the polynomial | B + lambda A | = 0

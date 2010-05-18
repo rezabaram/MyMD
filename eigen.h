@@ -3,7 +3,13 @@
 #include <stdio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_eigen.h>
-#include "common.h"
+#include "matrix.h"
+#include "vec.h"
+
+//FIXME not goood. put things in a better place
+using namespace math;
+typedef matrix<double> Matrix;
+//////////
 
 void mysort(gsl_vector_complex *eval, indexType ind[] , indexType n){
 

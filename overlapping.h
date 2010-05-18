@@ -123,7 +123,6 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
 	//CQuartic q=characteristicPolynom(M);
-	static int ii=0;
 
 	vector<complex<double> > eigenvals;
 	vector<HomVec> eigenvecs;
