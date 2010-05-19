@@ -9,14 +9,14 @@ class COverlapping{
 	public:
 	COverlapping(const vec &_x, const vec &_dx ):x(_x), dx(_dx){}
 
-	static void overlaps(vector<COverlapping> &ovs, const GeomObjectBase *p1, const GeomObjectBase *p2);
+	static void overlaps(vector<COverlapping> &ovs, GeomObjectBase *p1, GeomObjectBase *p2);
 
 
 	//every new kind of particle needs to define two functions
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tsphere>     *p1, const GeomObject <tbox>        *b );
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tsphere>     *p1, const GeomObject <tsphere>     *p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tellipsoid>  *p2);
+	static void overlaps(vector<COverlapping> &ovs, GeomObject <tellipsoid>  *p1, GeomObject <tellipsoid>  *p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tcomposite>  *p2);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
 	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tbox>        *b );
@@ -40,7 +40,7 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 	}
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObjectBase *p1, const GeomObjectBase *p2){
+void COverlapping::overlaps(vector<COverlapping> &ovs, GeomObjectBase *p1, GeomObjectBase *p2){
 		if(p1->type==tsphere && p2->type==tsphere)
 			overlaps(ovs, static_cast<const GeomObject<tsphere> *>(p1), static_cast<const GeomObject<tsphere> *>(p2));
 		else if(p1->type==tsphere && p2->type==tbox)
@@ -52,7 +52,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObjectBase *p1,
 		else if(p1->type==tellipsoid&& p2->type==tbox)//FIXME
 			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tellipsoid)//FIXME
-			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tellipsoid> *>(p2));
+			overlaps(ovs, static_cast<GeomObject<tellipsoid> *>(p1), static_cast<GeomObject<tellipsoid> *>(p2));
 		else ERROR(true, "Not Implemented");
 		};
 inline
@@ -120,7 +120,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 		}
 	}
 
-CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
+	bool separatingPlane(CPlane &plane,  CEllipsoid  &E1, CEllipsoid  &E2){
 	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
 	//CQuartic q=characteristicPolynom(M);
 
@@ -128,24 +128,23 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 	vector<HomVec> eigenvecs;
 	eigens(M, eigenvals, eigenvecs);
 
-		cout<< (E1.Xc-E2.Xc).abs()-E1.c-E2.c<<"  ";
-		for(int i=0; i<4; i++){
-			cout<< eigenvals.at(i).real()<<"  "<<eigenvals.at(i).imag()<<"  ";
-		}
-		cout<<endl;
 
-	if(eigenvals.size()==4){
+	if(fabs(eigenvals.at(3).imag() ) < epsilon){
 		CRay<HomVec> ray(eigenvecs.at(3),eigenvecs.at(2));
 		CQuadratic q1(intersect(ray, E1));
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
 		HomVec X1= ray(q1.root(1).real()); //on the surface of E1
 		HomVec X2= ray(q2.root(0).real()); //on the surface of E2
-		vec n1=HomVec(E1.ellip_mat*X1).get3d();
-		vec n2=HomVec(E2.ellip_mat*X2).get3d();
-		CPlane p1(X1.get3d(),n1);
-		CPlane p2(X2.get3d(),n2);
-		CSphere S((X1.get3d()+X2.get3d())*.5, 0.01);
+		E1.fixToBody(X1);
+		E2.fixToBody(X2);
+
+		vec n1=HomVec(E1.ellip_mat*X1).project();
+		vec n2=HomVec(E2.ellip_mat*X2).project();
+/*
+		CPlane p1(X1.project(),n1);
+		CPlane p2(X2.project(),n2);
+		CSphere S((X1.project()+X2.project())*.5, 0.01);
 		CRay<vec> nr(S.Xc, S.Xc+0.05*(n1-n2));
 		if(gout!=NULL and gout->is_open()){
 			S.print(*gout);
@@ -153,14 +152,12 @@ CPlane separatingPlane(const CEllipsoid  &E1, const CEllipsoid  E2){
 			
 			nr.print(*gout);
 			}
-		//cerr<< (X1-X2).abs() <<endl;
+*/
 
-		return CPlane((X1.get3d()+X2.get3d())*.5, (n1-n2)*.5);
+		plane=CPlane((X1.project()+X2.project())*.5, (n1-n2)*.5);
+		return true;
 		}
-	
-	
-
-	ERROR(1, "no separating plane");
+	return false;
 	}
 
 void append(vector<COverlapping> &v, vector<COverlapping> &v2){
@@ -172,33 +169,35 @@ void append(vector<COverlapping> &v, vector<COverlapping> &v2){
 	}
 #define XOR(p, q) ( ((p) || (q)) && !((p) && (q)) ) 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
-	static CPlane *p=NULL;
+void COverlapping::overlaps(vector<COverlapping> &ovs, CEllipsoid  *E1, CEllipsoid  *E2){
+	static CPlane plane(vec(0,0,0), vec(0,0,1));
 	static bool collide=false;
 	static vector<COverlapping> ovtest1;
 	static vector<COverlapping> ovtest2;
 	ovtest1.clear();
 	ovtest2.clear();
 
-	if(p==NULL and !collide){
-		p= new CPlane(separatingPlane(*E, *E0));
+	if(!separatingPlane(plane, *E1, *E2)){
+		ovs.push_back( COverlapping( (E1->P.project()+E2->P.project())/2, (E1->P.project()-E2->P.project())) );
 		}
+
+/*
 	overlaps(ovtest1, E, p);
 	overlaps(ovtest2, E0, p);
 	if(ovtest1.size()>0 and ovtest2.size()>0){
 		//append(ovs, ovtest1);
 		throw 1;
 		collide=true;
-		p->print(cerr);
-		cerr<<endl;
 		}
-		 *p= separatingPlane(*E, *E0);//update the plane
+
+	*p= separatingPlane(*E, *E0);//update the plane
 	if(XOR(ovtest1.size()>0 , ovtest2.size()>0) and !collide){
 		 *p= separatingPlane(*E, *E0);//update the plane
 		}
 	
 	//ERROR(1, "stopped");
 	//ERROR(1,"Stopped here");
+*/
 	}
 inline
 void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){

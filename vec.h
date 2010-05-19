@@ -322,6 +322,13 @@ class HomVec: public vec4d{
 	vec get3d()const{
 		return vec((*this)(0), (*this)(1), (*this)(2));
 		}
+
+	vec project()const{
+		static double w;
+		w=(*this)(3);
+		ERROR(w==0,"The point is projected to infinity");
+		return vec((*this)(0)/w, (*this)(1)/w, (*this)(2)/w);
+		}
 	};
 
 #endif
