@@ -160,6 +160,19 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	return false;
 	}
 
+void adjust(const CEllipsoid &E1,const CEllipsoid &E2, long nIter=10){
+	
+	 double dx=0.001;	
+         HomVec X=E1.P, Xp;
+	for(long i=0; i<nIter; i++){
+	 	CRay<HomVec> raytest(HomVec(E1.Xc,1), HomVec(X(0)+dx*drand48(), X(1)+dx*drand48(), X(2)+dx*drand48(),X(3))); 
+		X=raytest((intersect(raytest, E2)).root(1).real());
+		if(E2(Xp)<E2(X))X=Xp;
+		}
+	 
+	return;
+	}
+
 void append(vector<COverlapping> &v, vector<COverlapping> &v2){
 	for(size_t i=0; i<v2.size(); i++){
 		v.push_back(v2.at(i));	

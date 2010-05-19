@@ -6,4 +6,4 @@ particleSize 	0.1
 nParticle 	2
 maxTime		10.45
 stiffness  	7.32e+06
-damping		1e+01
+damping		1e+04

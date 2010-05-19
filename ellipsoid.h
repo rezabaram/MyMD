@@ -150,6 +150,9 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 
 		}
+	double operator() (const HomVec &X)const {
+		return X*ellip_mat*X;
+		}
 
 	Matrix inv()const{
 		return (~rotat_mat*inv_scale_mat*rotat_mat); 
