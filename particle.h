@@ -28,21 +28,7 @@ class CProperty
  	private:
 	};
 
-class CParticle;
-template<typename T1=CParticle, typename T2=CParticle>
-class CContact
-	{
-	public:
-	CContact(){};
-	CContact(T1 *_p1, T1 *_p2):p1(_p1), p2(_p2){}
-	T1 *p1;
-	T2 *p2;
-	//bool (CParticle *_p1, CParticle *_p1){}
- 	private:
-	};
 
-//#define shapeType tcomposite
-//#define shapeType tsphere
 class CParticle{
 	CParticle(const CParticle&);
 	public:

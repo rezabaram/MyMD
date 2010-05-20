@@ -9,7 +9,7 @@ define_parameters();
 config.parse("config");
 
 
-CSys sys;
+CSys sys(config.get_param<size_t>("nParticle"));
 sys.outDt=config.get_param<double>("outDt");
 double Dt=config.get_param<double>("timeStep");
 
@@ -29,7 +29,7 @@ for(double i=margin; i<1-margin; i+=margin){
 for(double j=1-margin; j>margin; j-=margin){
 for(double k=1-margin; k>margin; k-=margin){
 
-	if(sys.particles.size()==config.get_param<size_t>("nParticle")) {
+	if(sys.particles.size()==sys.maxNParticle) {
 		break;
 		}
 	x(1)=0.5;//i+size*drand48()/10; 

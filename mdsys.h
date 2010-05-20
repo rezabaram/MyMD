@@ -1,23 +1,35 @@
 #ifndef MDSYS_H
 #define MDSYS_H 
-#include"common.h"
+#include "common.h"
 //#include"grid.h"
 #include"particle.h"
-#include"overlapping.h"
+#include"interaction.h"
 
-typedef list<CParticle *> ParticleContainer;
+class ParticleContactHolder : public ShapeContactHolder{
+	public:
+	ParticleContactHolder(const CParticle &_p1, const CParticle & _p2):ShapeContactHolder(), p1(&_p1), p2(&_p2){}
+	ParticleContactHolder(const CParticle *_p1, const CParticle * _p2):ShapeContactHolder(), p1(_p1), p2(_p2){}
+
+	const CParticle *p1, *p2;
+ 	private:
+	};
+
+typedef vector<CParticle *> ParticleContainer;
 
 typedef GeomObjectBase * BasePtr;
 class CSys{
 	public:
-	CSys():t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)),epsFreeze(1.0e-12){};
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), maxNParticle(maxnparticle),epsFreeze(1.0e-12){
+		pairs=new ParticleContactHolder*[maxNParticle*maxNParticle];
+		};
 	~CSys();
 
+	void initialize();
 	void solve(double tMax, double dt);
 	void forward(double dt);
 	void calForces();
-	void overlappings();
-	inline bool interact(CParticle *p1,CParticle *p2)const; //force from p2 on p1
+	void interactions();
+	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
 
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
@@ -32,11 +44,13 @@ class CSys{
 	double ke;//kinetic energy
 	double t, outDt;
 	ParticleContainer particles;
+	ParticleContactHolder **pairs;
 	GeomObject<tbox> box;
 	CPlane *sp;
 	//CRecGrid *grid;
 	double maxr;
 	vec G;
+	const unsigned maxNParticle;
  	private:
 	double epsFreeze;
 	};
@@ -46,7 +60,15 @@ CSys::~CSys(){
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		delete (*it);
 		}
-	//delete grid;
+	delete [] pairs;
+	}
+
+void CSys::initialize(){
+	//create for each pair an object for the contact
+	for(unsigned int i=0; i<maxNParticle; i++)
+		for(unsigned int j=0; j<maxNParticle; j++){
+			pairs[j+i*particles.size()]=new ParticleContactHolder(particles.at(i), particles.at(j));
+			}
 	}
 
 //void CSys::setup_grid(double _d){
@@ -54,6 +76,8 @@ CSys::~CSys(){
 		//}
 
 bool CSys::add(CParticle *p){
+TRY
+	ERROR(particles.size()==maxNParticle,"Reached max number of particles.");
 	vec force(0.0);
 	//if(interact(p, box, force)){
 		//ERROR("The particle is intially within the box: "<<p->x(0));
@@ -64,34 +88,80 @@ bool CSys::add(CParticle *p){
 	//assert(grid);
 	//grid->add(p);
 	return true;
+CATCH
 	}
 
 void CSys::calForces(){
-	try{
-	ParticleContainer::iterator it1, it2, ittemp;
+TRY
+	ParticleContainer::iterator it1, it2;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->forces=G*((*it1)->get_mass());
 		(*it1)->torques=0.0;
 		}
+
 	//interactions
-	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		ittemp=it1;++ittemp;
-		for(it2=ittemp; it2!=particles.end(); ++it2){
+	//for(it1=particles.begin(); it1!=particles.end(); ++it1){
+	for(unsigned int i=0; i<particles.size(); i++){
+		for(unsigned int j=i+1; j<particles.size(); j++){
+		//ittemp=it1;++ittemp;
+		//for(it2=ittemp; it2!=particles.end(); ++it2){
 			//if((*it1)->frozen && (*it2)->frozen)continue;
-			if(interact(*it1, *it2)){ }
+			if(interact(i, j)){ }
 				//rescale_ellipse_to_touch(*(static_cast<CEllipsoid*> ((*it1)->shape)), *(static_cast<CEllipsoid*> ((*it2)->shape)));
 				}
 		//the walls
-		if(interact(*it1, &box)){  }
+		if(interact(particles.at(i), &box)){  }
 		}
-	}catch(CException e){
-		RETHROW(e);
+CATCH
+};
+
+inline
+vec contactForce(const vec dx, const vec dv, double stiff, double damp){
+	double proj=(dv*dx.normalized());
+	double ksi=dx.abs();
+	ksi=(stiff*ksi+damp*proj);//*sqrt(ksi); //to eliminate artifical attractions
+	if(ksi<0)ksi=0;
+	return -ksi*dx;//visco-elastic Hertz law
+	}
+
+inline bool CSys::interact(unsigned int i,unsigned int  j)const{
+TRY
+	CParticle *p1=particles.at(i);
+	CParticle *p2=particles.at(j);
+	ShapeContactHolder &overlaps=*pairs[i+particles.size()*j];
+	overlaps.clear();
+	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
+	static vec r1, r2, v1, v2, dv, force, torque(0.0);
+	//static double proj, ksi;
+	if(overlaps.size()==0)return false;
+	for(size_t i=0; i<overlaps.size(); i++){
+		r1=overlaps.at(i)->x-p1->x(0);
+		r2=overlaps.at(i)->x-p2->x(0);
+		v1=p1->x(1)+cross(r1, p1->w(1));
+		v2=p2->x(1)+cross(r2, p2->w(1));
+		dv=v1-v2;
+
+		force=contactForce(overlaps.at(i)->dx, dv, p1->material.stiffness, p1->material.damping);
+
+		p1->addforce(force);
+		torque=cross(r1, force);
+		p1->addtorque(torque);
+			
+		force*=-1.0;
+		p2->addforce(force);
+		torque=cross(r2, force);
+		p2->addtorque(torque);
+
 		}
-	};
+
+	return true;
+CATCH
+	}
+
 
 void CSys::forward(double dt){
-	try{
+TRY
 	static int count=0, outN=0,outPutN=outDt/dt;
 	static ofstream out;
 
@@ -136,14 +206,13 @@ void CSys::forward(double dt){
 //output 
 	count++;
 	if(out.is_open())out.close();
-	}catch(CException e){
-		RETHROW(e);
-		}
+CATCH
 	}
 
 void CSys::solve(double tMax, double dt){
 	try{
 	bool stop=false;
+	initialize();
 	while(true){
 		if(t+dt>tMax){//to stop exactly at tMax
 			dt=tMax-t;
@@ -300,7 +369,7 @@ bool CSys::exist(int i){
 		return false;
 		}
 
-void CSys::overlappings(){
+void CSys::interactions(){
 	ParticleContainer::iterator it1, it2, ittemp;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 	ittemp=it1;++ittemp;
@@ -312,68 +381,25 @@ void CSys::overlappings(){
 
 		}
 
-inline
-vec contactForce(const vec dx, const vec dv, double stiff, double damp){
-		double proj=(dv*dx.normalized());
-		double ksi=dx.abs();
-		ksi=(stiff*ksi+damp*proj);//*sqrt(ksi); //to eliminate artifical attractions
-		if(ksi<0)ksi=0;
-		return -ksi*dx;//visco-elastic Hertz law
-		}
-
-inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
-	try{
-	vector<COverlapping> overlaps;
-	COverlapping::overlaps(overlaps, p1->shape, p2->shape);
-	static vec r1, r2, v1, v2, dv, force, torque(0.0);
-	//static double proj, ksi;
-	if(overlaps.size()==0)return false;
-	for(size_t i=0; i<overlaps.size(); i++){
-		r1=overlaps.at(i).x-p1->x(0);
-		r2=overlaps.at(i).x-p2->x(0);
-		v1=p1->x(1)+cross(r1, p1->w(1));
-		v2=p2->x(1)+cross(r2, p2->w(1));
-		dv=v1-v2;
-
-		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
-
-		p1->addforce(force);
-		torque=cross(r1, force);
-		p1->addtorque(torque);
-			
-		force*=-1.0;
-		p2->addforce(force);
-		torque=cross(r2, force);
-		p2->addtorque(torque);
-
-		}
-
-	return true;
-	}catch(...){
-		ERROR(1, "Some error in calculation of interaction.");
-		}
-	}
-
 
 inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
-
-	try{
-	vector<COverlapping> overlaps;
-	COverlapping::overlaps(overlaps, p1->shape, (GeomObjectBase*)p2);
+TRY
+	ShapeContactHolder overlaps;
+	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)p2);
 
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
-		r1=overlaps.at(i).x-p1->x(0);
+		r1=overlaps.at(i)->x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
 
-		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
+		force=contactForce(overlaps.at(i)->dx, dv, p1->material.stiffness, p1->material.damping);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
 		p1->addtorque(torque);
 
-		//tangent=(1.0-fabs(proj)/dv.abs()/overlaps.at(i).dx.abs())*dv;
+		//tangent=(1.0-fabs(proj)/dv.abs()/overlaps.at(i)->dx.abs())*dv;
 
 		//cerr<< tangent <<endl;
 		//force=200*tangent;
@@ -381,10 +407,9 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 		//torque=cross(r1, force);
 		//p1->addtorque(torque);
 		}
+
 	return true;
-	}catch(...){
-		ERROR(1, "Some error in calculation of the force from the wall.");
-		}
+CATCH
 	}
 
 #endif /* MDSYS_H */
