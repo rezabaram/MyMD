@@ -3,29 +3,53 @@
 #include"shapes.h"
 #include"eigen.h"
 
-
-class COverlapping{
-	COverlapping();
+class Contact{
 	public:
-	COverlapping(const vec &_x, const vec &_dx ):x(_x), dx(_dx){}
-
-	static void overlaps(vector<COverlapping> &ovs, GeomObjectBase *p1, GeomObjectBase *p2);
-
-
-	//every new kind of particle needs to define two functions
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tsphere>     *p1, const GeomObject <tbox>        *b );
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tsphere>     *p1, const GeomObject <tsphere>     *p2);
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
-	static void overlaps(vector<COverlapping> &ovs, GeomObject <tellipsoid>  *p1, GeomObject <tellipsoid>  *p2);
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tcomposite>  *p2);
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
-	static void overlaps(vector<COverlapping> &ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tbox>        *b );
-
+	Contact(const vec &_x, const vec &_dx ):x(_x), dx(_dx){}
 	vec x, dx;
 	};
 
+template<typename T1=double, typename T2=double>
+class PairContact : public Contact {
+	public:
+	PairContact(const vec &_x, const vec &_dx ):Contact(_x,_dx){}
+ 	private:
+	};
+
+class ShapeContactHolder : public vector<Contact*>{
+	public:
+	ShapeContactHolder():vector<Contact*>(){}
+	void add(const Contact &c){
+		push_back(new Contact(c));
+		}
+	~ShapeContactHolder(){
+		ShapeContactHolder::iterator it;
+		for(it=this->begin(); it!=this->end(); ++it)
+			delete (*it);
+		}
+	};
+
+class CInteraction{
+	public:
+	CInteraction();
+
+	static void overlaps(ShapeContactHolder* ovs, GeomObjectBase *p1, GeomObjectBase *p2);
+
+	static void append(ShapeContactHolder&v, ShapeContactHolder&v2);
+	//every new kind of particle needs to define two functions
+	static void overlaps(ShapeContactHolder* ovs, const GeomObject <tsphere>     *p1, const GeomObject <tbox>        *b );
+	static void overlaps(ShapeContactHolder* ovs, const GeomObject <tsphere>     *p1, const GeomObject <tsphere>     *p2);
+	static void overlaps(ShapeContactHolder* ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
+	static void overlaps(ShapeContactHolder* ovs, GeomObject <tellipsoid>  *p1, GeomObject <tellipsoid>  *p2);
+	static void overlaps(ShapeContactHolder* ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tcomposite>  *p2);
+	static void overlaps(ShapeContactHolder* ovs, const GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
+	static void overlaps(ShapeContactHolder* ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tbox>        *b );
+
+
+	};
+
 inline
-void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2){
+void CInteraction::overlaps(ShapeContactHolder* ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2){
 	static vec v;
 	static double d, dd;
 	v=p2->displacement(p1);//Xc2-Xc1
@@ -35,12 +59,12 @@ void COverlapping::overlaps(vector<COverlapping > &ovs, const GeomObject<tsphere
 	if(dd>0) {
 		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
 		v.normalized();
-		ovs.push_back(COverlapping(p1->getpos()+v, (dd)*v));
+		ovs->add(Contact(p1->getpos()+v, (dd)*v));
 		}
 	}
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, GeomObjectBase *p1, GeomObjectBase *p2){
+void CInteraction::overlaps(ShapeContactHolder* ovs, GeomObjectBase *p1, GeomObjectBase *p2){
 		if(p1->type==tsphere && p2->type==tsphere)
 			overlaps(ovs, static_cast<const GeomObject<tsphere> *>(p1), static_cast<const GeomObject<tsphere> *>(p2));
 		else if(p1->type==tsphere && p2->type==tbox)
@@ -56,34 +80,34 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, GeomObjectBase *p1, GeomO
 		else ERROR(true, "Not Implemented");
 		};
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
+void CInteraction::overlaps(ShapeContactHolder* ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
 	static vec v;
 	static double d, dd;
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		v=b->face[i]->normal_from_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
-		//if(dd>0) ovs.push_back( COverlapping(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
+		//if(dd>0) ovs->push_back( CInteraction(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-			ovs.push_back( COverlapping(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+			ovs->add(Contact(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
 			}
 		}
 	}
 
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
+void CInteraction::overlaps(ShapeContactHolder* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
 	static vec v, vp;
 	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
 	vp=p1->point_to_plane(*(plane));
 	v=plane->normal_from_point(vp, 0);
 	if(v*plane->n <0)return;
-	ovs.push_back( COverlapping(vp, -v) );
+	ovs->add(  Contact(vp, -v) );
 	return;
 	}
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
+void CInteraction::overlaps(ShapeContactHolder* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 	try{
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		overlaps(ovs, p1, b->face[i]);
@@ -94,7 +118,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipso
 	}
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
+void CInteraction::overlaps(ShapeContactHolder* ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
 
 	ERROR(p1==p2, "A particle is checked against itself for overlapping.")
 	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
@@ -107,7 +131,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	}
 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
+void CInteraction::overlaps(ShapeContactHolder* ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	static double d;
 	bool need_to_check=false;
 	for(indexType i=0; i<6; ++i){
@@ -204,7 +228,7 @@ TRY
 CATCH
 	}
 
-void append(vector<COverlapping> &v, vector<COverlapping> &v2){
+void CInteraction::append(ShapeContactHolder &v, ShapeContactHolder &v2){
 	for(size_t i=0; i<v2.size(); i++){
 		v.push_back(v2.at(i));	
 		}
@@ -213,28 +237,27 @@ void append(vector<COverlapping> &v, vector<COverlapping> &v2){
 	}
 #define XOR(p, q) ( ((p) || (q)) && !((p) && (q)) ) 
 inline
-void COverlapping::overlaps(vector<COverlapping> &ovs, CEllipsoid  *E1, CEllipsoid  *E2){
+void CInteraction::overlaps(ShapeContactHolder* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
 TRY
 	static CPlane plane(vec(0,0,0), vec(0,0,1));
-	static vector<COverlapping> ovtest1;
-	static vector<COverlapping> ovtest2;
+	static ShapeContactHolder ovtest1;
+	static ShapeContactHolder ovtest2;
 	ovtest1.clear();
 	ovtest2.clear();
         static HomVec X1=E1->P, X2=E2->P;
-	static int i=0;
 	
-	bool b=(*E2)(X1)>0?true:false;
+	//bool b=(*E2)(X1)>0?true:false;
 	if(!separatingPlane(plane, *E1, *E2)){
 		//adjust2(*E1, *E2);
 		adjust(*E1, *E2);
 		adjust(*E2, *E1);
 	//if(b and (*E2)(X1)>0)cerr<< "errorooooooooooooo "<<++i<<endl;
-		//ovs.push_back( COverlapping( (E1->P.project()+E2->P.project())/2, (E1->P.project()-E2->P.project())) );
+		//ovs->push_back( Contact( (E1->P.project()+E2->P.project())/2, (E1->P.project()-E2->P.project())) );
 		double dd=(E1->P.project()-E2->P.project()).abs();
 		vec x=(E1->P.project()+E2->P.project())/2;
 		vec dx=(E1->gradient(x)-E2->gradient(x));
 		dx.normalize();
-		ovs.push_back( COverlapping(x,dd*dx) );
+		ovs->add(Contact(x,dd*dx) );
 		}
 /*
 	overlaps(ovtest1, E, p);
@@ -255,8 +278,9 @@ TRY
 */
 CATCH
 	}
+/*
 inline
-void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
+void overlapsTemp(vector<Contact> ovs, const CEllipsoid  *E, const CEllipsoid  *E0){
 	//here we should if E will touch E0 or not;
 // ------------------------------------------
 	static vec v;
@@ -268,7 +292,7 @@ void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllips
 	if(dp<0) {//return;
 		v*=((E->radius-dp/2.0)/d); //from center of p1 to contact point
 		v.normalized();
-		ovs.push_back(COverlapping(E->getpos()+v, (dp)*v));
+		ovs->push_back(Contact(E->getpos()+v, (dp)*v));
 		}
 //------------------------------------
 	static vec R, R0, R12;
@@ -326,7 +350,7 @@ void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllips
 			//return CContact(rc-R, rE-R);
 			cerr<< dx<<"  "<<lambda <<endl;
 			cerr<< setprecision(10)<<R <<"   x "<<rc<<"  dx "<<rE <<endl;
-			//ovs.push_back(COverlapping(rc, R-rE));
+			//ovs->push_back(Contact(rc, R-rE));
 			return;
 			}
 		lambda += dx;
@@ -336,4 +360,5 @@ void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllips
 	  return ;
 
 }
+*/
 #endif /* OVERLAPPING_H */
