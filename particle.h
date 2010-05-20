@@ -129,7 +129,7 @@ double friction=1;
 
 //using beeman method
 void CParticle::calPos(double dt){
-
+TRY
 	static const double c=1./6.0;
 	//translational degree
 	x(0) += x(1)*dt + x(2)*(dt*dt*4.0*c) - x0(2)*(dt*dt*c);
@@ -153,6 +153,7 @@ void CParticle::calPos(double dt){
 	
 	shape->rotateTo(shape->q);
 	shape->moveto(x(0));
+CATCH
 	}
 
 void CParticle::calVel(double dt){

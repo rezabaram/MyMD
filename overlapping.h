@@ -84,8 +84,12 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipso
 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
+	try{
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		overlaps(ovs, p1, b->face[i]);
+		}
+	}catch(...){
+		ERROR(1,"Some error in the interaction with wall");
 		}
 	}
 
@@ -160,17 +164,44 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, const GeomObject<tcomposi
 	return false;
 	}
 
-void adjust(const CEllipsoid &E1,const CEllipsoid &E2, long nIter=10){
-	
-	 double dx=0.001;	
-         HomVec X=E1.P, Xp;
+void adjust2(CEllipsoid &E1, CEllipsoid &E2, long nIter=1){
+TRY
 	for(long i=0; i<nIter; i++){
-	 	CRay<HomVec> raytest(HomVec(E1.Xc,1), HomVec(X(0)+dx*drand48(), X(1)+dx*drand48(), X(2)+dx*drand48(),X(3))); 
-		X=raytest((intersect(raytest, E2)).root(1).real());
-		if(E2(Xp)<E2(X))X=Xp;
+        	HomVec X=(E1.P+E2.P)/2;
+        	HomVec X1, X2;
+	 	CRay<HomVec> ray1(HomVec(E1.Xc,1), HomVec(X(0), X(1), X(2), X(3))); 
+	 	CRay<HomVec> ray2(HomVec(E2.Xc,1), HomVec(X(0), X(1), X(2), X(3))); 
+		X1=ray1((intersect(ray1, E1)).root(1).real());
+		X2=ray2((intersect(ray2, E2)).root(1).real());
+		E1.fixToBody(X1);
+		E2.fixToBody(X2);
 		}
 	 
 	return;
+CATCH
+	}
+void adjust(CEllipsoid &E1, const CEllipsoid &E2, long nIter=20){
+TRY
+	double dx=(E1.P-E2.P).abs();	
+        HomVec X=E1.P, Xp, Xpp;
+	bool b=E2(X)<0?true:false;
+	for(long i=0; i<nIter; i++){
+	 	CRay<HomVec> raytest(HomVec(E1.Xc,1), HomVec(X(0)+dx*drand48(), X(1)+dx*drand48(), X(2)+dx*drand48(),X(3))); 
+		Xp=raytest((intersect(raytest, E1)).root(1).real());
+		Xpp=raytest((intersect(raytest, E2)).root(0).real());
+		//cerr<< " here " <<E2(Xp) << "  " <<E1(Xpp) <<endl;
+		//cerr<< " here " <<E2(Xp) * E1(Xpp) <<endl;
+		if(E2(Xp)<E2(X)){
+			cerr<<setprecision(14)<< (Xp*X)/Xp.abs()/X.abs() <<endl;
+			//cerr<< (Xp-X).abs() <<endl;
+			X=Xp;
+			}
+		}
+	if(b and E2(X)>0)cerr<< "errorooooooooooooo in "<<__FILE__ <<endl;
+	E1.fixToBody(X);
+	 
+	return;
+CATCH
 	}
 
 void append(vector<COverlapping> &v, vector<COverlapping> &v2){
@@ -183,17 +214,28 @@ void append(vector<COverlapping> &v, vector<COverlapping> &v2){
 #define XOR(p, q) ( ((p) || (q)) && !((p) && (q)) ) 
 inline
 void COverlapping::overlaps(vector<COverlapping> &ovs, CEllipsoid  *E1, CEllipsoid  *E2){
+TRY
 	static CPlane plane(vec(0,0,0), vec(0,0,1));
-	static bool collide=false;
 	static vector<COverlapping> ovtest1;
 	static vector<COverlapping> ovtest2;
 	ovtest1.clear();
 	ovtest2.clear();
-
+        static HomVec X1=E1->P, X2=E2->P;
+	static int i=0;
+	
+	bool b=(*E2)(X1)>0?true:false;
 	if(!separatingPlane(plane, *E1, *E2)){
-		ovs.push_back( COverlapping( (E1->P.project()+E2->P.project())/2, (E1->P.project()-E2->P.project())) );
+		//adjust2(*E1, *E2);
+		adjust(*E1, *E2);
+		adjust(*E2, *E1);
+	//if(b and (*E2)(X1)>0)cerr<< "errorooooooooooooo "<<++i<<endl;
+		//ovs.push_back( COverlapping( (E1->P.project()+E2->P.project())/2, (E1->P.project()-E2->P.project())) );
+		double dd=(E1->P.project()-E2->P.project()).abs();
+		vec x=(E1->P.project()+E2->P.project())/2;
+		vec dx=(E1->gradient(x)-E2->gradient(x));
+		dx.normalize();
+		ovs.push_back( COverlapping(x,dd*dx) );
 		}
-
 /*
 	overlaps(ovtest1, E, p);
 	overlaps(ovtest2, E0, p);
@@ -211,6 +253,7 @@ void COverlapping::overlaps(vector<COverlapping> &ovs, CEllipsoid  *E1, CEllipso
 	//ERROR(1, "stopped");
 	//ERROR(1,"Stopped here");
 */
+CATCH
 	}
 inline
 void overlapsTemp(vector<COverlapping> &ovs, const CEllipsoid  *E, const CEllipsoid  *E0){

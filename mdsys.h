@@ -67,6 +67,7 @@ bool CSys::add(CParticle *p){
 	}
 
 void CSys::calForces(){
+	try{
 	ParticleContainer::iterator it1, it2, ittemp;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
@@ -84,10 +85,13 @@ void CSys::calForces(){
 		//the walls
 		if(interact(*it1, &box)){  }
 		}
-	
+	}catch(CException e){
+		RETHROW(e);
+		}
 	};
 
 void CSys::forward(double dt){
+	try{
 	static int count=0, outN=0,outPutN=outDt/dt;
 	static ofstream out;
 
@@ -132,9 +136,13 @@ void CSys::forward(double dt){
 //output 
 	count++;
 	if(out.is_open())out.close();
+	}catch(CException e){
+		RETHROW(e);
+		}
 	}
 
 void CSys::solve(double tMax, double dt){
+	try{
 	bool stop=false;
 	while(true){
 		if(t+dt>tMax){//to stop exactly at tMax
@@ -146,6 +154,9 @@ void CSys::solve(double tMax, double dt){
 		forward(dt);
 		t+=dt;
 		if(stop)break;
+		}
+	}catch(CException e){
+		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
 		}
 	}
 
@@ -311,7 +322,7 @@ vec contactForce(const vec dx, const vec dv, double stiff, double damp){
 		}
 
 inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
-
+	try{
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
@@ -338,11 +349,15 @@ inline bool CSys::interact(CParticle *p1, CParticle *p2)const{
 		}
 
 	return true;
+	}catch(...){
+		ERROR(1, "Some error in calculation of interaction.");
+		}
 	}
 
 
 inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 
+	try{
 	vector<COverlapping> overlaps;
 	COverlapping::overlaps(overlaps, p1->shape, (GeomObjectBase*)p2);
 
@@ -367,6 +382,9 @@ inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
 		//p1->addtorque(torque);
 		}
 	return true;
+	}catch(...){
+		ERROR(1, "Some error in calculation of the force from the wall.");
+		}
 	}
 
 #endif /* MDSYS_H */

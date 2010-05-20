@@ -24,6 +24,7 @@ T tmax(const T &a, const T &b){
 
 typedef matrix<double> Matrix;
 void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
+TRY
 	double Nq = q.abs2();
 	static double s;
 	if( Nq > 0.0) s = 2.0/Nq; else s = 0.0;
@@ -36,12 +37,15 @@ void quaternionToMatrix(const Quaternion &q, Matrix &M){//got from wikipedia
 	M(0,0)=1.0-(yY+zZ); M(1,0)=xY-wZ ;       M(2,0)= xZ+wY;
 	M(0,1)= xY+wZ;      M(1,1)=1.0-(xX+zZ);  M(2,1)=yZ-wX;
 	M(0,2)=xZ-wY;       M(1,2)= yZ+wX;       M(2,2)=1.0-(xX+yY);
-return;
+	return;
+CATCH
 }
+
 
 template <size_t dim>
 inline
 Vec<dim> operator *(const Matrix &M, const Vec<dim> &v){
+TRY
 	assert(M.RowNo()>=v.dim);
 	assert(M.IsSquare());
 	Vec<dim> u;
@@ -52,11 +56,13 @@ Vec<dim> operator *(const Matrix &M, const Vec<dim> &v){
 			u(i)+=v(j)*M(i,j);
 		}
 	return u;
+CATCH
 	}
 
 template <size_t dim>
 inline
 Vec<dim> operator *(const Vec<dim> &v, const Matrix &M){
+TRY
 	assert(M.RowNo()>=v.dim);
 	assert(M.IsSquare());
 	Vec<dim> u;
@@ -67,15 +73,18 @@ Vec<dim> operator *(const Vec<dim> &v, const Matrix &M){
 			u(i)+=v(j)*M(j,i);
 		}
 	return u;
+CATCH
 	}
 
 template <class T>
 Matrix & operator +=(Matrix &M, const double d){
+TRY
 	assert(M.RowNo() == M.ColNo());
 	for(indexType i=0; i<M.RowNo(); ++i){
 		M(i,i)+=d;
 		}
 	return M;
+CATCH
 	}
 
 
@@ -150,6 +159,9 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 
 		}
+	vec gradient (const vec &X)const {
+		return ellip_mat*(X-Xc);
+		}
 	double operator() (const HomVec &X)const {
 		return X*ellip_mat*X;
 		}
@@ -159,6 +171,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	void update_tranlation_mat(){
+	TRY	
 		trans_mat(0,3)=-Xc(0);
 		trans_mat(1,3)=-Xc(1);
 		trans_mat(2,3)=-Xc(2);
@@ -166,14 +179,18 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
 		//P=HomVec(0.1,0.1,0.1,1);
 		P=(!(rotat_mat*trans_mat))*P0;
+	CATCH
 		}
 
 	void moveto(const vec &v){
+	TRY
 		Xc=v;
 		update_tranlation_mat();
+	CATCH
 		}
 
 	void rotateTo(const Quaternion &q){
+	TRY
 		quaternionToMatrix(q, rotat_mat);
 		//Matrix temp=(rotat_mat*(~rotat_mat));
 		//cerr<< temp <<endl;
@@ -181,11 +198,14 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		//ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		update_tranlation_mat();
 		//P=ellip_mat*P0;
+	CATCH
 		}
 
 	double I(vec n){//FIXME only in special coordinate system
+	TRY
 		n.normalize();
 		return n*inert_mat*n;
+	CATCH
 		}
 
 	double vol(){
@@ -211,6 +231,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	vec point_to_plane(const CPlane &plane)const{//FIXME need to be obtimized
+	TRY
 		double alpha;
 		alpha=(plane.n*(this->inv())*plane.n);
 	
@@ -224,16 +245,19 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		if(d1<d2)return Xc+m;
 		else return Xc-m;
+	CATCH
 		}
 
 	void print(std::ostream &out)const{
 		//FIXME temporary 
 		CSphere S(P.project(), 0.01);
-		S.print(out); out<<endl;
+		S.print(out); 
+	//	return;
+		out<<endl;
 		///
 
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<radius<<"  ";
+		out<< Xc<< "  "<<radius+epsilon<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
 		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
