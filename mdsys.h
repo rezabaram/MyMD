@@ -7,10 +7,12 @@
 
 class ParticleContactHolder : public ShapeContactHolder{
 	public:
-	ParticleContactHolder(const CParticle &_p1, const CParticle & _p2):ShapeContactHolder(), p1(&_p1), p2(&_p2){}
-	ParticleContactHolder(const CParticle *_p1, const CParticle * _p2):ShapeContactHolder(), p1(_p1), p2(_p2){}
+	ParticleContactHolder(const CParticle &_p1, const CParticle & _p2, bool b=false):ShapeContactHolder(), p1(&_p1), p2(&_p2),persist(b){}
+	ParticleContactHolder(const CParticle *_p1=NULL, const CParticle * _p2=NULL, bool b=false):ShapeContactHolder(), p1(_p1), p2(_p2),persist(b){}
 
 	const CParticle *p1, *p2;
+	
+	bool persist;
  	private:
 	};
 
@@ -20,7 +22,7 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), maxNParticle(maxnparticle),epsFreeze(1.0e-12){
-		pairs=new ParticleContactHolder*[maxNParticle*maxNParticle];
+		pairs=new ParticleContactHolder[maxNParticle*maxNParticle];
 		};
 	~CSys();
 
@@ -29,6 +31,7 @@ class CSys{
 	void forward(double dt);
 	void calForces();
 	void interactions();
+	void cleaninteractions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
 
@@ -36,6 +39,9 @@ class CSys{
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
 	void write_packing(string infilename);
+	ParticleContactHolder & pair(int i, int j){
+		return pairs[j+i*particles.size()];
+		}
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
@@ -44,7 +50,6 @@ class CSys{
 	double ke;//kinetic energy
 	double t, outDt;
 	ParticleContainer particles;
-	ParticleContactHolder **pairs;
 	GeomObject<tbox> box;
 	CPlane *sp;
 	//CRecGrid *grid;
@@ -52,6 +57,7 @@ class CSys{
 	vec G;
 	const unsigned maxNParticle;
  	private:
+	ParticleContactHolder *pairs;
 	double epsFreeze;
 	};
 
@@ -67,7 +73,7 @@ void CSys::initialize(){
 	//create for each pair an object for the contact
 	for(unsigned int i=0; i<maxNParticle; i++)
 		for(unsigned int j=0; j<maxNParticle; j++){
-			pairs[j+i*particles.size()]=new ParticleContactHolder(particles.at(i), particles.at(j));
+			pair(i,j).clear();
 			}
 	}
 
@@ -91,6 +97,18 @@ TRY
 CATCH
 	}
 
+void CSys::cleaninteractions(){
+TRY
+	//create for each pair an object for the contact
+	for(unsigned int i=0; i<maxNParticle; i++)
+		for(unsigned int j=0; j<maxNParticle; j++){
+			//if(! pair(i,j)->persist) pair(i,j).clear();
+			pair(i,j).clear();
+			}
+	return;
+CATCH
+	}
+
 void CSys::calForces(){
 TRY
 	ParticleContainer::iterator it1, it2;
@@ -101,7 +119,7 @@ TRY
 		}
 
 	//interactions
-	//for(it1=particles.begin(); it1!=particles.end(); ++it1){
+	cleaninteractions();
 	for(unsigned int i=0; i<particles.size(); i++){
 		for(unsigned int j=i+1; j<particles.size(); j++){
 		//ittemp=it1;++ittemp;
@@ -129,20 +147,20 @@ inline bool CSys::interact(unsigned int i,unsigned int  j)const{
 TRY
 	CParticle *p1=particles.at(i);
 	CParticle *p2=particles.at(j);
-	ShapeContactHolder &overlaps=*pairs[i+particles.size()*j];
-	overlaps.clear();
+	//if(pairs[i+particles.size()*j]==NULL) pairs[i+particles.size()*j]=new ParticleContactHolder*[maxNParticle*maxNParticle];
+	ShapeContactHolder &overlaps=pairs[i+particles.size()*j];
 	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
 	//static double proj, ksi;
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
-		r1=overlaps.at(i)->x-p1->x(0);
-		r2=overlaps.at(i)->x-p2->x(0);
+		r1=overlaps.at(i).x-p1->x(0);
+		r2=overlaps.at(i).x-p2->x(0);
 		v1=p1->x(1)+cross(r1, p1->w(1));
 		v2=p2->x(1)+cross(r2, p2->w(1));
 		dv=v1-v2;
 
-		force=contactForce(overlaps.at(i)->dx, dv, p1->material.stiffness, p1->material.damping);
+		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
 
 		p1->addforce(force);
 		torque=cross(r1, force);
@@ -390,10 +408,10 @@ TRY
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
-		r1=overlaps.at(i)->x-p1->x(0);
+		r1=overlaps.at(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
 
-		force=contactForce(overlaps.at(i)->dx, dv, p1->material.stiffness, p1->material.damping);
+		force=contactForce(overlaps.at(i).dx, dv, p1->material.stiffness, p1->material.damping);
 		p1->addforce(force);
 
 		torque=cross(r1, force);

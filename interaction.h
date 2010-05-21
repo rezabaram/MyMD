@@ -5,8 +5,11 @@
 
 class Contact{
 	public:
-	Contact(const vec &_x, const vec &_dx ):x(_x), dx(_dx){}
+	Contact(const vec &_x, const vec &_dx, bool b=false ):x(_x), dx(_dx), persist(b){}
 	vec x, dx;
+	vec x1, x2;
+	vec x01, x02;
+	bool persist;
 	};
 
 template<typename T1=double, typename T2=double>
@@ -16,16 +19,14 @@ class PairContact : public Contact {
  	private:
 	};
 
-class ShapeContactHolder : public vector<Contact*>{
+class ShapeContactHolder : public vector<Contact>{
 	public:
-	ShapeContactHolder():vector<Contact*>(){}
+	ShapeContactHolder():vector<Contact>(){}
 	void add(const Contact &c){
-		push_back(new Contact(c));
+		if(size()==1)(*begin()=c);
+		else push_back(Contact(c));
 		}
 	~ShapeContactHolder(){
-		ShapeContactHolder::iterator it;
-		for(it=this->begin(); it!=this->end(); ++it)
-			delete (*it);
 		}
 	};
 
@@ -204,7 +205,7 @@ TRY
 	return;
 CATCH
 	}
-void adjust(CEllipsoid &E1, const CEllipsoid &E2, long nIter=20){
+void adjust(CEllipsoid &E1, const CEllipsoid &E2, long nIter=5){
 TRY
 	double dx=(E1.P-E2.P).abs();	
         HomVec X=E1.P, Xp, Xpp;
@@ -221,7 +222,7 @@ TRY
 			X=Xp;
 			}
 		}
-	if(b and E2(X)>0)cerr<< "errorooooooooooooo in "<<__FILE__ <<endl;
+	ERROR( (b and E2(X)>0), "Bug in the code. This should not happen.")
 	E1.fixToBody(X);
 	 
 	return;
@@ -239,6 +240,8 @@ void CInteraction::append(ShapeContactHolder &v, ShapeContactHolder &v2){
 inline
 void CInteraction::overlaps(ShapeContactHolder* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
 TRY
+	ERROR(ovs->size()>1, "There can be only 1 contact between two ellipsoids");
+
 	static CPlane plane(vec(0,0,0), vec(0,0,1));
         static HomVec X1=E1->P, X2=E2->P;
 	
@@ -255,23 +258,6 @@ TRY
 		dx.normalize();
 		ovs->add(Contact(x,dd*dx) );
 		}
-/*
-	overlaps(ovtest1, E, p);
-	overlaps(ovtest2, E0, p);
-	if(ovtest1.size()>0 and ovtest2.size()>0){
-		//append(ovs, ovtest1);
-		throw 1;
-		collide=true;
-		}
-
-	*p= separatingPlane(*E, *E0);//update the plane
-	if(XOR(ovtest1.size()>0 , ovtest2.size()>0) and !collide){
-		 *p= separatingPlane(*E, *E0);//update the plane
-		}
-	
-	//ERROR(1, "stopped");
-	//ERROR(1,"Stopped here");
-*/
 CATCH
 	}
 /*
