@@ -35,4 +35,5 @@ class CException
 		ERROR(1, "Unknown");\
 		}\
 
+#define CHECKPOINT throw CException("Checkpoint reached.", __FILE__, __PRETTY_FUNCTION__, __LINE__);
 #endif /* EXCEPTION_H */

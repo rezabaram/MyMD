@@ -240,10 +240,6 @@ inline
 void CInteraction::overlaps(ShapeContactHolder* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
 TRY
 	static CPlane plane(vec(0,0,0), vec(0,0,1));
-	static ShapeContactHolder ovtest1;
-	static ShapeContactHolder ovtest2;
-	ovtest1.clear();
-	ovtest2.clear();
         static HomVec X1=E1->P, X2=E2->P;
 	
 	//bool b=(*E2)(X1)>0?true:false;
