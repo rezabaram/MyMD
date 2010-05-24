@@ -3,7 +3,7 @@ density  	.2
 outDt  		0.01
 timeStep 	0.00005
 particleSize 	0.025
-nParticle 	15
+nParticle 	215
 maxTime		2.02
 stiffness  	5e+03
 damping		2e+01

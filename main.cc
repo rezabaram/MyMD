@@ -23,7 +23,7 @@ sys.G=config.get_param<vec>("Gravity");
 
 double size=config.get_param<double>("particleSize");
 
-double margin=2.2*size;
+double margin=2.4*size;
 vec x(0.0, 0.0, .0);
 for(double i=margin; i<1-margin; i+=margin){
 for(double j=1-margin; j>margin; j-=margin){
