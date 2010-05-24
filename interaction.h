@@ -247,7 +247,7 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
 TRY
 	
-		if((E1->Xc-E2->Xc).abs()>E1->radius+E2->radius)return;
+		if((E1->Xc-E2->Xc).abs()>1.01*(E1->radius+E2->radius))return;
 
 		E1->P=E1->toWorld(ovs->x01);
 		E2->P=E2->toWorld(ovs->x02);

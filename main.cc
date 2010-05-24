@@ -23,11 +23,11 @@ sys.G=config.get_param<vec>("Gravity");
 
 double size=config.get_param<double>("particleSize");
 
-double margin=2.4*size;
+double margin=2.3*size;
 vec x(0.0, 0.0, .0);
-for(double i=margin; i<1-margin; i+=margin){
-for(double j=1-margin; j>margin; j-=margin){
-for(double k=1-margin; k>margin; k-=margin){
+for(double i=margin/2; i<1-margin/2; i+=margin){
+for(double j=1-margin/2; j>margin/2; j-=margin){
+for(double k=1-margin/2; k>margin/2; k-=margin){
 
 	if(sys.particles.size()==sys.maxNParticle) {
 		break;
@@ -51,6 +51,7 @@ for(double k=1-margin; k>margin; k-=margin){
 	}
 	}
 	}
+	cerr<< "Number of Particles: "<<sys.particles.size() <<endl;
 	sys.solve(config.get_param<double>("maxTime"), Dt);
 }
 

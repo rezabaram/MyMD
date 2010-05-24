@@ -263,7 +263,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		///
 
 		out<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+epsilon<<"  ";
+		out<< Xc<< "  "<<radius+0.001<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
 		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
