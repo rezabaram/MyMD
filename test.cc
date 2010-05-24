@@ -116,9 +116,7 @@ void vectest(){
 	cerr<< w1 <<"   "<< w2 <<endl;
 	}
 
-
 int main(int argc, char **argv){
-
 vectest();
 return 0;
 }

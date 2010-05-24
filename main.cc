@@ -23,7 +23,7 @@ sys.G=config.get_param<vec>("Gravity");
 
 double size=config.get_param<double>("particleSize");
 
-double margin=3.0*size;
+double margin=2.2*size;
 vec x(0.0, 0.0, .0);
 for(double i=margin; i<1-margin; i+=margin){
 for(double j=1-margin; j>margin; j-=margin){
@@ -32,13 +32,13 @@ for(double k=1-margin; k>margin; k-=margin){
 	if(sys.particles.size()==sys.maxNParticle) {
 		break;
 		}
-	x(1)=0.5;//i+size*drand48()/10; 
+	x(1)=i+size*drand48()/10; 
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
 	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
 	double alpha=drand48()*M_PI;
 	Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
-	GeomObject<tellipsoid> E(x, 1, 1-0.4*drand48(), 0.6, size*(1+0.2*drand48()), q);
+	GeomObject<tellipsoid> E(x, 1-0.4*drand48(), 1-0.4*drand48(),1-0.4*drand48(), size*(1+0.2*drand48()), q);
 	CParticle *p = new CParticle(E);
 	vec axis(0.0);
 	axis(1)=30.0*drand48();

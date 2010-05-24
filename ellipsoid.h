@@ -106,15 +106,21 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		CRay<HomVec> ray(HomVec(0,0,0, 1) , HomVec(0,0,1, 1) );
 		CQuadratic quartic(intersect(ray, *this));
 		//the roots are sorted ascending
-		P0= ray(quartic.root(0).real()); //on the surface of E1
-		quartic.print_roots(cerr);
+		//P0= ray(quartic.root(0).real()); //on the surface of E1
+		//quartic.print_roots(cerr);
 		//ray2.print(cerr);
-		cerr<< P0 <<endl;
+		//cerr<< P0 <<endl;
 		rotateTo(q);
 		update_tranlation_mat();
 		}
 
 	~GeomObject(){}
+	HomVec toWorld(const HomVec &point)const{
+		return (!(rotat_mat*trans_mat))*point;
+		}
+	HomVec toBody(const HomVec &point)const{
+		return (rotat_mat*trans_mat)*point;
+		}
 	void fixToBody(const HomVec &point){
 		P=point;
 		P0=(rotat_mat*trans_mat)*point;
@@ -250,7 +256,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void print(std::ostream &out)const{
 		//FIXME temporary 
-		CSphere S(P.project(), 0.01);
+		CSphere S(P.project(), 0.002);
 		S.print(out); 
 	//	return;
 		out<<endl;

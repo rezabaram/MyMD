@@ -127,7 +127,7 @@ TRY
 
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
 	wp=shape->q.toBody(w(1));//FIXME make sure which should be used
-	//wp=w(1);//this one seems to be correct
+	//wp=w(1);			or this
 	dq.u =    -shape->q.v(0)*wp(0) - shape->q.v(1)*wp(1) - shape->q.v(2)*wp(2);
 	dq.v(0) =  shape->q.u  * wp(0) - shape->q.v(2)*wp(1) + shape->q.v(1)*wp(2);
 	dq.v(1) =  shape->q.v(2)*wp(0) + shape->q.u *  wp(1) - shape->q.v(0)*wp(2);
