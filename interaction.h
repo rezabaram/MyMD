@@ -71,30 +71,10 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 	}
 
 
-inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
-	static vec v, vp;
-	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
-	vp=p1->point_to_plane(*(plane));
-	v=plane->normal_from_point(vp, 0);
-	if(v*plane->n <0)return;
-	ovs->add(Contact(vp, -v) );
-	return;
-	}
-
-inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
-	try{
-	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
-		overlaps(ovs, p1, b->face[i]);
-		}
-	}catch(...){
-		ERROR(1,"Some error in the interaction with wall");
-		}
-	}
 
 inline
 void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
+TRY
 
 	ERROR(p1==p2, "A particle is checked against itself for overlapping.")
 	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
@@ -104,6 +84,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1
 			overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
 			}
 		}
+CATCH
 	}
 
 inline
@@ -124,24 +105,50 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1
 		}
 	}
 
-/*
-void adjust2(CEllipsoid &E1, CEllipsoid &E2, long nIter=1){
+inline
+void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
+	static vec v, vp;
+	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
+	vp=p1->point_to_plane(*(plane));
+	v=plane->normal_from_point(vp, 0);
+	if(v*plane->n <0)return;
+	ovs->add(Contact(vp, -v) );
+	return;
+	}
+
+inline
+void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 TRY
+	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+		overlaps(ovs, p1, b->face[i]);
+		}
+CATCH
+	}
+void adjust3(ShapeContact &ovs, CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
+TRY
+		vec x=(ovs.x1.project()+ovs.x2.project())/2;
+		vec dx=(E1.gradient(x)-E2.gradient(x));
+		dx.normalize();
 	for(long i=0; i<nIter; i++){
-        	HomVec X=(E1.P+E2.P)/2;
+        	HomVec X=(ovs.x1+ovs.x2)/2;
         	HomVec X1, X2;
-	 	CRay<HomVec> ray1(HomVec(E1.Xc,1), HomVec(X(0), X(1), X(2), X(3))); 
-	 	CRay<HomVec> ray2(HomVec(E2.Xc,1), HomVec(X(0), X(1), X(2), X(3))); 
+	 	CRay<HomVec> ray1(HomVec(x,1), HomVec(x+dx,1)); 
+	 	CRay<HomVec> ray2(HomVec(x,1), HomVec(x-dx,1)); 
 		X1=ray1((intersect(ray1, E1)).root(1).real());
 		X2=ray2((intersect(ray2, E2)).root(1).real());
-		E1.fixToBody(X1);
-		E2.fixToBody(X2);
+		E1.P=X1;
+		E2.P=X2;
+		ovs.x1=X1;
+		ovs.x2=X2;
+		ovs.x01=E1.toBody(X1);
+		ovs.x02=E2.toBody(X2);
 		}
 	 
+		double dd=(ovs.x1-ovs.x2).abs();
+		ovs.add(Contact(x,dd*dx) );
 	return;
 CATCH
 	}
-*/
 void adjust1(ShapeContact &ovs, CEllipsoid &E1, const CEllipsoid &E2, long nIter=0){
 TRY
         HomVec X=ovs.x1, Xp, Xpp;
@@ -247,23 +254,18 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
 TRY
 	
-		if((E1->Xc-E2->Xc).abs()>1.01*(E1->radius+E2->radius))return;
+	ERROR(E1==E2, "A particle is checked for overlapping against itself for overlapping.")
+	if((E1->Xc-E2->Xc).abs()>1.01*(E1->radius+E2->radius))return;
 
-		E1->P=E1->toWorld(ovs->x01);
-		E2->P=E2->toWorld(ovs->x02);
 	if(!separatingPlane(*ovs, *E1, *E2)){
 		//adjust2(*E1, *E2);
 		
 		ovs->x1=E1->toWorld(ovs->x01);
 		ovs->x2=E2->toWorld(ovs->x02);
 
-		adjust1(*ovs, *E1, *E2, 10);
-		adjust2(*ovs, *E1, *E2, 10);
-		double dd=(ovs->x1-ovs->x2).abs();
-		vec x=(ovs->x1.project()+ovs->x2.project())/2;
-		vec dx=(E1->gradient(x)-E2->gradient(x));
-		dx.normalize();
-		ovs->add(Contact(x,dd*dx) );
+		adjust1(*ovs, *E1, *E2, 100);
+		adjust2(*ovs, *E1, *E2, 100);
+		adjust3(*ovs, *E1, *E2, 1);
 		}
 CATCH
 	}

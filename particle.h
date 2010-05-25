@@ -63,7 +63,8 @@ class CParticle{
 		return -mass*(g*x(0));
 		}
 	double rEnergy(){
-		return 0.5*(Ixx*w(1)(0)*w(1)(0)+Iyy*w(1)(1)*w(1)(1)+Izz*w(1)(1)*w(1)(1));
+		vec wp=shape->q.toBody(w(1));
+		return 0.5*(Ixx*wp(0)*wp(0)+Iyy*wp(1)*wp(1)+Izz*wp(2)*wp(2));
 		}
 
 	double get_mass()const{return mass;}

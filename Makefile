@@ -18,10 +18,10 @@ test.avi:
 	sh genFrames.sh out* > /dev/null 2>&1
 
 clean:
-	rm -rf a.out out* test.avi
+	rm -rf a.out out* *jpg test.avi
 
 aclean:
-	rm -rf test.avi *jpg
+	rm -rf test.avi 
 
 pov:
 	coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png

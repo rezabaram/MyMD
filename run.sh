@@ -6,4 +6,4 @@ then
 	echo "Remove old output files if you want to run a new simulation."
 	exit 1;
 fi
-./a.out 
+./a.out > log

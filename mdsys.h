@@ -181,6 +181,7 @@ void CSys::forward(double dt){
 TRY
 	static int count=0, outN=0,outPutN=outDt/dt;
 	static ofstream out;
+	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
 	ParticleContainer::iterator it;
 	if(count%outPutN==0){
@@ -194,14 +195,15 @@ TRY
 				}
 			count=0;
 			outN++;
+			Energy=rEnergy+kEnergy+pEnergy;
+			cout<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
+			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			}
-	//double energy=0.0;
 	//bool allforwarded=false;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
-		//energy+=(*it)->rEnergy()+(*it)->kEnergy()+(*it)->pEnergy(G);
 		}
 	calForces();
 //	if(!allforwarded)foward(dt/2.0, 2);
@@ -217,7 +219,11 @@ TRY
 			(*it)->material.color="0.5 0.5 0.5";
 			(*it)->x(1)=0.0;
 			}
-		ke+=(*it)->kEnergy();
+		//ke+=(*it)->kEnergy();
+		//energy+=(*it)->kEnergy()+(*it)->pEnergy(G);
+		rEnergy+=(*it)->rEnergy();
+		pEnergy+=(*it)->pEnergy(G);
+		kEnergy+=(*it)->kEnergy();
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
 //output 
