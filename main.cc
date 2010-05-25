@@ -25,6 +25,8 @@ double size=config.get_param<double>("particleSize");
 
 double margin=2.3*size;
 vec x(0.0, 0.0, .0);
+
+double ratio=0.3;
 for(double i=margin/2; i<1-margin/2; i+=margin){
 for(double j=1-margin/2; j>margin/2; j-=margin){
 for(double k=1-margin/2; k>margin/2; k-=margin){
@@ -38,7 +40,9 @@ for(double k=1-margin/2; k>margin/2; k-=margin){
 	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1+0.2*drand48())));
 	double alpha=drand48()*M_PI;
 	Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
-	GeomObject<tellipsoid> E(x, 1-0.4*drand48(), 1-0.4*drand48(),1-0.4*drand48(), size*(1+0.0*drand48()), q);
+	GeomObject<tellipsoid> E(x, 1-0.5*drand48(), 1-0.5*drand48(),1-0.5*drand48(), size*(1+0.0*drand48()));
+	ratio=ratio*-1.0;
+	//GeomObject<tellipsoid> E(x, 0.7+ratio, 0.7-ratio,0.7-ratio, size*(1+0.0*drand48()), q);
 	CParticle *p = new CParticle(E);
 	vec axis(0.0);
 	axis(1)=30.0*drand48();

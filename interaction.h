@@ -35,7 +35,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 	if(dd>0) {
 		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
 		v.normalized();
-		ovs->add(Contact(p1->getpos()+v, (dd)*v));
+		ovs->add(Contact(p1->getpos()+v, v, dd));
 		}
 	}
 
@@ -65,7 +65,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 		dd=p1->radius-d;
 		//if(dd>0) ovs->push_back( CInteraction(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-			ovs->add(Contact(p1->getpos()+v*(1+0.5*dd), (dd)*v) );
+			ovs->add(Contact(p1->getpos()+v*(1+0.5*dd), v, dd) );
 			}
 		}
 	}
@@ -108,11 +108,14 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1
 inline
 void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
 	static vec v, vp;
+	static double dx;
 	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
 	vp=p1->point_to_plane(*(plane));
 	v=plane->normal_from_point(vp, 0);
+	dx=v.abs();
+	v/=dx;
 	if(v*plane->n <0)return;
-	ovs->add(Contact(vp, -v) );
+	ovs->add(Contact(vp, -v, dx) );
 	return;
 	}
 
@@ -145,7 +148,7 @@ TRY
 		}
 	 
 		double dd=(ovs.x1-ovs.x2).abs();
-		ovs.add(Contact(x,dd*dx) );
+		ovs.add(Contact(x,dx,dd) );
 	return;
 CATCH
 	}
@@ -263,8 +266,8 @@ TRY
 		ovs->x1=E1->toWorld(ovs->x01);
 		ovs->x2=E2->toWorld(ovs->x02);
 
-		adjust1(*ovs, *E1, *E2, 100);
-		adjust2(*ovs, *E1, *E2, 100);
+		adjust1(*ovs, *E1, *E2, 10);
+		adjust2(*ovs, *E1, *E2, 10);
 		adjust3(*ovs, *E1, *E2, 1);
 		}
 CATCH

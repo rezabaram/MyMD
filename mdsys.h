@@ -132,13 +132,17 @@ CATCH
 };
 
 inline
-vec contactForce(const vec &dx, const vec &dv, double stiff, double damp){
+vec contactForce(const Contact &c, const vec &dv, double stiff, double damp, double friction){
 TRY
-	double proj=(dv*dx.normalized());
-	double ksi=dx.abs();
-	ksi=(stiff*ksi+damp*proj);//*sqrt(ksi); //to eliminate artifical attractions
+	double proj=(dv*c.n);
+	double ksi=c.dx_n;
+	ksi=(stiff*ksi+damp*proj)*sqrt(ksi); //to eliminate artifical attractions
+	//testout<< ksi <<endl;
 	if(ksi<0)ksi=0;
-	return -ksi*dx;//visco-elastic Hertz law
+	vec fn=-ksi*c.n;//normal force
+	vec ft=-friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
+	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
+	return fn+ft;//visco-elastic Hertz law
 CATCH
 	}
 
@@ -159,7 +163,7 @@ TRY
 		v2=p2->x(1)+cross(r2, p2->w(1));
 		dv=v1-v2;
 
-		force=contactForce(overlaps(ii).dx, dv, p1->material.stiffness, p1->material.damping);
+		force=contactForce(overlaps(ii), dv, p1->material.stiffness, p1->material.damping, p1->material.friction);
 
 		p1->addforce(force);
 		torque=cross(r1, force);
@@ -417,7 +421,7 @@ TRY
 		r1=overlaps(i).x-p1->x(0);
 		dv=p1->x(1)+cross(r1, p1->w(1));
 
-		force=contactForce(overlaps(i).dx, dv, p1->material.stiffness, p1->material.damping);
+		force=contactForce(overlaps(i), dv, p1->material.stiffness, p1->material.damping, -p1->material.friction);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
