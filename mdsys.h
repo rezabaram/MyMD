@@ -46,7 +46,6 @@ class CSys{
 	bool add(CParticle *p);
 	inline bool exist(int i);
 
-	double ke;//kinetic energy
 	double t, outDt;
 	ParticleContainer particles;
 
@@ -212,25 +211,20 @@ TRY
 	calForces();
 //	if(!allforwarded)foward(dt/2.0, 2);
 
-	ke=0;
+	Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calVel(dt);
-		//vec dA=(it->forces/it->get_mass()-it->x(2));
-		//if(!it->frozen) it->x.gear_correct<5>(dt,dA);
 		if(0)if((*it)->x(1).abs()< epsFreeze  && (*it)->avgforces.abs()< epsFreeze ) {
 			//(*it)->frozen=true;
 			(*it)->material.color="0.5 0.5 0.5";
 			(*it)->x(1)=0.0;
 			}
-		//ke+=(*it)->kEnergy();
-		//energy+=(*it)->kEnergy()+(*it)->pEnergy(G);
 		rEnergy+=(*it)->rEnergy();
 		pEnergy+=(*it)->pEnergy(G);
 		kEnergy+=(*it)->kEnergy();
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
-//output 
 	count++;
 	if(out.is_open())out.close();
 CATCH
