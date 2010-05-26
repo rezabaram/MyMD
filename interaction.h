@@ -131,6 +131,7 @@ void adjust3(ShapeContact &ovs, CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
 TRY
 		vec x=(ovs.x1.project()+ovs.x2.project())/2;
 		vec dx=(E1.gradient(x)-E2.gradient(x));
+		//dx=ovs.plane.n;//FIXME test
 		dx.normalize();
 	for(long i=0; i<nIter; i++){
         	HomVec X=(ovs.x1+ovs.x2)/2;
@@ -149,6 +150,8 @@ TRY
 	 
 		double dd=(ovs.x1-ovs.x2).abs();
 		ovs.add(Contact(x,dx,dd) );
+		ovs.plane.Xc=x;
+		ovs.plane.n=dx;
 	return;
 CATCH
 	}
@@ -197,6 +200,36 @@ TRY
 CATCH
 	}
 
+bool checkpoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
+TRY
+        HomVec X1=ovs.x1, X2=ovs.x2;
+	HomVec X=(X1+X2)/2.0;
+	HomVec n1=cross(X,HomVec(drand48(), drand48(), drand48(),0));
+	HomVec n2=cross(X,n1);
+/*	
+	CRay<HomVec> raytest(X, X+n1); 
+	complex<double> t1, t2;
+	t1=(intersect(raytest, E1)).root(0);
+	t2=(intersect(raytest, E1)).root(1);
+	if(t1.imag()>epsilon or t2.imag()>epsilon or t1.real()*t2.real()>0)WARNING("Wrong points "<<t1<<"   "<<t2);
+	t1=(intersect(raytest, E2)).root(0);
+	t2=(intersect(raytest, E2)).root(1);
+	if(t1.imag()>epsilon or t2.imag()>epsilon or t1.real()*t2.real()>0)WARNING("Wrong points "<<t1<<"   "<<t2);
+*/
+	//if( E1(X) > epsilon or E2(X) >epsilon )WARNING(E1(X));
+	static int i=0;
+	if( E1(X) > epsilon or E2(X) >epsilon )cerr<<"\r"<< ++i<<"  "<<E1(X1) <<" "<<E1(X)<<"  "<<E1(X2);
+	return true;
+CATCH
+	}
+void estimatepoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+TRY
+	ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
+	ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
+	ovs.x01=E1.toBody(ovs.x1);
+	ovs.x02=E2.toBody(ovs.x2);
+CATCH
+	}
 bool hit_plane(const CEllipsoid  *p1, const CPlane *plane){
 TRY
 	static vec v, vp;
@@ -268,7 +301,9 @@ TRY
 
 		adjust1(*ovs, *E1, *E2, 10);
 		adjust2(*ovs, *E1, *E2, 10);
+		checkpoints(*ovs, *E1, *E2);
 		adjust3(*ovs, *E1, *E2, 1);
+		estimatepoints(*ovs, *E1, *E2);
 		}
 CATCH
 	}
