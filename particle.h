@@ -19,10 +19,10 @@ class CProperty
 	{
 	public:
 	CProperty():
-	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")), friction(paramsDouble("friction")), density(paramsDouble("density")), color(" 1"){
+	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")), friction(paramsDouble("friction")), cohesion(paramsDouble("cohesion")), density(paramsDouble("density")), color(" 1"){
 		};
 	~CProperty(){}
-	double stiffness, damping, friction;
+	double stiffness, damping, friction, cohesion;
 	double density;
 	string color;
  	private:

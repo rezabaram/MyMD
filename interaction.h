@@ -127,7 +127,7 @@ TRY
 		}
 CATCH
 	}
-void adjust3(ShapeContact &ovs, CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
+void resetcontact(ShapeContact &ovs, CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
 TRY
 		vec x=(ovs.x1.project()+ovs.x2.project())/2;
 		vec dx=(E1.gradient(x)-E2.gradient(x));
@@ -222,14 +222,34 @@ TRY
 	return true;
 CATCH
 	}
+void updatecontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+TRY
+	ovs.x1=E1.toWorld(ovs.x01);
+	ovs.x2=E2.toWorld(ovs.x02);
+CATCH
+	}
+void updateplane(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+TRY
+	ovs.plane.Xc=(ovs.x1.project()+ovs.x2.project())/2;
+	ovs.plane.n=(E1.gradient(ovs.x1.project())-E2.gradient(ovs.x2.project())).normalized();
+CATCH
+	}
 void estimatepoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
 	ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
 	ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
+	static int i;
+	if( E2(ovs.x1) > epsilon or E1(ovs.x2) >epsilon ) cout<<"  "<< ++i<<"  "<<E2(ovs.x1) <<" "<<E1(HomVec(ovs.plane.Xc,1))<<" "<<E2(HomVec(ovs.plane.Xc,1))<<"  "<<E1(ovs.x2)<<endl;
 CATCH
 	}
+void setcontact(ShapeContact &ovs){
+TRY
+	ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
+CATCH
+	}
+
 bool hit_plane(const CEllipsoid  *p1, const CPlane *plane){
 TRY
 	static vec v, vp;
@@ -294,16 +314,18 @@ TRY
 	if((E1->Xc-E2->Xc).abs()>1.01*(E1->radius+E2->radius))return;
 
 	if(!separatingPlane(*ovs, *E1, *E2)){
-		//adjust2(*E1, *E2);
 		
-		ovs->x1=E1->toWorld(ovs->x01);
-		ovs->x2=E2->toWorld(ovs->x02);
-
-		adjust1(*ovs, *E1, *E2, 10);
-		adjust2(*ovs, *E1, *E2, 10);
-		checkpoints(*ovs, *E1, *E2);
-		adjust3(*ovs, *E1, *E2, 1);
+		updatecontact(*ovs, *E1, *E2);
+		updateplane(*ovs, *E1, *E2);
 		estimatepoints(*ovs, *E1, *E2);
+		setcontact(*ovs);
+		//ovs->x1=E1->toWorld(ovs->x01);
+		//ovs->x2=E2->toWorld(ovs->x02);
+
+		//adjust1(*ovs, *E1, *E2, 10);
+		//adjust2(*ovs, *E1, *E2, 10);
+		//checkpoints(*ovs, *E1, *E2);
+		//adjust3(*ovs, *E1, *E2, 1);
 		}
 CATCH
 	}
