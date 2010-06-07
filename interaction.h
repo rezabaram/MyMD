@@ -222,28 +222,32 @@ TRY
 	return true;
 CATCH
 	}
+
 void updatecontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
 	ovs.x1=E1.toWorld(ovs.x01);
 	ovs.x2=E2.toWorld(ovs.x02);
 CATCH
 	}
+
 void updateplane(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
 	ovs.plane.Xc=(ovs.x1.project()+ovs.x2.project())/2;
 	ovs.plane.n=(E1.gradient(ovs.x1.project())-E2.gradient(ovs.x2.project())).normalized();
 CATCH
 	}
+
 void estimatepoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
 	ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
 	ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
-	static int i;
+	static int i=0;
 	if( E2(ovs.x1) > epsilon or E1(ovs.x2) >epsilon ) cout<<"  "<< ++i<<"  "<<E2(ovs.x1) <<" "<<E1(HomVec(ovs.plane.Xc,1))<<" "<<E2(HomVec(ovs.plane.Xc,1))<<"  "<<E1(ovs.x2)<<endl;
 CATCH
 	}
+
 void setcontact(ShapeContact &ovs){
 TRY
 	ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
@@ -305,6 +309,70 @@ void CInteraction::append(ShapeContact &v, ShapeContact &v2){
 
 	return;
 	}
+
+/* solving following system of equations
+	f0:   (X1-X10) E1 (X1 - X10) - 1=0
+	f1:   (X2-X20) E2 (X2 - X20) - 1=0
+	f2-4: E1.grad(X1 - X10)+ alpha  E2.grad(X2 - X20)=0, alpha > 0
+	f5-7: (X1 - X2) + beta E1.grad(X1 - X10)=0,      beta  < 0
+*/
+void newton(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
+TRY
+	static Matrix J(8,8), F(8,1), dF(8,1);
+	static vec g1, g2; //gradients
+
+
+
+	g1=E1.gradient(ovs.x1.project());
+	g2=E2.gradient(ovs.x2.project());
+
+	double alpha=g1.abs()/g2.abs();
+	double beta=-(ovs.x1-ovs.x2).abs()/g1.abs();
+
+
+	long iter=0;
+	while(iter<nIter){
+	g1=E1.gradient(ovs.x1.project());
+	g2=E2.gradient(ovs.x2.project());
+	iter++;
+
+	F(0,0)=E1(ovs.x1);
+	F(1,0)=E2(ovs.x2);
+	F(2,0)=g1(0)+alpha*g2(0); F(3,0)=g1(1)+alpha*g2(1); F(4,0)=g1(2)+alpha*g2(2);
+	F(5,0)=ovs.x1(0)-ovs.x2(0)+ beta*g1(0); F(6,0)=ovs.x1(1)-ovs.x2(1)+beta* g1(1); F(7,0)=ovs.x1(2)-ovs.x2(2)+ beta*g1(2);
+
+	
+	for(int i=0; i<8; i++)
+		for(int j=0; j<8; j++){
+			J(i,j)=0;
+			}
+
+	/*d/d x1.x*/ J(0,0)=g1(0); J(0,2)=2*E1.ellip_mat(0,0); J(0,5)=1+2*beta*E1.ellip_mat(0,0);
+	/*d/d x1.y*/ J(1,0)=g1(1); J(1,3)=2*E1.ellip_mat(1,1); J(1,6)=1+2*beta*E1.ellip_mat(1,1);
+	/*d/d x1.z*/ J(2,0)=g1(2); J(2,4)=2*E1.ellip_mat(2,2); J(2,7)=1+2*beta*E1.ellip_mat(2,2);
+
+
+	/*d/d x2.x*/ J(3,1)=g2(0); J(3,2)=2*alpha*E2.ellip_mat(0,0); J(3,5)=-1;
+	/*d/d x2.y*/ J(4,1)=g2(1); J(4,3)=2*alpha*E2.ellip_mat(1,1); J(4,6)=-1;
+	/*d/d x2.z*/ J(5,1)=g2(2); J(5,4)=2*alpha*E2.ellip_mat(2,2); J(5,7)=-1;
+
+	/*d/d alpha*/ J(6,2)=g2(0); J(6,3)=g2(1); J(6,4)=g2(2); 
+	/*d/d beta*/  J(7,5)=g1(0); J(7,6)=g1(1); J(7,7)=g1(2); 
+
+
+	
+	dF=-(!J)*F;
+	ovs.x1(0)+=dF(0,0); ovs.x1(1)+=dF(1,0); ovs.x1(2)+=dF(2,0);
+	ovs.x2(0)+=dF(3,0); ovs.x2(1)+=dF(4,0); ovs.x2(2)+=dF(5,0);
+	alpha+=dF(6,0);
+	beta +=dF(7,0);
+	cerr<< iter<<"  "<<alpha<<"  "<<beta<<endl;
+	}
+
+
+CATCH
+}
+
 #define XOR(p, q) ( ((p) || (q)) && !((p) && (q)) ) 
 inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
@@ -318,7 +386,11 @@ TRY
 		updatecontact(*ovs, *E1, *E2);
 		updateplane(*ovs, *E1, *E2);
 		estimatepoints(*ovs, *E1, *E2);
+		newton(*ovs, *E1, *E2, 10);
 		setcontact(*ovs);
+
+
+
 		//ovs->x1=E1->toWorld(ovs->x01);
 		//ovs->x2=E2->toWorld(ovs->x02);
 

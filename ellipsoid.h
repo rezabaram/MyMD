@@ -166,7 +166,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		}
 	vec gradient (const vec &X)const {
-		return ellip_mat*(X-Xc);
+		return 2.0*ellip_mat*(X-Xc);
 		}
 	double operator() (const HomVec &X)const {
 		return X*ellip_mat*X;
