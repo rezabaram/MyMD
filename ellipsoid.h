@@ -168,6 +168,10 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	vec gradient (const vec &X)const {
 		return 2.0*ellip_mat*(X-Xc);
 		}
+
+	double operator() (const vec &X)const {
+		return (X-Xc)*ellip_mat*(X-Xc)-1;
+		}
 	double operator() (const HomVec &X)const {
 		return X*ellip_mat*X;
 		}
@@ -236,7 +240,23 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		setup();
 		}
 
-	vec point_to_plane(const CPlane &plane)const{//FIXME need to be obtimized
+	bool doesHit(const CPlane &plane)const{//FIXME needs to be obtimized
+	TRY
+		double alpha;
+		alpha=(plane.n*(this->inv())*plane.n);
+	
+		ERROR(alpha<0, "Impossible happened");
+
+		alpha=1/sqrt(alpha);
+		static vec m(0.0);
+		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*plane.n))); //this more efficient form of m=(alpha*(!ellip_mat)*plane.n);
+
+		if(((Xc+m-plane.Xc)*plane.n)*((Xc-m-plane.Xc)*plane.n) < 0)return true;//extreme points lie on both side of the plane
+		else return false;
+	CATCH
+		}
+
+	vec point_to_plane(const CPlane &plane)const{//FIXME needs to be obtimized
 	TRY
 		double alpha;
 		alpha=(plane.n*(this->inv())*plane.n);

@@ -223,6 +223,12 @@ TRY
 CATCH
 	}
 
+void fixcontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+TRY
+	ovs.x01=E1.toBody(ovs.x1);
+	ovs.x02=E2.toBody(ovs.x2);
+CATCH
+	}
 void updatecontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
 	ovs.x1=E1.toWorld(ovs.x01);
@@ -237,10 +243,10 @@ TRY
 CATCH
 	}
 
-void estimatepoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+void correctpoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
-	ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
-	ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
+	//ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
+	//ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
 	static int i=0;
@@ -250,25 +256,14 @@ CATCH
 
 void setcontact(ShapeContact &ovs){
 TRY
-	ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
+	//ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
+	ovs.add(Contact(ovs.plane.Xc, (ovs.x1.project()-ovs.x2.project()).normalized(), (ovs.x1-ovs.x2).abs()));
 CATCH
 	}
 
-bool hit_plane(const CEllipsoid  *p1, const CPlane *plane){
-TRY
-	static vec v, vp;
-	//if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return false;
-	vp=p1->point_to_plane(*(plane));
-	v=plane->normal_from_point(vp, 0);
-	if(v*plane->n <0)return false;
-	return true;
-CATCH
-	}
+
 bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
-	//if(ovs.set)if( !hit_plane(&E1, &ovs.plane) ) return true;
-	//if(ovs.set)if( !hit_plane(&E1, &ovs.plane) and !hit_plane(&E2, &ovs.plane)) return false;
-	 //ovs.set=true;
 	
 	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
 	//CQuartic q=characteristicPolynom(M);
@@ -366,10 +361,40 @@ TRY
 	ovs.x2(0)+=dF(3,0); ovs.x2(1)+=dF(4,0); ovs.x2(2)+=dF(5,0);
 	alpha+=dF(6,0);
 	beta +=dF(7,0);
-	cerr<< iter<<"  "<<alpha<<"  "<<beta<<endl;
+//	cerr<< iter<<"  "<<alpha<<"  "<<beta<<endl;
 	}
 
 
+CATCH
+}
+// find min of x on E1, in the potentional of E2
+void findMin(HomVec &x,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
+TRY
+	double lambda;
+	vec xp0, xp=x.project();
+	Matrix Em1(3,3), Em2(3,3);
+	for(int i=0; i<3; i++){
+	for(int j=0; j<3; j++){
+		Em1(i,j)=E1.ellip_mat(i,j);
+		Em2(i,j)=E2.ellip_mat(i,j);
+		}
+		}
+	
+	long iter=0;
+	bool converged=false;
+	do{
+		++iter;
+		xp0=xp;
+		lambda=-(xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc);
+		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
+		converged= (xp-xp0).abs()<1e-14;
+		}
+	while(iter<nIter and !converged);
+
+	if(!converged)WARNING("minimization not converged.");
+	x(0)=xp(0);
+	x(1)=xp(1);
+	x(2)=xp(2);
 CATCH
 }
 
@@ -381,12 +406,19 @@ TRY
 	ERROR(E1==E2, "A particle is checked for overlapping against itself for overlapping.")
 	if((E1->Xc-E2->Xc).abs()>1.01*(E1->radius+E2->radius))return;
 
+	//if(ovs->set)if( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)) return;
+	 //ovs->set=true;
+
 	if(!separatingPlane(*ovs, *E1, *E2)){
 		
+		//cerr<< E1->doesHit(ovs->plane) <<"\t"<< E2->doesHit(ovs->plane) <<endl;
+		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
+
 		updatecontact(*ovs, *E1, *E2);
+		findMin(ovs->x1, *E1, *E2, 100);
+		findMin(ovs->x2, *E2, *E1, 100);
 		updateplane(*ovs, *E1, *E2);
-		estimatepoints(*ovs, *E1, *E2);
-		newton(*ovs, *E1, *E2, 10);
+		correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs);
 
 
@@ -398,6 +430,8 @@ TRY
 		//adjust2(*ovs, *E1, *E2, 10);
 		//checkpoints(*ovs, *E1, *E2);
 		//adjust3(*ovs, *E1, *E2, 1);
+		}
+	else{
 		}
 CATCH
 	}
