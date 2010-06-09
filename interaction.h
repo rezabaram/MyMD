@@ -111,11 +111,11 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1
 	static double dx;
 	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
 	vp=p1->point_to_plane(*(plane));
-	v=plane->normal_from_point(vp, 0);
+	v=plane->normal_to_point(vp, 0);
 	dx=v.abs();
 	v/=dx;
-	if(v*plane->n <0)return;
-	ovs->add(Contact(vp, -v, dx) );
+	if(v*plane->n >0)return;
+	ovs->add(Contact(vp, v, dx) );
 	return;
 	}
 
@@ -125,101 +125,6 @@ TRY
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		overlaps(ovs, p1, b->face[i]);
 		}
-CATCH
-	}
-void resetcontact(ShapeContact &ovs, CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
-TRY
-		vec x=(ovs.x1.project()+ovs.x2.project())/2;
-		vec dx=(E1.gradient(x)-E2.gradient(x));
-		//dx=ovs.plane.n;//FIXME test
-		dx.normalize();
-	for(long i=0; i<nIter; i++){
-        	HomVec X=(ovs.x1+ovs.x2)/2;
-        	HomVec X1, X2;
-	 	CRay<HomVec> ray1(HomVec(x,1), HomVec(x+dx,1)); 
-	 	CRay<HomVec> ray2(HomVec(x,1), HomVec(x-dx,1)); 
-		X1=ray1((intersect(ray1, E1)).root(1).real());
-		X2=ray2((intersect(ray2, E2)).root(1).real());
-		E1.P=X1;
-		E2.P=X2;
-		ovs.x1=X1;
-		ovs.x2=X2;
-		ovs.x01=E1.toBody(X1);
-		ovs.x02=E2.toBody(X2);
-		}
-	 
-		double dd=(ovs.x1-ovs.x2).abs();
-		ovs.add(Contact(x,dx,dd) );
-		ovs.plane.Xc=x;
-		ovs.plane.n=dx;
-	return;
-CATCH
-	}
-void adjust1(ShapeContact &ovs, CEllipsoid &E1, const CEllipsoid &E2, long nIter=0){
-TRY
-        HomVec X=ovs.x1, Xp, Xpp;
-	double dx=(X-ovs.x2).abs();	
-	bool b=E2(X)<0?true:false;
-	
-	for(long i=0; i<nIter; i++){
-	 	CRay<HomVec> raytest(HomVec(E1.Xc,1), HomVec(X(0)+dx*drand48(), X(1)+dx*drand48(), X(2)+dx*drand48(),X(3))); 
-		Xp=raytest((intersect(raytest, E1)).root(1).real());
-		Xpp=raytest((intersect(raytest, E2)).root(0).real());
-		if(E2(Xp)<E2(X)){
-			//cerr<<setprecision(14)<< (Xp*X)/Xp.abs()/X.abs() <<endl;
-			X=Xp;
-			}
-		}
-	if(b and E2(X)>0)cerr<< "errorooooooooooooo in "<<__FILE__ <<endl;
-	ovs.x1=X;
-	ovs.x01=E1.toBody(X);
-	 
-	return;
-CATCH
-	}
-void adjust2(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
-TRY
-        HomVec X=ovs.x2, Xp, Xpp;
-	double dx=(X-ovs.x1).abs();	
-	bool b=E1(X)<0?true:false;
-	
-	for(long i=0; i<nIter; i++){
-	 	CRay<HomVec> raytest(HomVec(E2.Xc,1), HomVec(X(0)+dx*drand48(), X(1)+dx*drand48(), X(2)+dx*drand48(),X(3))); 
-		Xp=raytest((intersect(raytest, E2)).root(1).real());
-		Xpp=raytest((intersect(raytest, E1)).root(0).real());
-		if(E1(Xp)<E1(X)){
-	//		cerr<<setprecision(14)<< (Xp*X)/Xp.abs()/X.abs() <<endl;
-			X=Xp;
-			}
-		}
-	if(b and E1(X)>0)cerr<< "errorooooooooooooo in "<<__FILE__ <<endl;
-	ovs.x2=X;
-	ovs.x02=E2.toBody(X);
-	 
-	return;
-CATCH
-	}
-
-bool checkpoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2, long nIter=0){
-TRY
-        HomVec X1=ovs.x1, X2=ovs.x2;
-	HomVec X=(X1+X2)/2.0;
-	HomVec n1=cross(X,HomVec(drand48(), drand48(), drand48(),0));
-	HomVec n2=cross(X,n1);
-/*	
-	CRay<HomVec> raytest(X, X+n1); 
-	complex<double> t1, t2;
-	t1=(intersect(raytest, E1)).root(0);
-	t2=(intersect(raytest, E1)).root(1);
-	if(t1.imag()>epsilon or t2.imag()>epsilon or t1.real()*t2.real()>0)WARNING("Wrong points "<<t1<<"   "<<t2);
-	t1=(intersect(raytest, E2)).root(0);
-	t2=(intersect(raytest, E2)).root(1);
-	if(t1.imag()>epsilon or t2.imag()>epsilon or t1.real()*t2.real()>0)WARNING("Wrong points "<<t1<<"   "<<t2);
-*/
-	//if( E1(X) > epsilon or E2(X) >epsilon )WARNING(E1(X));
-	static int i=0;
-	if( E1(X) > epsilon or E2(X) >epsilon )cerr<<"\r"<< ++i<<"  "<<E1(X1) <<" "<<E1(X)<<"  "<<E1(X2);
-	return true;
 CATCH
 	}
 
@@ -245,19 +150,22 @@ CATCH
 
 void correctpoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
-	//ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
-	//ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
+	ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
+	ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
-	static int i=0;
-	if( E2(ovs.x1) > epsilon or E1(ovs.x2) >epsilon ) cout<<"  "<< ++i<<"  "<<E2(ovs.x1) <<" "<<E1(HomVec(ovs.plane.Xc,1))<<" "<<E2(HomVec(ovs.plane.Xc,1))<<"  "<<E1(ovs.x2)<<endl;
+	//static int i=0;
+	//if( E2(ovs.x1) > epsilon or E1(ovs.x2) >epsilon ) cout<<"  "<< ++i<<"  "<<E2(ovs.x1) <<" "<<E1(HomVec(ovs.plane.Xc,1))<<" "<<E2(HomVec(ovs.plane.Xc,1))<<"  "<<E1(ovs.x2)<<endl;
 CATCH
 	}
 
-void setcontact(ShapeContact &ovs){
+void setcontact(ShapeContact &ovs,CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 	//ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
-	ovs.add(Contact(ovs.plane.Xc, (ovs.x1.project()-ovs.x2.project()).normalized(), (ovs.x1-ovs.x2).abs()));
+	ovs.x01=E1.toBody(ovs.x1);
+	ovs.x02=E2.toBody(ovs.x2);
+	ovs.add(Contact((ovs.x1.project()+ovs.x2.project())/2, (ovs.x1.project()-ovs.x2.project()).normalized(), (ovs.x1-ovs.x2).abs()));
+	//ovs.add(Contact((ovs.x1.project()+ovs.x2.project())/2, (ovs.x1.project()-ovs.x2.project()).normalized(), (ovs.x1-ovs.x2).abs()));
 CATCH
 	}
 
@@ -305,68 +213,6 @@ void CInteraction::append(ShapeContact &v, ShapeContact &v2){
 	return;
 	}
 
-/* solving following system of equations
-	f0:   (X1-X10) E1 (X1 - X10) - 1=0
-	f1:   (X2-X20) E2 (X2 - X20) - 1=0
-	f2-4: E1.grad(X1 - X10)+ alpha  E2.grad(X2 - X20)=0, alpha > 0
-	f5-7: (X1 - X2) + beta E1.grad(X1 - X10)=0,      beta  < 0
-*/
-void newton(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
-TRY
-	static Matrix J(8,8), F(8,1), dF(8,1);
-	static vec g1, g2; //gradients
-
-
-
-	g1=E1.gradient(ovs.x1.project());
-	g2=E2.gradient(ovs.x2.project());
-
-	double alpha=g1.abs()/g2.abs();
-	double beta=-(ovs.x1-ovs.x2).abs()/g1.abs();
-
-
-	long iter=0;
-	while(iter<nIter){
-	g1=E1.gradient(ovs.x1.project());
-	g2=E2.gradient(ovs.x2.project());
-	iter++;
-
-	F(0,0)=E1(ovs.x1);
-	F(1,0)=E2(ovs.x2);
-	F(2,0)=g1(0)+alpha*g2(0); F(3,0)=g1(1)+alpha*g2(1); F(4,0)=g1(2)+alpha*g2(2);
-	F(5,0)=ovs.x1(0)-ovs.x2(0)+ beta*g1(0); F(6,0)=ovs.x1(1)-ovs.x2(1)+beta* g1(1); F(7,0)=ovs.x1(2)-ovs.x2(2)+ beta*g1(2);
-
-	
-	for(int i=0; i<8; i++)
-		for(int j=0; j<8; j++){
-			J(i,j)=0;
-			}
-
-	/*d/d x1.x*/ J(0,0)=g1(0); J(0,2)=2*E1.ellip_mat(0,0); J(0,5)=1+2*beta*E1.ellip_mat(0,0);
-	/*d/d x1.y*/ J(1,0)=g1(1); J(1,3)=2*E1.ellip_mat(1,1); J(1,6)=1+2*beta*E1.ellip_mat(1,1);
-	/*d/d x1.z*/ J(2,0)=g1(2); J(2,4)=2*E1.ellip_mat(2,2); J(2,7)=1+2*beta*E1.ellip_mat(2,2);
-
-
-	/*d/d x2.x*/ J(3,1)=g2(0); J(3,2)=2*alpha*E2.ellip_mat(0,0); J(3,5)=-1;
-	/*d/d x2.y*/ J(4,1)=g2(1); J(4,3)=2*alpha*E2.ellip_mat(1,1); J(4,6)=-1;
-	/*d/d x2.z*/ J(5,1)=g2(2); J(5,4)=2*alpha*E2.ellip_mat(2,2); J(5,7)=-1;
-
-	/*d/d alpha*/ J(6,2)=g2(0); J(6,3)=g2(1); J(6,4)=g2(2); 
-	/*d/d beta*/  J(7,5)=g1(0); J(7,6)=g1(1); J(7,7)=g1(2); 
-
-
-	
-	dF=-(!J)*F;
-	ovs.x1(0)+=dF(0,0); ovs.x1(1)+=dF(1,0); ovs.x1(2)+=dF(2,0);
-	ovs.x2(0)+=dF(3,0); ovs.x2(1)+=dF(4,0); ovs.x2(2)+=dF(5,0);
-	alpha+=dF(6,0);
-	beta +=dF(7,0);
-//	cerr<< iter<<"  "<<alpha<<"  "<<beta<<endl;
-	}
-
-
-CATCH
-}
 // find min of x on E1, in the potentional of E2
 void findMin(HomVec &x,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
 TRY
@@ -382,16 +228,20 @@ TRY
 	
 	long iter=0;
 	bool converged=false;
+	cout<< xp <<endl;
 	do{
 		++iter;
 		xp0=xp;
-		lambda=-(xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc);
+		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
 		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
 		converged= (xp-xp0).abs()<1e-14;
 		}
 	while(iter<nIter and !converged);
+	//	cout<<setprecision(14)<<iter<<"  lambda="<< lambda<<"   Xp="<<xp <<"  C1="<< E1.Xc<<"  C2="<<E2.Xc<<endl;
+	
 
-	if(!converged)WARNING("minimization not converged.");
+	if(!converged)WARNING("minimization not converged: "<<E2(xp));
+	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<E2(xp));
 	x(0)=xp(0);
 	x(1)=xp(1);
 	x(2)=xp(2);
@@ -415,21 +265,13 @@ TRY
 		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
 
 		updatecontact(*ovs, *E1, *E2);
-		findMin(ovs->x1, *E1, *E2, 100);
-		findMin(ovs->x2, *E2, *E1, 100);
-		updateplane(*ovs, *E1, *E2);
-		correctpoints(*ovs, *E1, *E2);
-		setcontact(*ovs);
+		findMin(ovs->x1, *E1, *E2, 50);
+		findMin(ovs->x2, *E2, *E1, 50);
+		//updateplane(*ovs, *E1, *E2);
+		//correctpoints(*ovs, *E1, *E2);
+		setcontact(*ovs, *E1, *E2);
+		cout<< (ovs->x1-ovs->x2).abs() <<endl;
 
-
-
-		//ovs->x1=E1->toWorld(ovs->x01);
-		//ovs->x2=E2->toWorld(ovs->x02);
-
-		//adjust1(*ovs, *E1, *E2, 10);
-		//adjust2(*ovs, *E1, *E2, 10);
-		//checkpoints(*ovs, *E1, *E2);
-		//adjust3(*ovs, *E1, *E2, 1);
 		}
 	else{
 		}

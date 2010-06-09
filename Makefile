@@ -18,7 +18,7 @@ test.avi:
 	sh genFrames.sh out* > /dev/null 2>&1
 
 clean:
-	rm -rf a.out out* *jpg test.avi
+	rm -rf a.out log out* *jpg test.avi
 
 aclean:
 	rm -rf test.avi 

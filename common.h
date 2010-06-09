@@ -53,6 +53,7 @@ void define_parameters()
 	config.add_param<double>("timeStep", 0.00001); 
 	config.add_param<double>("maxTime", 4.0); 
 	config.add_param<size_t>("nParticle", 5); 
+	config.add_param<string>("particleShape", "sphere"); 
 }
 
 template <class T>

@@ -1,7 +1,6 @@
 #ifndef GRID_H
 #define GRID_H
 #include "common.h"
-#include "vec3d.h"
 #include "particle.h"
 
 enum {
@@ -34,13 +33,13 @@ enum {
 };
 
 
-//an ad hoc class for int coordinates. Maybe I will make vec a template to simply include this class in it.
-class CCoord : public vec3d<int>
+//class for int coordinates. 
+class CCoord : public Vec<3, int>
 	{
 	public:
 	CCoord(){};
 	CCoord(const int i, const int j, const int k)
-		:vec3d<int>(i,j,k)
+		:Vec<3, int>(i,j,k)
 		{}
 	};
 
@@ -76,7 +75,7 @@ class CWindow
 	private:
 };
 
-typedef std::vector<CParticle *> Container;
+typedef std::list<CParticle *> Container;
 
 //this class is for nodes which keeps the information of their neighborhood 
 //the node is unaware where in the grid it is. this information is kept in grid class (CRecGrid).
@@ -166,13 +165,13 @@ CNode3D & CRecGrid::operator ()(int i, int j, int k)
 	return *node(i,j, k);
 	}
 
-void CRecGrid::add(CParticle *cir,const CWindow &win)
+void CRecGrid::add(CParticle *p,const CWindow &win)
 	{
-	assert(cir);
+	assert(p);
 	for(int i=win.lleft(0); i<=win.uright(0); i++){
 	for(int j=win.lleft(1); j<=win.uright(1); j++){
 	for(int k=win.lleft(2); k<=win.uright(2); k++){
-		node(i,j,k)->push_back(cir);
+		node(i,j,k)->push_back(p);
 		//if(k>top_nodes[j*N(0)+i])top_nodes[j*N(0)+i]=k;
 		}
 		}

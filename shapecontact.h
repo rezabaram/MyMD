@@ -14,8 +14,9 @@ class ShapeContact : public std::vector<Contact>
 		}
 
 	void add(const Contact &contact){
-		if(this->size()>0)this->at(0)=contact;
-		else push_back(contact);
+		//if(this->size()>0)this->at(0)=contact;
+		//else 
+		push_back(contact);
 		}
 	Contact &operator()(size_t i){
 		return (this->at(i));

@@ -1,7 +1,7 @@
 #ifndef MDSYS_H
 #define MDSYS_H 
 #include "common.h"
-//#include"grid.h"
+#include"grid.h"
 #include"particle.h"
 #include"interaction.h"
 
@@ -21,7 +21,7 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), maxNParticle(maxnparticle),epsFreeze(1.0e-12){
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), maxNParticle(maxnparticle),epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
 		pairs=new ParticleContactHolder*[maxNParticle*maxNParticle];
 		for(unsigned int i=0; i<maxNParticle*maxNParticle; i++) pairs[i]=NULL;
@@ -62,6 +62,7 @@ class CSys{
 	const unsigned maxNParticle;
  	private:
 	double epsFreeze;
+	ofstream outEnergy;
 	};
 
 CSys::~CSys(){
@@ -135,9 +136,8 @@ vec contactForce(const Contact &c, const vec &dv, double stiff, double damp, dou
 TRY
 	double proj=(dv*c.n);
 	double ksi=c.dx_n;
-	ksi=(stiff*ksi+damp*proj)*sqrt(ksi); //to eliminate artifical attractions
-	//testout<< ksi <<endl;
-	if(ksi<0)ksi=0;
+	ksi=(stiff*ksi+damp*proj)*sqrt(ksi); 
+	if(ksi<0)ksi=0;//to eliminate artifical attractions
 	vec fn=-ksi*c.n;//normal force
 	vec ft=-friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
 	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
@@ -199,7 +199,7 @@ TRY
 			count=0;
 			outN++;
 			Energy=rEnergy+kEnergy+pEnergy;
-			cout<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
+			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			}
 	//bool allforwarded=false;
