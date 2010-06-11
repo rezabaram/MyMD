@@ -5,7 +5,7 @@ run: a.out
 	time ./run.sh
 
 a.out:	*.cc *h
-	$(CC)  main.cc -Wall  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
+	$(CC)  main.cc -O2 -Wall  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
 
 test:	test.cc 
 	$(CC)  test.cc  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas

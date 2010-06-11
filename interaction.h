@@ -28,14 +28,13 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2){
 	static vec v;
 	static double d, dd;
-	v=p2->displacement(p1);//Xc2-Xc1
+	v=p2->Xc-p1->Xc;
 	d=v.abs();
 	dd=p2->radius+p1->radius-d;//FIXME can be put in the base class too
 
 	if(dd>0) {
 		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
-		v.normalized();
-		ovs->add(Contact(p1->getpos()+v, v, dd));
+		ovs->add(Contact(p1->getpos()+v, v.normalized(), dd));
 		}
 	}
 
@@ -65,7 +64,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 		dd=p1->radius-d;
 		//if(dd>0) ovs->push_back( CInteraction(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-			ovs->add(Contact(p1->getpos()+v*(1+0.5*dd), v, dd) );
+			ovs->add(Contact(p1->getpos()+v+1.5*dd*v.normalized(), v.normalized(), dd) );
 			}
 		}
 	}
@@ -270,7 +269,6 @@ TRY
 		//updateplane(*ovs, *E1, *E2);
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);
-		cout<< (ovs->x1-ovs->x2).abs() <<endl;
 
 		}
 	else{

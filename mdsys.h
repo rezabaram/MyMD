@@ -136,11 +136,14 @@ vec contactForce(const Contact &c, const vec &dv, double stiff, double damp, dou
 TRY
 	double proj=(dv*c.n);
 	double ksi=c.dx_n;
+	
 	ksi=(stiff*ksi+damp*proj)*sqrt(ksi); 
 	if(ksi<0)ksi=0;//to eliminate artifical attractions
 	vec fn=-ksi*c.n;//normal force
 	vec ft=-friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
 	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
+
+
 	return fn+ft;//visco-elastic Hertz law
 CATCH
 	}

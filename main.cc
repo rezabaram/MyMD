@@ -21,10 +21,14 @@ for(double k=1-margin/2; k>margin/2; k-=margin){
 	x(2)=k+size*drand48()/10; 
 	double alpha=drand48()*M_PI;
 	Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
-	CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*drand48())));
+	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*drand48())));
 	//GeomObject<tellipsoid> E(x, 1-0.0*drand48(), 1-0.0*drand48(),1-0.0*drand48(), size*(1+0.0*drand48()));
 	//CParticle *p = new CParticle(E);
+	CParticle *p = new CParticle(GeomObject<tsphere>(x,size));
+	GeomObject<tellipsoid> E(x, 1, 1, 1, size);
+	CParticle *p2 = new CParticle(E);
 	sys.add(p);
+	
 	}
 	}
 	}
