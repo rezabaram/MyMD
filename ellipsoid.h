@@ -92,7 +92,7 @@ template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
-	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c), R(_a,_b,_c), P(HomVec(0,0,0,1)) {
+	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c), R(_a,_b,_c) {
 		identifier=14;
 		radius=tmax(a, tmax(b,c));
 		a*=_r;
@@ -307,7 +307,6 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	double a,b,c;
 	vec R;
-	HomVec P, P0;
 	private:
 	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
 	GeomObject<tellipsoid> ();

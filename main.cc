@@ -24,9 +24,18 @@ for(double k=1-margin/2; k>margin/2; k-=margin){
 	//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*drand48())));
 	//GeomObject<tellipsoid> E(x, 1-0.0*drand48(), 1-0.0*drand48(),1-0.0*drand48(), size*(1+0.0*drand48()));
 	//CParticle *p = new CParticle(E);
-	CParticle *p = new CParticle(GeomObject<tsphere>(x,size));
-	GeomObject<tellipsoid> E(x, 1, 1, 1, size);
-	CParticle *p2 = new CParticle(E);
+	double r=size*(1-0.1*drand48());
+	GeomObject<tsphere> E1(x,r);
+	//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
+
+	double ee=0.0;
+	double a =1-ee*drand48();
+	double b =1-ee*drand48();
+	double c =1-ee*drand48();
+	GeomObject<tellipsoid> E2(x, a,b,c, r);
+	CParticle *p = new CParticle(E2);
+	p->x(1)(0)=1-2*drand48();
+	p->x(1)(2)=1-2*drand48();
 	sys.add(p);
 	
 	}

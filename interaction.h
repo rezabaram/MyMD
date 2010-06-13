@@ -14,10 +14,10 @@ class CInteraction{
 	//every new kind of particle needs to define two functions
 	static void overlaps(ShapeContact* ovs, const GeomObject <tsphere>     *p1, const GeomObject <tbox>        *b );
 	static void overlaps(ShapeContact* ovs, const GeomObject <tsphere>     *p1, const GeomObject <tsphere>     *p2);
-	static void overlaps(ShapeContact* ovs, const GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
+	static void overlaps(ShapeContact* ovs, GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
+	static void overlaps(ShapeContact* ovs, GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
 	static void overlaps(ShapeContact* ovs, GeomObject <tellipsoid>  *p1, GeomObject <tellipsoid>  *p2);
 	static void overlaps(ShapeContact* ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tcomposite>  *p2);
-	static void overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
 	static void overlaps(ShapeContact* ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tbox>        *b );
 
 	static void append(ShapeContact&v, ShapeContact&v2);
@@ -33,7 +33,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 	dd=p2->radius+p1->radius-d;//FIXME can be put in the base class too
 
 	if(dd>0) {
-		v*=((p1->radius-dd/2.0)/d); //from center of p1 to contact point
+		v*=((p1->radius-dd/2)/d); //from center of p1 to contact point
 		ovs->add(Contact(p1->getpos()+v, v.normalized(), dd));
 		}
 	}
@@ -49,7 +49,7 @@ void CInteraction::overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBas
 		else if(p1->type==tcomposite && p2->type==tbox)//FIXME
 			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tbox)//FIXME
-			overlaps(ovs, static_cast<const GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
+			overlaps(ovs, static_cast<GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tellipsoid)//FIXME
 			overlaps(ovs, static_cast<GeomObject<tellipsoid> *>(p1), static_cast<GeomObject<tellipsoid> *>(p2));
 		else ERROR(true, "Not Implemented");
@@ -64,7 +64,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 		dd=p1->radius-d;
 		//if(dd>0) ovs->push_back( CInteraction(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-			ovs->add(Contact(p1->getpos()+v+1.5*dd*v.normalized(), v.normalized(), dd) );
+			ovs->add( Contact(p1->getpos()+v+1.0*dd*v.normalized(), v.normalized(), dd) );
 			}
 		}
 	}
@@ -105,7 +105,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1
 	}
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
+void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
 	static vec v, vp;
 	static double dx;
 	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
@@ -115,11 +115,12 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1
 	v/=dx;
 	if(v*plane->n >0)return;
 	ovs->add(Contact(vp, v, dx) );
+	p1->fixToBody(HomVec(vp,1));
 	return;
 	}
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
+void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 TRY
 	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		overlaps(ovs, p1, b->face[i]);

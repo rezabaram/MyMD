@@ -1,5 +1,6 @@
 #ifndef GEOMBASE_H
 #include<ostream>
+#include"vec.h"
 #include"quaternion.h"
 
 typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid, tcylinder} GType;
@@ -21,6 +22,7 @@ class GeomObjectBase
 	virtual void scale(double)=0;
 	virtual void print(std::ostream &out)const=0;
 	virtual void parse(std::istream &in)=0;
+	virtual void fixToBody(const HomVec &point){};
 
 	virtual void moveto(const vec& v){//derived classes can override this. especially composite particles should!
 		Xc=v;
@@ -38,6 +40,7 @@ class GeomObjectBase
 
 	double radius;
 	vec Xc, Xc0; //center 
+	HomVec P, P0; //test point
 	int identifier;
 	GType type;
 	Quaternion q;

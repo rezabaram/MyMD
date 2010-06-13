@@ -36,6 +36,7 @@ class CSys{
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
+	vec contactForce(const Contact &c, const vec &dv, CProperty &m)const;
 
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
@@ -132,17 +133,22 @@ CATCH
 };
 
 inline
-vec contactForce(const Contact &c, const vec &dv, double stiff, double damp, double friction){
+vec CSys::contactForce(const Contact &c, const vec &dv, CProperty &m)const{
 TRY
 	double proj=(dv*c.n);
 	double ksi=c.dx_n;
 	
-	ksi=(stiff*ksi+damp*proj)*sqrt(ksi); 
+
+	ksi=(m.stiffness*ksi+m.damping*proj)*sqrt(ksi); 
 	if(ksi<0)ksi=0;//to eliminate artifical attractions
 	vec fn=-ksi*c.n;//normal force
-	vec ft=-friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
+	vec ft=m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
 	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
 
+	//static int i2=0;
+	//i2++;
+	//if(i2==160)exit(0);
+	//cerr<< t<<"  "<<setprecision(14)<<c.x<<"  "<<c.n<<"  "<< c.dx_n << "  dv="<<dv<<"  Fn="<<fn<<endl;
 
 	return fn+ft;//visco-elastic Hertz law
 CATCH
@@ -161,11 +167,13 @@ TRY
 	for(size_t ii=0; ii<overlaps.size(); ii++){
 		r1=overlaps(ii).x-p1->x(0);
 		r2=overlaps(ii).x-p2->x(0);
-		v1=p1->x(1)+cross(r1, p1->w(1));
-		v2=p2->x(1)+cross(r2, p2->w(1));
+		v1=p1->x(1)-cross(p1->w(1), r1);
+		v2=p2->x(1)-cross(p2->w(1), r2);
 		dv=v1-v2;
 
-		force=contactForce(overlaps(ii), dv, p1->material.stiffness, p1->material.damping, p1->material.friction);
+		force=contactForce(overlaps(ii), dv, p1->material);
+		p1->shape->fixToBody(HomVec(overlaps(ii).x,1));
+
 
 		p1->addforce(force);
 		torque=cross(r1, force);
@@ -243,7 +251,7 @@ void CSys::solve(double tMax, double dt){
 			stop=true;
 			}
 
-		calForces();
+		//calForces();
 		forward(dt);
 		t+=dt;
 		if(stop)break;
@@ -416,9 +424,9 @@ TRY
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
 		r1=overlaps(i).x-p1->x(0);
-		dv=p1->x(1)+cross(r1, p1->w(1));
+		dv=p1->x(1)+cross(p1->w(1), r1);
 
-		force=contactForce(overlaps(i), dv, p1->material.stiffness, p1->material.damping, -p1->material.friction);
+		force=contactForce(overlaps(i), -dv, p1->material);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
