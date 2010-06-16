@@ -24,10 +24,10 @@ typedef size_t indexType;
 //typedef vec3d<double> vec;
 
 #include"quaternion.h"
+#include"MersenneTwister.h"
 #include"matrix.h"
 using namespace math;
 typedef matrix<double> Matrix;
-#include"log.h"
 #include"polynom.h"
 #include"shapes.h"
 
@@ -67,6 +67,12 @@ string stringify(T x, int width=15, const char ch=' ')
 
 using namespace math;
 
+extern long RNGSeed;
+static MTRand rgen(RNGSeed);
+
+vec randomVec(const vec &x1, const vec &x2){
+	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(0)+(x2(2)-x1(2))*rgen());
+	}
 
 //obtaining the polynomial | B + lambda A | = 0
 CQuartic characteristicPolynom(const Matrix &AB){

@@ -58,7 +58,7 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
 	static vec v;
 	static double d, dd;
-	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+	for(size_t i=0; i<b->nFaces; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		v=b->face[i]->normal_from_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
 		d=v.abs();
 		dd=p1->radius-d;
@@ -90,7 +90,7 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
 	static double d;
 	bool need_to_check=false;
-	for(indexType i=0; i<6; ++i){
+	for(indexType i=0; i<b->nFaces; ++i){
 		d=(b->face[i]->normal_from_point(p1->Xc,0.0)).abs2() - p1->radius*p1->radius;
 		if(d<0){
 			need_to_check=true;
@@ -122,7 +122,7 @@ void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, cons
 inline
 void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
 TRY
-	for(int i=0; i<6; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+	for(size_t i=0; i<b->nFaces; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		overlaps(ovs, p1, b->face[i]);
 		}
 CATCH
@@ -219,8 +219,8 @@ TRY
 	double lambda;
 	vec xp0, xp=x.project();
 	Matrix Em1(3,3), Em2(3,3);
-	for(int i=0; i<3; i++){
-	for(int j=0; j<3; j++){
+	for(size_t i=0; i<3; i++){
+	for(size_t j=0; j<3; j++){
 		Em1(i,j)=E1.ellip_mat(i,j);
 		Em2(i,j)=E2.ellip_mat(i,j);
 		}
@@ -228,7 +228,6 @@ TRY
 	
 	long iter=0;
 	bool converged=false;
-	cout<< xp <<endl;
 	do{
 		++iter;
 		xp0=xp;

@@ -23,6 +23,7 @@ class GeomObjectBase
 	virtual void print(std::ostream &out)const=0;
 	virtual void parse(std::istream &in)=0;
 	virtual void fixToBody(const HomVec &point){};
+	virtual double operator()(const vec &point){return 1e+100;};
 
 	virtual void moveto(const vec& v){//derived classes can override this. especially composite particles should!
 		Xc=v;

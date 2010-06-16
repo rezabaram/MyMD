@@ -138,7 +138,6 @@ TRY
 	shape->q.normalize();
 	
 	
-	//cerr<< shape->q <<endl;
 	shape->rotateTo(shape->q);
 	shape->moveto(x(0));
 CATCH

@@ -25,7 +25,7 @@ class GeomObject<tsphere>: public GeomObjectBase
 
 	double vol(){ 
 			return 4.0/3.0*M_PI*radius*radius*radius;}
-	double I(vec n){return 2.0/5.0*vol()*radius*radius;}
+	double I(vec n){return 2.0/5.0*radius*radius;}
 	private:
 	GeomObject<tsphere>();
 	};

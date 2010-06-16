@@ -276,10 +276,10 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 	void print(std::ostream &out)const{
 		//FIXME temporary 
-		CSphere S(P.project(), 0.01);
-		S.print(out); 
+//		CSphere S(P.project(), 0.01);
+//		S.print(out); 
 	//	return;
-		out<<endl;
+//		out<<endl;
 		///
 
 		out<< identifier<< "   ";

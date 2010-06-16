@@ -1,12 +1,10 @@
 #include<iostream>
 using namespace std;
 #include"polynom.h"
-#include"group.h"
 #include"eigen.h"
 #include"vec.h"
-#include"vec3d.h"
+#include"MersenneTwister.h"
 #include"common.h"
-
 void polytest(){
 
 vector<double> coefs;
@@ -39,13 +37,6 @@ poly.print_roots(cerr);
 poly.plot(cout, -3, 3, 0.01);
 }
 
-void listtest(){
-	CList<int> list;
-	for(int i=0; i<100; ++i){
-	list.push_back(i);
-	}
-
-	}
 void gaussElimTest(){
 	drand48();
 	const size_t N=15, M=15;
@@ -109,15 +100,15 @@ void mysort(int val[], int ind[] , int n){
 
 }
 
-void vectest(){
-	Vec<3, double>  v1(1,2,3), u1(2,3,4), w1(2);
-	vec3d<double> v2(1,2,3), u2(2,3,4), w2(2);
-	
-	cerr<< w1 <<"   "<< w2 <<endl;
-	}
 
 int main(int argc, char **argv){
-vectest();
+long seed=0;
+MTRand rgen(seed);
+
+for(int i=0; i<100; i++){
+	cerr<< rgen() <<endl;
+	}
+
 return 0;
 }
 

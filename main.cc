@@ -9,13 +9,13 @@ double size=sys.maxr;
 double margin=2.3*size;
 vec x(0.0, 0.0, .0);
 
+double k=0;
+while(sys.particles.size()<sys.maxNParticle){
+	k+=margin;
 for(double i=margin/2; i<1-margin/2; i+=margin){
 for(double j=1-margin/2; j>margin/2; j-=margin){
-for(double k=1-margin/2; k>margin/2; k-=margin){
+	if(sys.particles.size()==sys.maxNParticle)break;
 
-	if(sys.particles.size()==sys.maxNParticle) {
-		break;
-		}
 	x(1)=i+size*drand48()/10; 
 	x(0)=j+size*drand48()/10;
 	x(2)=k+size*drand48()/10; 
@@ -28,14 +28,15 @@ for(double k=1-margin/2; k>margin/2; k-=margin){
 	GeomObject<tsphere> E1(x,r);
 	//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
-	double ee=0.0;
-	double a =1-ee*drand48();
+	double ee=0.5;
+	double a =1;
 	double b =1-ee*drand48();
 	double c =1-ee*drand48();
 	GeomObject<tellipsoid> E2(x, a,b,c, r);
 	CParticle *p = new CParticle(E2);
 	p->x(1)(0)=1-2*drand48();
 	p->x(1)(2)=1-2*drand48();
+	p->w(1)(2)=10*(1-2*drand48());
 	sys.add(p);
 	
 	}
@@ -43,26 +44,31 @@ for(double k=1-margin/2; k>margin/2; k-=margin){
 	}
 }
 
-void Run(){
+long RNGSeed;
+void Initialize(){
+	RNGSeed=0;
 	define_parameters();
 	config.parse("config");
 
 
+	}
+
+void Run(){
+
 	CSys sys(config.get_param<size_t>("nParticle"));
 	sys.outDt=config.get_param<double>("outDt");
-	double Dt=config.get_param<double>("timeStep");
 	sys.maxr=config.get_param<double>("particleSize");
 
 	sys.G=config.get_param<vec>("Gravity");
 	particles_on_grid(sys);
-
 	cerr<< "Number of Particles: "<<sys.particles.size() <<endl;
+	double Dt=config.get_param<double>("timeStep");
 	sys.solve(config.get_param<double>("maxTime"), Dt);
 }
 
 int main(){
 	try {
-	//Initialize();
+	Initialize();
 	Run();
 	//Shutdown();
 	return 0;

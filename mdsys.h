@@ -42,6 +42,7 @@ class CSys{
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
 	void write_packing(string infilename);
+	double packFraction(const vec &x1, const vec &x2, unsigned long N);
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
@@ -90,6 +91,20 @@ TRY
 			}
 		}
 CATCH
+	}
+
+//calculating packing fraction inside cube with x1, x2 az opposite corners
+double CSys::packFraction(const vec &x1, const vec &x2, unsigned long N=10000){
+	double n=0, nt=0;
+	vec x;
+	for(unsigned long i=0; i<N; i++){
+		++nt;
+		x=randomVec(x1,x2);
+		for(unsigned long j=0; j<particles.size(); j++) 
+			if((*(particles.at(i)->shape))(x)<0)
+				++n;
+		}
+	return n/nt;
 	}
 
 //void CSys::setup_grid(double _d){
@@ -142,13 +157,14 @@ TRY
 	ksi=(m.stiffness*ksi+m.damping*proj)*sqrt(ksi); 
 	if(ksi<0)ksi=0;//to eliminate artifical attractions
 	vec fn=-ksi*c.n;//normal force
-	vec ft=m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
+	vec ft=-m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
 	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
 
-	//static int i2=0;
-	//i2++;
+	static int i2=0;
+	i2++;
 	//if(i2==160)exit(0);
 	//cerr<< t<<"  "<<setprecision(14)<<c.x<<"  "<<c.n<<"  "<< c.dx_n << "  dv="<<dv<<"  Fn="<<fn<<endl;
+	//cerr<< ft.abs()/fn.abs() <<endl;
 
 	return fn+ft;//visco-elastic Hertz law
 CATCH
@@ -167,12 +183,13 @@ TRY
 	for(size_t ii=0; ii<overlaps.size(); ii++){
 		r1=overlaps(ii).x-p1->x(0);
 		r2=overlaps(ii).x-p2->x(0);
-		v1=p1->x(1)-cross(p1->w(1), r1);
-		v2=p2->x(1)-cross(p2->w(1), r2);
+		v1=p1->x(1)+cross(p1->w(1), r1);
+		v2=p2->x(1)+cross(p2->w(1), r2);
 		dv=v1-v2;
 
 		force=contactForce(overlaps(ii), dv, p1->material);
 		p1->shape->fixToBody(HomVec(overlaps(ii).x,1));
+		//cerr<< (p2->x(0)-p1->x(0)).normalized() <<endl;
 
 
 		p1->addforce(force);
@@ -426,7 +443,7 @@ TRY
 		r1=overlaps(i).x-p1->x(0);
 		dv=p1->x(1)+cross(p1->w(1), r1);
 
-		force=contactForce(overlaps(i), -dv, p1->material);
+		force=contactForce(overlaps(i), dv, p1->material);
 		p1->addforce(force);
 
 		torque=cross(r1, force);

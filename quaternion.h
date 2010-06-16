@@ -4,9 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <fstream>
-#include "log.h"
 #include <string>
-#include "common.h"
 
 class Quaternion{
 Quaternion();
@@ -185,7 +183,7 @@ return rq;
 }
 
 inline void Quaternion::rotateMe(const vec &axis, double angle){
-log <<"Check this!"<<std::endl; // FIXME
+WARNING("Check this");//FIXME
 *this=Quaternion(axis,angle).rotate(*this);
 }
 

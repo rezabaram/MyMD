@@ -8,17 +8,18 @@ class GeomObject<tbox>: public GeomObjectBase
 	public:
 	virtual ~GeomObject(){};
 	GeomObject(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0)):
-		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L),
+		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L), nFaces(5),
 		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
 		identifier=6;
+		face =  new GeomObject<tplane> * [nFaces];
 		face[0]=new GeomObject<tplane> (corner,u0);
 		face[1]=new GeomObject<tplane> (corner,u1);
 		face[2]=new GeomObject<tplane> (corner,u2);
 
 		face[3]=new GeomObject<tplane> (corner+L,-u0);
 		face[4]=new GeomObject<tplane> (corner+L,-u1);
-		face[5]=new GeomObject<tplane> (corner+L,-u2);
+//		face[5]=new GeomObject<tplane> (corner+L,-u2);
 		};
 
 	void shift(const vec &x){corner+=x;}
@@ -46,7 +47,8 @@ class GeomObject<tbox>: public GeomObjectBase
 
 	vec top()const{return corner+L;}
 	vec corner, L;
-	GeomObject<tplane> * face[6];
+	const size_t nFaces;
+	GeomObject<tplane> ** face;
  	private:
 	GeomObject();
 	vec u0, u1, u2;
