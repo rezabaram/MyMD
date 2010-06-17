@@ -21,7 +21,8 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), maxNParticle(maxnparticle),epsFreeze(1.0e-12), outEnergy("log_energy"){
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), 
+		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
 		pairs=new ParticleContactHolder*[maxNParticle*maxNParticle];
 		for(unsigned int i=0; i<maxNParticle*maxNParticle; i++) pairs[i]=NULL;
@@ -35,6 +36,7 @@ class CSys{
 	void calForces();
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
+	inline bool interact(CParticle *, CParticle *)const; //force from p2 on p1
 	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m)const;
 
@@ -46,6 +48,8 @@ class CSys{
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
+	void setup_verlet(CParticle *p);
+	void setup_verlet();
 	inline bool exist(int i);
 
 	double t, outDt;
@@ -59,9 +63,10 @@ class CSys{
 	GeomObject<tbox> box;
 	CPlane *sp;
 	//CRecGrid *grid;
-	double maxr;
+	double maxr, verlet_distance;
 	vec G;
 	const unsigned maxNParticle;
+	bool verlet_need_update;
  	private:
 	double epsFreeze;
 	ofstream outEnergy;
@@ -111,6 +116,28 @@ double CSys::packFraction(const vec &x1, const vec &x2, unsigned long N=10000){
 		//grid=new CRecGrid(box.corner, box.L, _d*maxr);
 		//}
 
+//construct the verlet list of all particles
+void CSys::setup_verlet(){
+	vector<CParticle *>::iterator it;
+	for(it=particles.begin(); it!=particles.end(); it++){
+		(*it)->neighbors.clear();
+		setup_verlet(*it);
+		}
+	verlet_need_update=false;
+	cerr<< "Verlet updated at: "<<t <<endl;
+	}
+
+//construct the verlet list of one particle 
+void CSys::setup_verlet(CParticle *p){
+TRY
+	vector<CParticle *>::iterator it;
+	for(it=particles.begin(); (*it)!=p; it++){ //checking all particles before
+		if((p->x(0)-(*it)->x(0)).abs() - p->shape->radius -(*it)->shape->radius < verlet_distance)p->neighbors.add((*it));
+		}
+	p->neighbors.x=p->x(0);
+CATCH
+	}
+
 bool CSys::add(CParticle *p){
 TRY
 	ERROR(particles.size()==maxNParticle,"Reached max number of particles.");
@@ -120,7 +147,12 @@ TRY
 		//return false;
 		//}
 	if(maxr<p->shape->radius)maxr=p->shape->radius;
+	verlet_distance=0.5*maxr;
+
 	particles.push_back(p);
+	particles.back()->id=particles.size()-1;
+
+	setup_verlet(particles.back());
 	//assert(grid);
 	//grid->add(p);
 	return true;
@@ -129,7 +161,8 @@ CATCH
 
 void CSys::calForces(){
 TRY
-	ParticleContainer::iterator it1, it2;
+	ParticleContainer::iterator it1, it2, ittemp;
+	CVerlet<CParticle>::iterator neigh;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->forces=G*((*it1)->get_mass());
@@ -137,12 +170,14 @@ TRY
 		}
 
 	//interactions
-	for(unsigned int i=0; i<particles.size(); i++){
-		for(unsigned int j=i+1; j<particles.size(); j++){
-			if(interact(i, j)){ }
+	for(it1=particles.begin(); it1!=particles.end(); ++it1){
+		
+	//	cerr<<(*it1)->neighbors.size()  <<endl;
+		for(neigh=(*it1)->neighbors.begin(); neigh!=(*it1)->neighbors.end(); ++neigh){
+			if(interact(*it1,*neigh)){ }
 			}
 		//the walls
-		if(interact(particles.at(i), &box)){  }
+		if(interact(*it1, &box)){  }
 		}
 CATCH
 };
@@ -170,11 +205,11 @@ TRY
 CATCH
 	}
 
-inline bool CSys::interact(unsigned int i,unsigned int  j)const{
+inline bool CSys::interact(CParticle *p1,CParticle *p2)const{
 TRY
-	CParticle *p1=particles.at(i);
-	CParticle *p2=particles.at(j);
-	ShapeContact &overlaps=*pair(i,j);
+	//CParticle *p1=particles.at(i);
+	//CParticle *p2=particles.at(j);
+	ShapeContact &overlaps=*pair(p1->id,p2->id);
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
@@ -214,6 +249,8 @@ TRY
 	static ofstream out;
 	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
+
+	if(verlet_need_update)setup_verlet();
 	ParticleContainer::iterator it;
 	if(count%outPutN==0){
 			stringstream outname;
@@ -234,6 +271,7 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
+		if(((*it)->x(0)-(*it)->neighbors.x).abs()> verlet_distance/2)verlet_need_update=true;
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		}
 	calForces();

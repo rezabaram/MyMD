@@ -10,6 +10,7 @@
 #include"common.h"
 #include"dfreedom.h"
 #include"shapes.h"
+#include"verlet.h"
 
 
 typedef enum {frozen, onhold, rejected, ready_to_go} tState;
@@ -35,7 +36,7 @@ class CParticle{
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<GType shapeType>
-	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go){init();}
+	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),neighbors(this){init();}
 	~CParticle(){
 		delete shape;
 		}
@@ -52,7 +53,6 @@ class CParticle{
 		Ixx=mass*shape->I(vec(1,0,0));
 		Iyy=mass*shape->I(vec(0,1,0));
 		Izz=mass*shape->I(vec(0,0,1));
-
 		};
 
 	double kEnergy(){
@@ -100,6 +100,7 @@ class CParticle{
 	vec forces, avgforces;
 	vec torques, avgtorque;
 	tState state;
+	CVerlet<CParticle> neighbors;
 	protected:
 	double mass, Ixx, Iyy, Izz;
  	private:
