@@ -4,16 +4,9 @@
 #include"grid.h"
 #include"particle.h"
 #include"interaction.h"
+#include"particlecontact.h"
 
-class ParticleContactHolder : public ShapeContact{
-	public:
-	ParticleContactHolder(CParticle &_p1, CParticle & _p2):ShapeContact(), p1(&_p1), p2(&_p2){}
-	ParticleContactHolder(CParticle *_p1, CParticle * _p2):ShapeContact(), p1(_p1), p2(_p2){}
-	ParticleContactHolder():ShapeContact(), p1(NULL), p2(NULL){}
 
-	CParticle * const p1, * const p2;
- 	private:
-	};
 
 typedef vector<CParticle *> ParticleContainer;
 
@@ -24,7 +17,7 @@ class CSys{
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), 
 		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
-		pairs=new ParticleContactHolder*[maxNParticle*maxNParticle];
+		pairs=new ParticleContactHolder<CParticle> *[maxNParticle*maxNParticle];
 		for(unsigned int i=0; i<maxNParticle*maxNParticle; i++) pairs[i]=NULL;
 	CATCH
 		};
@@ -56,10 +49,10 @@ class CSys{
 	ParticleContainer particles;
 
 	
-	ParticleContactHolder *  &pair(size_t i, size_t j)const{
+	ParticleContactHolder<CParticle>  *  &pair(size_t i, size_t j)const{
 		return pairs[j+i*particles.size()];
 			}
-	ParticleContactHolder **pairs;
+	ParticleContactHolder<CParticle>  **pairs;
 	GeomObject<tbox> box;
 	CPlane *sp;
 	//CRecGrid *grid;
@@ -91,7 +84,7 @@ TRY
 	//create for each pair an object for the contact
 	for(unsigned int i=0; i<particles.size(); i++){
 		for(unsigned int j=0; j<particles.size(); j++){
-			pair(i,j)=new ParticleContactHolder(particles.at(i), particles.at(j));
+			pair(i,j)=new ParticleContactHolder<CParticle> (particles.at(i), particles.at(j));
 		//	pair(i,j).set(particles.at(i), particles.at(j));
 			}
 		}
@@ -172,9 +165,11 @@ TRY
 	//interactions
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		
-	//	cerr<<(*it1)->neighbors.size()  <<endl;
-		for(neigh=(*it1)->neighbors.begin(); neigh!=(*it1)->neighbors.end(); ++neigh){
-			if(interact(*it1,*neigh)){ }
+		it2=it1; ++it2;
+		for(; it2!=particles.end(); ++it2){
+		//for(neigh=(*it1)->neighbors.begin(); neigh!=(*it1)->neighbors.end(); ++neigh){
+			//if(interact(*it1,*neigh)){ }
+			if(interact(*it1,*it2)){ }
 			}
 		//the walls
 		if(interact(*it1, &box)){  }
