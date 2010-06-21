@@ -45,6 +45,7 @@ for(double j=1-margin/2; j>margin/2; j-=margin){
 	}
 	}
 	t+=0.2;
+	if(t>config.get_param<double>("maxTime"))exit(0);
 	sys.setup_verlet();
 	sys.solve(t, Dt);
 	}

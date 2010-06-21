@@ -186,9 +186,11 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		trans_mat(1,3)=-Xc(1);
 		trans_mat(2,3)=-Xc(2);
 		trans_mat(3,3)=1;
-		ellip_mat=~trans_mat*~rotat_mat*scale_mat*rotat_mat*trans_mat;
+		static Matrix tempmat;
+		tempmat=rotat_mat*trans_mat;
+		ellip_mat=(~tempmat)*scale_mat*tempmat;
 		//P=HomVec(0.1,0.1,0.1,1);
-		P=(!(rotat_mat*trans_mat))*P0;
+		//P=(!(rotat_mat*trans_mat))*P0;
 	CATCH
 		}
 

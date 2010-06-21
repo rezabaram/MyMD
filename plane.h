@@ -48,4 +48,12 @@ class GeomObject<tplane> : public GeomObjectBase
 
 typedef GeomObject<tplane> CPlane;
 
+class HomPlane
+	{
+	public:
+	HomPlane(){}
+	HomVec x, n;
+ 	private:
+	};
+
 #endif /* PLANE_H */
