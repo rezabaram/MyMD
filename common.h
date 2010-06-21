@@ -5,6 +5,7 @@
 //#include"matrix.h"
 
 #include<assert.h>
+#include<time.h>
 #include<memory>
 #include<limits>
 #include<iomanip>
@@ -31,6 +32,9 @@ typedef matrix<double> Matrix;
 #include"polynom.h"
 #include"shapes.h"
 
+#define FROMTIME double CLOCKSTART=clock(); cerr<<"Time in function "<<__FUNCTION__<<": ";
+#define TOTIME cerr<<(clock()-CLOCKSTART)/CLOCKS_PER_SEC<<endl;
+
 ofstream *gout=NULL;
 
 extern CConfig &config; // don't forget "&" or you get a vicious bug, which took me one day to find
@@ -52,6 +56,7 @@ void define_parameters()
 	config.add_param<double>("particleSize", 0.05); 
 	config.add_param<double>("timeStep", 0.00001); 
 	config.add_param<double>("maxTime", 4.0); 
+	config.add_param<double>("verletfactor", 0.5); 
 	config.add_param<size_t>("nParticle", 5); 
 	config.add_param<string>("particleShape", "sphere"); 
 }

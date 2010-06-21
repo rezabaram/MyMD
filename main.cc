@@ -10,8 +10,11 @@ double margin=2.3*size;
 vec x(0.0, 0.0, .0);
 
 double k=0;
+double t=0;
+double Dt=config.get_param<double>("timeStep");
 while(sys.particles.size()<sys.maxNParticle){
-	k+=margin;
+	k=sys.maxh+margin;
+	if(k==1+10*margin)break;
 for(double i=margin/2; i<1-margin/2; i+=margin){
 for(double j=1-margin/2; j>margin/2; j-=margin){
 	if(sys.particles.size()==sys.maxNParticle)break;
@@ -34,13 +37,16 @@ for(double j=1-margin/2; j>margin/2; j-=margin){
 	double c =1-ee*drand48();
 	GeomObject<tellipsoid> E2(x, a,b,c, r);
 	CParticle *p = new CParticle(E2);
-	p->x(1)(0)=1-2*drand48();
-	p->x(1)(2)=1-2*drand48();
+	//p->x(1)(0)=1-2*drand48();
+	//p->x(1)(2)=1-2*drand48();
 	p->w(1)(2)=10*(1-2*drand48());
 	sys.add(p);
 	
 	}
 	}
+	t+=0.2;
+	sys.setup_verlet();
+	sys.solve(t, Dt);
 	}
 }
 

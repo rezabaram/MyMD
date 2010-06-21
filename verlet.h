@@ -5,6 +5,7 @@
 #include"exception.h"
 #include"vec.h"
 #include"shapecontact.h"
+#include"particlecontact.h"
 
 using namespace std;
 template<class T>
@@ -21,11 +22,11 @@ class CVerlet: public list<T*>
 		{
 		ERROR(p==self_p, "A particle cannot be added to its own verlet list");
 		push_back(p);
+		pairs.insert(pair<T*, ParticleContactHolder<T> > (p, ParticleContactHolder<T>(this->self_p, p)));
 		}
 
 	vec x; //position when the list was updated
-	
-	
+	map<T*, ParticleContactHolder<T> > pairs;
 
  	private:
 	T * self_p;
