@@ -241,7 +241,7 @@ class Vec{
 
 	template<indexType _dim, class T, class policy>
 	inline
-	  Vec<_dim, T, policy> Vec<_dim, T, policy>::operator+(const Vec<_dim, T, policy> &p)const {
+	  Vec<_dim, T, policy>Vec<_dim, T, policy>::operator+(const Vec<_dim, T, policy> &p)const {
 		Vec<_dim, T, policy> pp(*this);
 		pp+=p;
 		return pp;
@@ -315,6 +315,7 @@ typedef Vec<3,double> vec3d;
 typedef Vec<4,double> vec4d;
 
 class HomVec: public vec4d{
+ 	typedef HomVec ret;
 	public:
         HomVec(const double &x0, const double &x1, const double &x2, const double &x3=(double)0):vec4d(x0, x1, x2, x3){}
         HomVec(const vec4d &v):vec4d(v){}

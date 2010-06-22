@@ -173,11 +173,9 @@ CATCH
 bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 
-	cerr<< "calculating separation plane" <<endl;
-	if(ovs.has_sep_plane){
+	if(0)if(ovs.has_sep_plane){
 		if(!(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))) {
-//			cerr<< "separation plane update" <<endl;
-			//return true;
+			return true;
 			}
 		}
 	
@@ -196,40 +194,29 @@ TRY
 		CQuadratic q1(intersect(ray, E1));
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
-		HomVec X1= ray(q1.root(1).real()); //on the surface of E1
-		HomVec X2= ray(q2.root(0).real()); //on the surface of E2
+		HomVec X1= ray(q1.root(1).real()).project4d(); //on the surface of E1
+		HomVec X2= ray(q2.root(0).real()).project4d(); //on the surface of E2
 
 		ovs.x1=X1;
 		ovs.x2=X2;
-		ovs.x01=E1.toBody(X1.project4d());
-		ovs.x02=E2.toBody(X2.project4d());
-
-//		vec n1=HomVec(E1.ellip_mat*X1).project();
-//		vec n2=HomVec(E2.ellip_mat*X2).project();
+		ovs.x01=E1.toBody(X1);
+		ovs.x02=E2.toBody(X2);
 
 
-		cerr<< eigenvecs.at(0) *E1.ellip_mat*eigenvecs.at(1) <<endl;
-		HomVec v0=eigenvecs.at(0);
-		HomVec v1=eigenvecs.at(1);
-		CQuadratic q3(v1*E1.ellip_mat*v1,v0*E1.ellip_mat*v1+v1*E1.ellip_mat*v0,v0*E1.ellip_mat*v0 );
-		CQuadratic q4(v1*E2.ellip_mat*v1,v0*E2.ellip_mat*v1+v1*E2.ellip_mat*v0,v0*E2.ellip_mat*v0 );
-		q3.print_roots();
-		q4.print_roots();
-		//eigenvecs.at(0)=v0+q3.root(0).imag()*v1;
-		//eigenvecs.at(1)=v0+q3.root(1).imag()*v1;
-		cerr<< eigenvecs.at(0) *E1.ellip_mat*eigenvecs.at(1) <<endl;
+		//calculating the separating plane
 
-		static HomVec np=(X1.project4d()+X2.project4d())*.5;
-			cerr<< cross(X1.project()-eigenvecs.at(0).project(), X1.project()-eigenvecs.at(1).project()).normalize()<<"  "<<E1.gradient(X1.project()).normalize() <<endl;
-			//cerr<< cross(X2-eigenvecs.at(0), X2-eigenvecs.at(1)).normalize()<<"  "<<E2.gradient(X2.project()).normalize() <<endl;
-		ovs.plane=CPlane(np.project(), -cross(np.project()-eigenvecs.at(0).project(), np.project()-eigenvecs.at(1).project()));
-		if((E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))){
-			cerr<< cross(X1-eigenvecs.at(0), X1-eigenvecs.at(1)).normalize()<<"  "<<E1.gradient(X1.project()).normalize() <<endl;
-			cerr<< cross(X2-eigenvecs.at(0), X2-eigenvecs.at(1)).normalize()<<"  "<<E2.gradient(X2.project()).normalize() <<endl;
-			cerr<< (E1.Xc-E2.Xc).normalize() <<endl;
-			
+		vec n1=HomVec(E1.ellip_mat*X1).project();
+		vec n2=HomVec(E2.ellip_mat*X2).project();
+		HomVec mp=(X1+X2)*.5;
+		double alpha=-(mp.project()-X1.project())*n1 /( (mp.project()-X2.project())*n2);
+		ovs.plane=CPlane(mp.project(), n1+alpha*n2);
+		cerr<< ovs.plane.n*(E2.Xc-E1.Xc).normalize() <<endl<<endl;;
+
+		bool hit=(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane));
+		if(hit){
+			cerr<< E1(ovs.plane.Xc) <<"\t"<< E2(ovs.plane.Xc) <<endl;
 			}
-		ERROR((E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane)), "the separation plane set incorrectly");
+		ERROR(hit, "the separation plane set incorrectly");
 		return true;
 		}
 	return false;
@@ -285,7 +272,7 @@ void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *E1, CEllipsoid  *E2)
 TRY
 	
 	ERROR(E1==E2, "A particle is checked for overlapping against itself for overlapping.")
-	if((E1->Xc-E2->Xc).abs()>1.01*(E1->radius+E2->radius))return;
+	if((E1->Xc-E2->Xc).abs()>1.001*(E1->radius+E2->radius))return;
 
 	//if(ovs->set)if( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)) return;
 	 //ovs->set=true;
@@ -303,9 +290,9 @@ TRY
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);
 
-		cerr<< "COLLIDE" <<endl;
 		}
 	else{
+		//dont collid
 		}
 CATCH
 	}

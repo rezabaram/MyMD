@@ -251,9 +251,9 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		alpha=1/sqrt(alpha);
 		static vec m(0.0);
-		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*plane.n))); //this more efficient form of m=(alpha*(!ellip_mat)*plane.n);
+		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*plane.n))); //this is more efficient form of m=(alpha*(!ellip_mat)*plane.n);
 
-		if(((Xc+m-plane.Xc)*plane.n)*((Xc-m-plane.Xc)*plane.n) < 0)return true;//extreme points lie on both side of the plane
+		if(((Xc+m-plane.Xc)*plane.n)*((Xc-m-plane.Xc)*plane.n) <= 0)return true;//extreme points lie on both side of the plane
 		else return false;
 	CATCH
 		}
@@ -267,7 +267,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		alpha=1/sqrt(alpha);
 		static vec m(0.0);
-		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*plane.n))); //this more efficient form of m=(alpha*(!ellip_mat)*plane.n);
+		m=alpha*(~rotat_mat*(inv_scale_vec^(rotat_mat*plane.n))); //this is more efficient form of m=(alpha*(!ellip_mat)*plane.n);
 		double d1=plane.normal_from_point(Xc+m).abs();
 		double d2=plane.normal_from_point(Xc-m).abs();
 
@@ -284,7 +284,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 //		out<<endl;
 		///
 
-		out<< identifier<< "   ";
+		out<<setprecision(12)<< identifier<< "   ";
 		out<< Xc<< "  "<<radius+0.001<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
