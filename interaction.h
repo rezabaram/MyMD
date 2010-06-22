@@ -172,6 +172,14 @@ CATCH
 
 bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
+
+	cerr<< "calculating separation plane" <<endl;
+	if(ovs.has_sep_plane){
+		if(!(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))) {
+//			cerr<< "separation plane update" <<endl;
+			//return true;
+			}
+		}
 	
 	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
 	//CQuartic q=characteristicPolynom(M);
@@ -182,7 +190,9 @@ TRY
 
 
 	if(fabs(eigenvals.at(3).imag() ) < epsilon){
-		CRay<HomVec> ray(eigenvecs.at(3),eigenvecs.at(2));
+		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
+
+		CRay<HomVec> ray(eigenvecs.at(3).project4d(),eigenvecs.at(2).project4d());
 		CQuadratic q1(intersect(ray, E1));
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
@@ -191,13 +201,35 @@ TRY
 
 		ovs.x1=X1;
 		ovs.x2=X2;
-		ovs.x01=E1.toBody(X1);
-		ovs.x02=E2.toBody(X2);
+		ovs.x01=E1.toBody(X1.project4d());
+		ovs.x02=E2.toBody(X2.project4d());
 
-		vec n1=HomVec(E1.ellip_mat*X1).project();
-		vec n2=HomVec(E2.ellip_mat*X2).project();
+//		vec n1=HomVec(E1.ellip_mat*X1).project();
+//		vec n2=HomVec(E2.ellip_mat*X2).project();
 
-		ovs.plane=CPlane((X1.project()+X2.project())*.5, (n1-n2)*.5);
+
+		cerr<< eigenvecs.at(0) *E1.ellip_mat*eigenvecs.at(1) <<endl;
+		HomVec v0=eigenvecs.at(0);
+		HomVec v1=eigenvecs.at(1);
+		CQuadratic q3(v1*E1.ellip_mat*v1,v0*E1.ellip_mat*v1+v1*E1.ellip_mat*v0,v0*E1.ellip_mat*v0 );
+		CQuadratic q4(v1*E2.ellip_mat*v1,v0*E2.ellip_mat*v1+v1*E2.ellip_mat*v0,v0*E2.ellip_mat*v0 );
+		q3.print_roots();
+		q4.print_roots();
+		//eigenvecs.at(0)=v0+q3.root(0).imag()*v1;
+		//eigenvecs.at(1)=v0+q3.root(1).imag()*v1;
+		cerr<< eigenvecs.at(0) *E1.ellip_mat*eigenvecs.at(1) <<endl;
+
+		static HomVec np=(X1.project4d()+X2.project4d())*.5;
+			cerr<< cross(X1.project()-eigenvecs.at(0).project(), X1.project()-eigenvecs.at(1).project()).normalize()<<"  "<<E1.gradient(X1.project()).normalize() <<endl;
+			//cerr<< cross(X2-eigenvecs.at(0), X2-eigenvecs.at(1)).normalize()<<"  "<<E2.gradient(X2.project()).normalize() <<endl;
+		ovs.plane=CPlane(np.project(), -cross(np.project()-eigenvecs.at(0).project(), np.project()-eigenvecs.at(1).project()));
+		if((E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))){
+			cerr<< cross(X1-eigenvecs.at(0), X1-eigenvecs.at(1)).normalize()<<"  "<<E1.gradient(X1.project()).normalize() <<endl;
+			cerr<< cross(X2-eigenvecs.at(0), X2-eigenvecs.at(1)).normalize()<<"  "<<E2.gradient(X2.project()).normalize() <<endl;
+			cerr<< (E1.Xc-E2.Xc).normalize() <<endl;
+			
+			}
+		ERROR((E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane)), "the separation plane set incorrectly");
 		return true;
 		}
 	return false;
@@ -258,7 +290,8 @@ TRY
 	//if(ovs->set)if( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)) return;
 	 //ovs->set=true;
 
-	if(!separatingPlane(*ovs, *E1, *E2)){
+	ovs->has_sep_plane=separatingPlane(*ovs, *E1, *E2);
+	if(!ovs->has_sep_plane){
 		
 		//cerr<< E1->doesHit(ovs->plane) <<"\t"<< E2->doesHit(ovs->plane) <<endl;
 		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
@@ -270,6 +303,7 @@ TRY
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);
 
+		cerr<< "COLLIDE" <<endl;
 		}
 	else{
 		}

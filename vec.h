@@ -303,10 +303,10 @@ class Vec{
 
 	template<indexType _dim, class T, class policy>
 	inline
-	Vec<_dim, T, policy> cross(const Vec<_dim, T, policy> u, const Vec<_dim, T, policy> v){
+	Vec<3, T, policy> cross(const Vec<_dim, T, policy> u, const Vec<_dim, T, policy> v){
 		//only first 3 components
 		assert(u.dim>=3 and v.dim>=3);
-		return Vec<_dim, T, policy> (policy::mul(u(1),v(2))-policy::mul(u(2),v(1)),policy::mul(u(2),v(0))-policy::mul(u(0),v(2)),policy::mul(u(0),v(1))-policy::mul(u(1),v(0)));
+		return Vec<3, T, policy> (policy::mul(u(1),v(2))-policy::mul(u(2),v(1)),policy::mul(u(2),v(0))-policy::mul(u(0),v(2)),policy::mul(u(0),v(1))-policy::mul(u(1),v(0)));
 	}
 
 typedef Vec<2,double> vec2d;
@@ -329,6 +329,12 @@ class HomVec: public vec4d{
 		w=(*this)(3);
 		ERROR(w==0,"The point is projected to infinity");
 		return vec((*this)(0)/w, (*this)(1)/w, (*this)(2)/w);
+		}
+	HomVec project4d()const{
+		static double w;
+		w=(*this)(3);
+		ERROR(w==0,"The point is projected to infinity");
+		return HomVec((*this)(0)/w, (*this)(1)/w, (*this)(2)/w,1);
 		}
 	};
 

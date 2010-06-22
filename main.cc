@@ -31,7 +31,7 @@ for(double j=1-margin/2; j>margin/2; j-=margin){
 	GeomObject<tsphere> E1(x,r);
 	//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
-	double ee=0.5;
+	double ee=0.0;
 	double a =1;
 	double b =1-ee*drand48();
 	double c =1-ee*drand48();

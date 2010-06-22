@@ -8,7 +8,7 @@ class ShapeContact : public std::vector<Contact>
 	{
 	public:
 	ShapeContact(GeomObjectBase *_p1=NULL, GeomObjectBase *_p2=NULL, const CPlane &p=CPlane(vec(0,0,0), vec(0,0,1)) )
-		:std::vector<Contact >(), p1(_p1), p2(_p2), plane(p), x1(HomVec(0,0,0,1)), x2(HomVec(0,0,0,1)), set(false)
+		:std::vector<Contact >(), p1(_p1), p2(_p2), plane(p), x1(HomVec(0,0,0,1)), x2(HomVec(0,0,0,1)), has_sep_plane(false)
 		{
 		N++;
 		}
@@ -29,7 +29,7 @@ class ShapeContact : public std::vector<Contact>
 	CPlane plane;
 	HomVec x1, x2;
 	HomVec x01, x02;
-	bool set;
+	bool has_sep_plane;
  	private:
 	static long N;
 	};
