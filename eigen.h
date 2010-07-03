@@ -70,6 +70,7 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
 		gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);
 		gsl_vector_complex_view evec_i = gsl_matrix_complex_column (evec, ind[i]);
 		//eigenvals.push_back((GSL_REAL(eval_i), GSL_IMAG(eval_i))); 
+
 		eigenvals.push_back(complex<double> (GSL_REAL(eval_i), GSL_IMAG(eval_i)));
 		eigenvecs.push_back(
 			HomVec(

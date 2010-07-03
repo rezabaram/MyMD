@@ -56,8 +56,6 @@ void Initialize(){
 	RNGSeed=0;
 	define_parameters();
 	config.parse("config");
-
-
 	}
 
 void Run(){

@@ -190,18 +190,18 @@ TRY
 	if(fabs(eigenvals.at(3).imag() ) < epsilon){
 		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
 
+		//line through two poles
 		CRay<HomVec> ray(eigenvecs.at(3).project4d(),eigenvecs.at(2).project4d());
 		CQuadratic q1(intersect(ray, E1));
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
-		HomVec X1= ray(q1.root(1).real()).project4d(); //on the surface of E1
-		HomVec X2= ray(q2.root(0).real()).project4d(); //on the surface of E2
+		HomVec X1= ray(q1.root(1).real());//on the surface of E1
+		HomVec X2= ray(q2.root(0).real());//on the surface of E2
 
 		ovs.x1=X1;
 		ovs.x2=X2;
 		ovs.x01=E1.toBody(X1);
 		ovs.x02=E2.toBody(X2);
-
 
 		//calculating the separating plane
 
@@ -210,7 +210,12 @@ TRY
 		HomVec mp=(X1+X2)*.5;
 		double alpha=-(mp.project()-X1.project())*n1 /( (mp.project()-X2.project())*n2);
 		ovs.plane=CPlane(mp.project(), n1+alpha*n2);
-		cerr<< ovs.plane.n*(E2.Xc-E1.Xc).normalize() <<endl<<endl;;
+
+		//cerr<< ovs.plane.n*(E2.Xc-E1.Xc).normalize() <<endl;
+		//cerr<< (X2.project()-X1.project()).normalize()*(E2.Xc-E1.Xc).normalize() <<endl;
+		//cerr <<endl;
+
+		return true;
 
 		bool hit=(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane));
 		if(hit){
@@ -289,6 +294,7 @@ TRY
 		//updateplane(*ovs, *E1, *E2);
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);
+		ERROR(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0), "incorrect contact points" );
 
 		}
 	else{

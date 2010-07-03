@@ -9,6 +9,7 @@ Disclaimer:
 	risk.
 */
 
+
 #ifndef CCONFIG_H
 #define CCONFIG_H
 #include<iostream>
@@ -75,7 +76,7 @@ ostream &operator<<(ostream &out, CParam<T> &param){
 			return out;
 			}
 
-// the class CConfig is a singleton since one needs only one instance of it
+// the class CConfig is a singleton 
 class CConfig {
 	public:
 	~CConfig();                                 

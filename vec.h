@@ -317,7 +317,7 @@ typedef Vec<4,double> vec4d;
 class HomVec: public vec4d{
  	typedef HomVec ret;
 	public:
-        HomVec(const double &x0, const double &x1, const double &x2, const double &x3=(double)0):vec4d(x0, x1, x2, x3){}
+        HomVec(const double &x0, const double &x1, const double &x2, const double &x3=1.0):vec4d(x0, x1, x2, x3){}
         HomVec(const vec4d &v):vec4d(v){}
         HomVec(const vec3d &v, double w):vec4d(v(0),v(1), v(2), w){}
         HomVec():vec4d(0,0,0,1){}

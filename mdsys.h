@@ -6,7 +6,7 @@
 #include"interaction.h"
 #include"particlecontact.h"
 
-
+#define VERLET
 
 typedef vector<CParticle *> ParticleContainer;
 
@@ -17,8 +17,10 @@ class CSys{
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), 
 		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
-		//pairs=new ParticleContactHolder<CParticle> *[maxNParticle*maxNParticle];
-		//for(unsigned int i=0; i<maxNParticle*maxNParticle; i++) pairs[i]=NULL;
+	#ifndef VERLET
+		pairs=new ParticleContactHolder<CParticle> *[maxNParticle*maxNParticle];
+		for(unsigned int i=0; i<maxNParticle*maxNParticle; i++) pairs[i]=NULL;
+	#endif
 	CATCH
 		};
 	~CSys();
@@ -29,8 +31,7 @@ class CSys{
 	void calForces();
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
-	inline bool interact(CParticle *p1,CParticle *p2, ParticleContactHolder<CParticle> &pairs2)const;
-	inline bool interact(CParticle *, CParticle *)const; //force from p2 on p1
+	inline bool interact(CParticle *p1,CParticle *p2)const;
 	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m)const;
 
@@ -50,13 +51,13 @@ class CSys{
 	ParticleContainer particles;
 
 	
-/*
+	#ifndef VERLET
+	ParticleContactHolder<CParticle>  **pairs;
 	ParticleContactHolder<CParticle>  *  &pair(size_t i, size_t j)const{
 		return pairs[j+i*particles.size()];
 			}
-*/
+	#endif
 
-	//ParticleContactHolder<CParticle>  **pairs;
 	GeomObject<tbox> box;
 	CPlane *sp;
 	//CRecGrid *grid;
@@ -71,13 +72,13 @@ class CSys{
 
 CSys::~CSys(){
 TRY
-/*
+	#ifndef VERLET
 	for(size_t i=0; i<particles.size(); i++)
 	for(size_t j=0; j<particles.size(); j++){
 		delete pair(i,j);
 		}
-	//delete [] pairs;
-*/
+	delete [] pairs;
+	#endif
 	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		delete (*it);
@@ -87,17 +88,18 @@ CATCH
 
 void CSys::initialize(){
 TRY
+	#ifdef VERLET
 	verlet_factor=config.get_param<double>("verletfactor");
 	verlet_distance=verlet_factor*maxr;
-/*
+	#else
 	//create for each pair an object for the contact
 	for(unsigned int i=0; i<particles.size(); i++){
 		for(unsigned int j=0; j<particles.size(); j++){
 			pair(i,j)=new ParticleContactHolder<CParticle> (particles.at(i), particles.at(j));
-		//	pair(i,j).set(particles.at(i), particles.at(j));
 			}
 		}
-*/
+	
+	#endif
 CATCH
 	}
 
@@ -121,14 +123,12 @@ double CSys::packFraction(const vec &x1, const vec &x2, unsigned long N=10000){
 
 //construct the verlet list of all particles
 void CSys::setup_verlet(){
-FROMTIME
 	vector<CParticle *>::iterator it;
 	for(it=particles.begin(); it!=particles.end(); it++){
-		(*it)->neighbors.clear();
+		(*it)->vlist.clear();
 		setup_verlet(*it);
 		}
 	verlet_need_update=false;
-TOTIME
 	cerr<< "Verlet updated at: "<<t <<endl;
 	}
 
@@ -136,16 +136,16 @@ TOTIME
 void CSys::setup_verlet(CParticle *p){
 TRY
 	vector<CParticle *>::iterator it;
-	for(it=particles.begin(); (*it)!=p; it++){ //checking all particles before
-		if((p->x(0)-(*it)->x(0)).abs() - p->shape->radius -(*it)->shape->radius < verlet_distance)p->neighbors.add((*it));
+	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
+		if((p->x(0)-(*it)->x(0)).abs() - p->shape->radius -(*it)->shape->radius < verlet_distance)p->vlist.add((*it));
 		}
-	p->neighbors.x=p->x(0);
+	p->vlist.x=p->x(0);//save the position at which the list has been updated
 CATCH
 	}
 
 bool CSys::add(CParticle *p){
 TRY
-	ERROR(particles.size()==maxNParticle,"Reached max number of particles.");
+	ERROR(particles.size()==maxNParticle, "Reached max number of particles.");
 	vec force(0.0);
 	//if(interact(p, box, force)){
 		//ERROR("The particle is intially within the box: "<<p->x(0));
@@ -176,15 +176,17 @@ TRY
 
 	//interactions
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		
-		//it2=it1; ++it2;
-		//for(; it2!=particles.end(); ++it2){//without verlet
-			//if(interact(*it1,*it2)){ }
-			//}
 
-		for(neigh=(*it1)->neighbors.begin(); neigh!=(*it1)->neighbors.end(); ++neigh){
-			if(interact(*it1,*neigh, (*it1)->neighbors.pairs[*neigh])){ }
+		#ifdef VERLET
+		for(neigh=(*it1)->vlist.begin(); neigh!=(*it1)->vlist.end(); ++neigh){
+			if(interact(*it1,(*neigh).first)){}
 			}
+		#else
+		it2=it1; ++it2;
+		for(; it2!=particles.end(); ++it2){//without verlet
+			if(interact(*it1,*it2)){ }
+			}
+		#endif
 
 		//the walls
 		if(interact(*it1, &box)){  }
@@ -216,12 +218,15 @@ TRY
 CATCH
 	}
 
-inline bool CSys::interact(CParticle *p1,CParticle *p2, ParticleContactHolder<CParticle> &pairs2)const{
+inline bool CSys::interact(CParticle *p1,CParticle *p2)const{
 TRY
 	//CParticle *p1=particles.at(i);
 	//CParticle *p2=particles.at(j);
-	//ShapeContact &overlaps=*pair(p1->id,p2->id);
-	ShapeContact &overlaps=pairs2;
+#ifdef VERLET
+	ShapeContact &overlaps=p1->vlist[p2];
+#else
+	ShapeContact &overlaps=*pair(p1->id,p2->id);
+#endif
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
@@ -262,7 +267,10 @@ TRY
 	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
 
+	#ifdef VERLET
 	if(verlet_need_update)setup_verlet();
+	#endif
+
 	ParticleContainer::iterator it;
 
 	static double starttime=clock();
@@ -289,7 +297,9 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
-		if(((*it)->x(0)-(*it)->neighbors.x).abs()> verlet_distance/2)verlet_need_update=true;
+		#ifdef VERLET
+		if(((*it)->x(0)-(*it)->vlist.x).abs()> verlet_distance/2-epsilon)verlet_need_update=true;
+		#endif
 		if((*it)->x(0)(2)>maxh) maxh=(*it)->x(0)(2);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		}

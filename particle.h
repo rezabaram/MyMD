@@ -36,7 +36,7 @@ class CParticle{
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<GType shapeType>
-	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),neighbors(this){init();}
+	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this){init();}
 	~CParticle(){
 		delete shape;
 		}
@@ -100,7 +100,7 @@ class CParticle{
 	vec forces, avgforces;
 	vec torques, avgtorque;
 	tState state;
-	CVerlet<CParticle> neighbors;
+	CVerlet<CParticle> vlist;
 	protected:
 	double mass, Ixx, Iyy, Izz;
  	private:
