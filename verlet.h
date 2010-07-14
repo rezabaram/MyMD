@@ -13,7 +13,7 @@ class CVerlet: public map<T*, ParticleContactHolder<T> >
 	{
 	public:
 
-	CVerlet(T *p):self_p(p)
+	CVerlet(T *p):self_p(p), set(false)
 		{
 		ERROR(p==NULL,"Improper initialization of verlet list");
 		}
@@ -27,8 +27,9 @@ class CVerlet: public map<T*, ParticleContactHolder<T> >
 
 	vec x; //position when the list was updated
 
- 	private:
 	T * const self_p;
+	bool set;
+ 	private:
 	};
 
 #endif /* VERLET_H */

@@ -81,19 +81,19 @@ class CConfig {
 	public:
 	~CConfig();                                 
 	static CConfig& Instance();
-	bool isValid(string fname);
+	bool isValid(string fname)const;
 	void parse(string fname);
 	void print(string fname="config");
 	void print(ostream &out=cout);
 
 	template<class T>
-	T get_param(string name, CParamBase::out_type def=CParamBase::Normal) {
+	T get_param(string name, CParamBase::out_type def=CParamBase::Normal)const {
 		//const CParamBase  *pp=params[name];
 	      if(!isValid(name)){
 			cerr<< "Warning: "<<name<<" is not a valid parameter or keyword" <<endl;
 			return T();
 			}
-		CParam<T> * const p=static_cast< CParam<T>* > (params[name]);//i dont know if there is a better solution, i like this tough
+		CParam<T> * const p = static_cast< CParam<T>* > (params.find(name)->second );//i dont know if there is a better solution, i like this tough
 
 		if(def==CParamBase::Default) return p->get_default();
 		else return p->get();
@@ -194,8 +194,8 @@ void CConfig::parse(string infilename) {
 	inputFile.close();
 }
 
-bool CConfig::isValid(string vname) {
-	vector<string>::iterator it;
+bool CConfig::isValid(string vname) const{
+	vector<string>::const_iterator it;
 	for( it=name_dict.begin(); it!=name_dict.end(); ++it){
 		if(vname==(*it))return true;
 		}

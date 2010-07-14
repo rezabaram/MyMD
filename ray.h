@@ -6,11 +6,13 @@ template<typename T>
 class CRay 
 	{
 	public:
-	CRay(const T &_x1, const T &_x2):x1(_x1),x2(_x2), n((_x2-_x1).normalize()){};
+	CRay(const T &_x1, const T &_x2):x1(_x1),x2(_x2), n((_x2-_x1)){};
 
 	T operator()(double t)const{
 		return x1+t*n;
 		}
+	const T &get_n()const{return n;}
+	T &get_n(){return n;}
 
 	void print(std::ostream &out)const{
 		out<< 5 << "   ";
@@ -18,7 +20,8 @@ class CRay
 		out<< x2<< "  "<<0.005<<endl;
 		};
 
-	T x1, x2, n;
+	T x1, x2;
+	T n;
  	private:
 	
 	};

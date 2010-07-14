@@ -190,11 +190,19 @@ TRY
 	if(fabs(eigenvals.at(3).imag() ) < epsilon){
 		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
 
-		//line through two poles
+		// eigenvec 3 is inside E1, and 2 inside E2
+		ERROR(E1(eigenvecs.at(3))>0 or E2(eigenvecs.at(2))>0, "error in calculation of poles.");
+
+		//line through two poles (from E1 to E2)
 		CRay<HomVec> ray(eigenvecs.at(3).project4d(),eigenvecs.at(2).project4d());
+		//CRay<HomVec> ray(HomVec(E1.Xc,1),HomVec(E2.Xc,1));
+		
 		CQuadratic q1(intersect(ray, E1));
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
+		ERROR(fabs(q1.root(0).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
+		ERROR(fabs(q1.root(1).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
+
 		HomVec X1= ray(q1.root(1).real());//on the surface of E1
 		HomVec X2= ray(q2.root(0).real());//on the surface of E2
 

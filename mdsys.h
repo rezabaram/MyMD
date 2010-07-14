@@ -14,7 +14,7 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0),  G(vec(0.0)), 
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0), maxh(0), G(vec(0.0)), 
 		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
 	#ifndef VERLET
@@ -25,8 +25,9 @@ class CSys{
 		};
 	~CSys();
 
-	void initialize();
-	void solve(double tMax, double dt);
+	void particles_on_grid();
+	void initialize(const CConfig &c);
+	void solve();
 	void forward(double dt);
 	void calForces();
 	void interactions();
@@ -43,11 +44,12 @@ class CSys{
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
+	double min_distance(CParticle *p1, CParticle *p2)const;
 	void setup_verlet(CParticle *p);
 	void setup_verlet();
 	inline bool exist(int i);
 
-	double t, outDt;
+	double t, tMax, dt, outDt;
 	ParticleContainer particles;
 
 	
@@ -86,11 +88,21 @@ TRY
 CATCH
 	}
 
-void CSys::initialize(){
+void CSys::initialize(const CConfig &c){
 TRY
+	outDt=c.get_param<double>("outDt");
+	maxr=c.get_param<double>("particleSize");
+
+	G=c.get_param<vec>("Gravity");
+
+	cerr<< 2 <<endl;
+	particles_on_grid();
+	cerr<< "Number of Particles: "<<particles.size() <<endl;
+
 	#ifdef VERLET
-	verlet_factor=config.get_param<double>("verletfactor");
+	verlet_factor=c.get_param<double>("verletfactor");
 	verlet_distance=verlet_factor*maxr;
+	setup_verlet();
 	#else
 	//create for each pair an object for the contact
 	for(unsigned int i=0; i<particles.size(); i++){
@@ -100,6 +112,11 @@ TRY
 		}
 	
 	#endif
+
+
+
+	tMax=config.get_param<double>("maxTime");
+	dt=config.get_param<double>("timeStep");
 CATCH
 	}
 
@@ -121,6 +138,13 @@ double CSys::packFraction(const vec &x1, const vec &x2, unsigned long N=10000){
 		//grid=new CRecGrid(box.corner, box.L, _d*maxr);
 		//}
 
+//minimum distances of the surfaces of the particles (putting them in spherical shells)
+double CSys::min_distance(CParticle *p1, CParticle *p2)const{
+TRY
+	return (p1->x(0)-p2->x(0)).abs() - p1->shape->radius -p2->shape->radius;
+CATCH
+	}
+
 //construct the verlet list of all particles
 void CSys::setup_verlet(){
 	vector<CParticle *>::iterator it;
@@ -129,6 +153,7 @@ void CSys::setup_verlet(){
 		setup_verlet(*it);
 		}
 	verlet_need_update=false;
+	cerr<< verlet_distance <<endl;
 	cerr<< "Verlet updated at: "<<t <<endl;
 	}
 
@@ -137,9 +162,11 @@ void CSys::setup_verlet(CParticle *p){
 TRY
 	vector<CParticle *>::iterator it;
 	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
-		if((p->x(0)-(*it)->x(0)).abs() - p->shape->radius -(*it)->shape->radius < verlet_distance)p->vlist.add((*it));
+		assert(verlet_distance>epsilon);
+		if(min_distance(p, *it) < verlet_distance)p->vlist.add((*it));
 		}
 	p->vlist.x=p->x(0);//save the position at which the list has been updated
+	p->vlist.set=true;
 CATCH
 	}
 
@@ -152,11 +179,12 @@ TRY
 		//return false;
 		//}
 	if(maxr<p->shape->radius)maxr=p->shape->radius;
+	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
 
 	particles.push_back(p);
 	particles.back()->id=particles.size()-1;
 
-	setup_verlet(particles.back());
+	//setup_verlet(particles.back());
 	//assert(grid);
 	//grid->add(p);
 	return true;
@@ -178,8 +206,12 @@ TRY
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 
 		#ifdef VERLET
+		ERROR(!(*it1)->vlist.set,"the verlet list was not constructed properly");
+
 		for(neigh=(*it1)->vlist.begin(); neigh!=(*it1)->vlist.end(); ++neigh){
-			if(interact(*it1,(*neigh).first)){}
+			if(interact(*it1,(*neigh).first)){
+				assert(*it1==(*it1)->vlist.self_p);
+				}
 			}
 		#else
 		it2=it1; ++it2;
@@ -214,6 +246,7 @@ TRY
 	//cerr<< t<<"  "<<setprecision(14)<<c.x<<"  "<<c.n<<"  "<< c.dx_n << "  dv="<<dv<<"  Fn="<<fn<<endl;
 	//cerr<< ft.abs()/fn.abs() <<endl;
 
+	ERROR((fn+ft).abs()>20, "divergence in force");
 	return fn+ft;//visco-elastic Hertz law
 CATCH
 	}
@@ -226,6 +259,7 @@ TRY
 	ShapeContact &overlaps=p1->vlist[p2];
 #else
 	ShapeContact &overlaps=*pair(p1->id,p2->id);
+	//ShapeContact overlaps;
 #endif
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
@@ -268,7 +302,8 @@ TRY
 
 
 	#ifdef VERLET
-	if(verlet_need_update)setup_verlet();
+	if(verlet_need_update)
+		setup_verlet();
 	#endif
 
 	ParticleContainer::iterator it;
@@ -298,7 +333,7 @@ TRY
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
 		#ifdef VERLET
-		if(((*it)->x(0)-(*it)->vlist.x).abs()> verlet_distance/2-epsilon)verlet_need_update=true;
+		if(verlet_need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs()> verlet_distance/2-epsilon)verlet_need_update=true;
 		#endif
 		if((*it)->x(0)(2)>maxh) maxh=(*it)->x(0)(2);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
@@ -325,9 +360,8 @@ TRY
 CATCH
 	}
 
-void CSys::solve(double tMax, double dt){
+void CSys::solve(){
 	try{
-	initialize();
 	bool stop=false;
 	while(true){
 		if(t+dt>tMax){//to stop exactly at tMax
@@ -529,4 +563,45 @@ TRY
 CATCH
 	}
 
+void CSys::particles_on_grid(){ 
+TRY
+	double size=maxr;
+	double margin=2.3*size;
+	vec x(0.0, 0.0, .0);
+
+	double k=0;
+
+	while(particles.size()<maxNParticle){
+		k=maxh+margin;
+		if(k==1+10*margin)break;
+		for(double i=margin/2; i<1-margin/2; i+=margin){
+			for(double j=1-margin/2; j>margin/2; j-=margin){
+				if(particles.size()==maxNParticle)break;
+
+				x(1)=i+size*drand48()/10; 
+				x(0)=j+size*drand48()/10;
+				x(2)=k+size*drand48()/10; 
+				double alpha=drand48()*M_PI;
+				Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
+				//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*drand48())));
+				//GeomObject<tellipsoid> E(x, 1-0.0*drand48(), 1-0.0*drand48(),1-0.0*drand48(), size*(1+0.0*drand48()));
+				//CParticle *p = new CParticle(E);
+				double r=size*(1-0.1*drand48());
+				GeomObject<tsphere> E1(x,r);
+				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
+
+				double ee=0.5;
+				double a =1;
+				double b =1-ee*drand48();
+				double c =1-ee*drand48();
+				GeomObject<tellipsoid> E2(x, a,b,c, r);
+				CParticle *p = new CParticle(E1);
+				p->w(1)(2)=10*(1-2*drand48());
+				add(p);
+				
+				}
+			}
+		}
+CATCH
+}
 #endif /* MDSYS_H */
