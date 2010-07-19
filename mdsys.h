@@ -46,7 +46,7 @@ class CSys{
 	bool add(CParticle *p);
 	double min_distance(CParticle *p1, CParticle *p2)const;
 	void setup_verlet(CParticle *p);
-	void setup_verlet();
+	void update_verlet();
 	inline bool exist(int i);
 
 	double t, tMax, dt, outDt;
@@ -102,7 +102,7 @@ TRY
 	#ifdef VERLET
 	verlet_factor=c.get_param<double>("verletfactor");
 	verlet_distance=verlet_factor*maxr;
-	setup_verlet();
+	update_verlet();
 	#else
 	//create for each pair an object for the contact
 	for(unsigned int i=0; i<particles.size(); i++){
@@ -146,14 +146,19 @@ CATCH
 	}
 
 //construct the verlet list of all particles
-void CSys::setup_verlet(){
+void CSys::update_verlet(){
 	vector<CParticle *>::iterator it;
+	for(it=particles.begin(); it!=particles.end(); ++it){
+		if(verlet_need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs() > verlet_distance/2.0-epsilon) verlet_need_update=true;
+		}
+
+	if(!verlet_need_update) return;
+
 	for(it=particles.begin(); it!=particles.end(); it++){
 		(*it)->vlist.clear();
 		setup_verlet(*it);
 		}
 	verlet_need_update=false;
-	cerr<< verlet_distance <<endl;
 	cerr<< "Verlet updated at: "<<t <<endl;
 	}
 
@@ -162,6 +167,7 @@ void CSys::setup_verlet(CParticle *p){
 TRY
 	vector<CParticle *>::iterator it;
 	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
+	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
 		assert(verlet_distance>epsilon);
 		if(min_distance(p, *it) < verlet_distance)p->vlist.add((*it));
 		}
@@ -257,6 +263,7 @@ TRY
 	//CParticle *p2=particles.at(j);
 #ifdef VERLET
 	ShapeContact &overlaps=p1->vlist[p2];
+	//ShapeContact overlaps;
 #else
 	ShapeContact &overlaps=*pair(p1->id,p2->id);
 	//ShapeContact overlaps;
@@ -301,10 +308,6 @@ TRY
 	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
 
-	#ifdef VERLET
-	if(verlet_need_update)
-		setup_verlet();
-	#endif
 
 	ParticleContainer::iterator it;
 
@@ -332,12 +335,14 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
-		#ifdef VERLET
-		if(verlet_need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs()> verlet_distance/2-epsilon)verlet_need_update=true;
-		#endif
 		if((*it)->x(0)(2)>maxh) maxh=(*it)->x(0)(2);
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		}
+
+	#ifdef VERLET
+	update_verlet();
+	#endif
+
 	calForces();
 //	if(!allforwarded)foward(dt/2.0, 2);
 
@@ -590,7 +595,7 @@ TRY
 				GeomObject<tsphere> E1(x,r);
 				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
-				double ee=0.5;
+				double ee=0.0;
 				double a =1;
 				double b =1-ee*drand48();
 				double c =1-ee*drand48();

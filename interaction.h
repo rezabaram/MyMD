@@ -188,6 +188,7 @@ TRY
 
 
 	if(fabs(eigenvals.at(3).imag() ) < epsilon){
+		return true;
 		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
 
 		// eigenvec 3 is inside E1, and 2 inside E2
@@ -296,7 +297,7 @@ TRY
 		//cerr<< E1->doesHit(ovs->plane) <<"\t"<< E2->doesHit(ovs->plane) <<endl;
 		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
 
-		updatecontact(*ovs, *E1, *E2);
+		//updatecontact(*ovs, *E1, *E2);
 		findMin(ovs->x1, *E1, *E2, 50);
 		findMin(ovs->x2, *E2, *E1, 50);
 		//updateplane(*ovs, *E1, *E2);
