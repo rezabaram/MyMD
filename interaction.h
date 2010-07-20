@@ -188,7 +188,6 @@ TRY
 
 
 	if(fabs(eigenvals.at(3).imag() ) < epsilon){
-		return true;
 		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
 
 		// eigenvec 3 is inside E1, and 2 inside E2
@@ -212,6 +211,7 @@ TRY
 		ovs.x01=E1.toBody(X1);
 		ovs.x02=E2.toBody(X2);
 
+
 		//calculating the separating plane
 
 		vec n1=HomVec(E1.ellip_mat*X1).project();
@@ -224,7 +224,6 @@ TRY
 		//cerr<< (X2.project()-X1.project()).normalize()*(E2.Xc-E1.Xc).normalize() <<endl;
 		//cerr <<endl;
 
-		return true;
 
 		bool hit=(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane));
 		if(hit){
@@ -297,7 +296,7 @@ TRY
 		//cerr<< E1->doesHit(ovs->plane) <<"\t"<< E2->doesHit(ovs->plane) <<endl;
 		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
 
-		//updatecontact(*ovs, *E1, *E2);
+		updatecontact(*ovs, *E1, *E2);
 		findMin(ovs->x1, *E1, *E2, 50);
 		findMin(ovs->x2, *E2, *E1, 50);
 		//updateplane(*ovs, *E1, *E2);

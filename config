@@ -3,11 +3,11 @@ density  	.1
 Gravity  	0   0   -5
 outDt  		0.01
 timeStep 	0.0001
-maxTime		2
-particleSize 	0.05
-nParticle 	110
+maxTime		4
+particleSize 	0.08
+nParticle 	100
 stiffness  	1e+04
-damping		0e+1
-friction	0.0
+damping		1e+1
+friction	1.0
 cohesion	0.0
-verletfactor 	0.5
+verletfactor 	0.2

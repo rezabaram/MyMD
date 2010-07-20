@@ -45,6 +45,7 @@ class CPolynom{
 		coefs=_coefs;
 		};
 
+	virtual ~CPolynom(){}
 	bool is_root(complex<double> x, double e=epsilon){
 		return (myabs2((*this)(x))<e);
 		}

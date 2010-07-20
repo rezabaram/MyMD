@@ -20,7 +20,6 @@ class CVerlet: public map<T*, ParticleContactHolder<T> >
 
 	void add(T *p)
 		{
-		if(p==self_p)return;
 		ERROR(p==self_p, "A particle cannot be added to its own verlet list");
 		//push_back(p);
 		insert(pair<T*, ParticleContactHolder<T> > (p, ParticleContactHolder<T>(this->self_p, p)));
@@ -28,7 +27,7 @@ class CVerlet: public map<T*, ParticleContactHolder<T> >
 
 	vec x; //position when the list was updated
 
-	T * const self_p;
+	T * self_p;
 	bool set;
  	private:
 	};

@@ -5,14 +5,17 @@ run: a.out
 	time ./run.sh
 
 a.out:	*.cc *h
-	$(CC)  main.cc -g -pg -Wall  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
+	$(CC) -O2  main.cc -g -pg -Wall  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
 
-test:	test.cc 
-	$(CC)  test.cc  -I/sw64/include/ -L/sw64/lib/ -lgsl -lgslcblas
+test:	
+	plot.sh 1:2 log_energy trash/log_energy 
+	#$(CC)  test.cc  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
+diff:
+	diff log_energy trash/log_energy
 
 animate: test.avi
-	feh *jpg
-	#mplayer test.avi
+	mplayer test.avi
+	#feh *jpg
 
 test.avi: 
 	sh genFrames.sh out* > /dev/null 2>&1
@@ -30,3 +33,5 @@ pov:
 	coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
 	#coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
 
+zip:
+	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
