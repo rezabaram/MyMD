@@ -54,6 +54,8 @@ TRY
 		u(i)=0;
 		for(size_t j=0; j<v.dim; j++)
 			u(i)+=v(j)*M(i,j);
+		//for(size_t j=v.dim; j<M.RowNo(); j++)
+			//u(i)+=M(i,j);
 		}
 	return u;
 CATCH
@@ -71,6 +73,8 @@ TRY
 		u(i)=0;
 		for(size_t j=0; j<v.dim; j++)
 			u(i)+=v(j)*M(j,i);
+		//for(size_t j=v.dim; j<M.RowNo(); j++)
+			//u(i)+=M(j,i);
 		}
 	return u;
 CATCH
@@ -167,6 +171,10 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 	vec gradient (const vec &X)const {
 		return 2.0*ellip_mat*(X-Xc);
+		}
+
+	HomVec gradient (const HomVec &X)const {
+		return 2.0*ellip_mat*X;
 		}
 
 	double operator() (const vec &X)const {

@@ -191,7 +191,7 @@ void CSys::update_verlet(){
 	if(verlet_distance>max_verlet_distance)verlet_distance=max_verlet_distance;
 
 	verlet_need_update=false;
-	cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
+	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
 	}
 
 //construct the verlet list of one particle 
@@ -639,10 +639,10 @@ TRY
 				GeomObject<tsphere> E1(x,r);
 				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
-				double ee=0.5;
+				double ee=0.55;
 				double a =1;
-				double b =1-ee*drand48();
-				double c =1-ee*drand48();
+				double b =1;//-ee;//*drand48();
+				double c =1-ee;//*drand48();
 				GeomObject<tellipsoid> E2(x, a,b,c, r);
 				CParticle *p = new CParticle(E2);
 				p->w(1)(2)=10*(1-2*drand48());

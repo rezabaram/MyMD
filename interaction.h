@@ -22,6 +22,8 @@ class CInteraction{
 
 	static void append(ShapeContact&v, ShapeContact&v2);
 
+//	void intersect(HomVec &X1, HomVec &X2, const CEllipsoid &E1, const CEllipsoid &E2);
+
 	};
 
 inline
@@ -159,12 +161,46 @@ TRY
 CATCH
 	}
 
+
+//this functions take two intersection ellipsoids, and give the intersection of a 
+//ray through midpoint mp (which should be inside both of them) in direction of the average gradient 
+// at point mp. the intersecting points are X1 on E1 and X2 on E2
+void intersect(HomVec &X1, HomVec &X2,  const CEllipsoid &E1, const CEllipsoid &E2){
+TRY
+	HomVec mp=(X1+X2)/2;
+	ERROR(E1(mp)>0 or E2(mp) > 0, "contact point is not inside both ellipsoids");
+	HomVec g1=E1.gradient(mp).project4d();
+	HomVec g2=E2.gradient(mp).project4d();
+	HomVec g=g2-g1; g.normalize();
+	if(g1*g2/g1.abs()/g2.abs()<0)g*=-1;
+
+	CRay<HomVec> ray(mp, mp+g);
+	CQuadratic q1(intersect(ray, E1));
+	CQuadratic q2(intersect(ray, E2));
+
+	ERROR(fabs(q1.root(0).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
+	ERROR(fabs(q2.root(1).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
+
+	X1= ray(q1.root(0).real());//on the surface of E1
+	X2= ray(q2.root(1).real());//on the surface of E2
+
+CATCH
+	}
+
 void setcontact(ShapeContact &ovs,CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 	//ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
+
+	intersect(ovs.x1, ovs.x2, E1, E2);
+	vec mp=((ovs.x1.project()+ovs.x2.project())/2.0);
+	vec diff=(ovs.x1.project()-ovs.x2.project());
+	double dx=diff.abs();
+	diff.normalize();
+
+	ovs.add(Contact(mp, diff, dx));
+
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
-	ovs.add(Contact((ovs.x1.project()+ovs.x2.project())/2, (ovs.x1.project()-ovs.x2.project()).normalized(), (ovs.x1-ovs.x2).abs()));
 	//ovs.add(Contact((ovs.x1.project()+ovs.x2.project())/2, (ovs.x1.project()-ovs.x2.project()).normalized(), (ovs.x1-ovs.x2).abs()));
 CATCH
 	}
@@ -201,7 +237,7 @@ TRY
 		CQuadratic q2(intersect(ray, E2));
 		//the roots are sorted ascending
 		ERROR(fabs(q1.root(0).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
-		ERROR(fabs(q1.root(1).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
+		ERROR(fabs(q2.root(1).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
 
 		HomVec X1= ray(q1.root(1).real());//on the surface of E1
 		HomVec X2= ray(q2.root(0).real());//on the surface of E2
@@ -302,7 +338,8 @@ TRY
 		//updateplane(*ovs, *E1, *E2);
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);
-		ERROR(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0), "incorrect contact points" );
+		//cerr<< (*E1)(ovs->x2) <<"\t"<<  (*E2)(ovs->x1)<<endl;
+		ERROR(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0), "incorrect contact points." );
 
 		}
 	else{
