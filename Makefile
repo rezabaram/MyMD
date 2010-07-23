@@ -12,6 +12,8 @@ test:
 	#$(CC)  test.cc  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
 diff:
 	diff log_energy trash/log_energy
+perf:
+	plot.sh 1:2 log trash/log
 
 animate: test.avi
 	mplayer test.avi
@@ -24,6 +26,7 @@ clean:
 	rm -f log_energy log out* *jpg test.avi 
 
 mv:
+	mv -f trash/* trash2/ &> /dev/null
 	mv -f log_energy log out* *jpg test.avi trash &> /dev/null
 
 aclean:

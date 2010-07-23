@@ -191,7 +191,7 @@ void CSys::update_verlet(){
 	if(verlet_distance>max_verlet_distance)verlet_distance=max_verlet_distance;
 
 	verlet_need_update=false;
-	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
+	cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
 	}
 
 //construct the verlet list of one particle 
@@ -243,7 +243,7 @@ TRY
 	CVerlet<CParticle>::iterator neigh;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		(*it1)->forces=G*((*it1)->get_mass());
+		(*it1)->forces=G*((*it1)->get_mass())-0.00005*(*it1)->x(1);//gravity plus dumping
 		(*it1)->torques=0.0;
 		}
 
@@ -641,11 +641,14 @@ TRY
 
 				double ee=0.55;
 				double a =1;
-				double b =1;//-ee;//*drand48();
+				double b =1-ee*drand48();
 				double c =1-ee;//*drand48();
 				GeomObject<tellipsoid> E2(x, a,b,c, r);
 				CParticle *p = new CParticle(E2);
-				p->w(1)(2)=10*(1-2*drand48());
+				p->w(1)(1)=10*(1-2*drand48());
+				p->w(1)(0)=10*(1-2*drand48());
+				p->x(1)(1)=0.5*(1-2*drand48());
+				p->x(1)(0)=0.5*(1-2*drand48());
 				add(p);
 				
 				}

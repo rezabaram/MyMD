@@ -169,10 +169,11 @@ void intersect(HomVec &X1, HomVec &X2,  const CEllipsoid &E1, const CEllipsoid &
 TRY
 	HomVec mp=(X1+X2)/2;
 	ERROR(E1(mp)>0 or E2(mp) > 0, "contact point is not inside both ellipsoids");
-	HomVec g1=E1.gradient(mp).project4d();
-	HomVec g2=E2.gradient(mp).project4d();
+	
+	HomVec g1=HomVec(E1.gradient(mp.project() ),0);
+	HomVec g2=HomVec(E2.gradient(mp.project() ), 0);
 	HomVec g=g2-g1; g.normalize();
-	if(g1*g2/g1.abs()/g2.abs()<0)g*=-1;
+	//if(g1*g2<0)g*=-1;
 
 	CRay<HomVec> ray(mp, mp+g);
 	CQuadratic q1(intersect(ray, E1));
@@ -209,7 +210,7 @@ CATCH
 bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 
-	if(0)if(ovs.has_sep_plane){
+	if(ovs.has_sep_plane){
 		if(!(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))) {
 			return true;
 			}
@@ -286,7 +287,7 @@ void findMin(HomVec &x,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
 TRY
 	double lambda;
 	vec xp0, xp=x.project();
-	Matrix Em1(3,3), Em2(3,3);
+	static Matrix Em1(3,3), Em2(3,3);
 	for(size_t i=0; i<3; i++){
 	for(size_t j=0; j<3; j++){
 		Em1(i,j)=E1.ellip_mat(i,j);
@@ -340,6 +341,7 @@ TRY
 		setcontact(*ovs, *E1, *E2);
 		//cerr<< (*E1)(ovs->x2) <<"\t"<<  (*E2)(ovs->x1)<<endl;
 		ERROR(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0), "incorrect contact points." );
+		ERROR(((*E1)(E2->Xc) < 0 or (*E2)(E1->Xc) <0), "ellipsoids penetrated too much." );
 
 		}
 	else{
