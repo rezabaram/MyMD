@@ -192,11 +192,22 @@ void setcontact(ShapeContact &ovs,CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 	//ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
 
-	intersect(ovs.x1, ovs.x2, E1, E2);
-	vec mp=((ovs.x1.project()+ovs.x2.project())/2.0);
 	vec diff=(ovs.x1.project()-ovs.x2.project());
+	vec mp=((ovs.x1.project()+ovs.x2.project())/2.0);
+	vec g1=E1.gradient(mp);
+	vec g2=E2.gradient(mp);
 	double dx=diff.abs();
 	diff.normalize();
+
+	//if the contact points are not along the normal direction, correct them
+	if(fabs(g1*diff/g1.abs()) <0.95 or fabs(g2*diff/g1.abs())<0.95 ){
+		intersect(ovs.x1, ovs.x2, E1, E2);
+		diff=(ovs.x1.project()-ovs.x2.project());
+		mp=((ovs.x1.project()+ovs.x2.project())/2.0);
+		dx=diff.abs();
+		diff.normalize();
+		}
+
 
 	ovs.add(Contact(mp, diff, dx));
 
@@ -210,7 +221,7 @@ CATCH
 bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 
-	if(ovs.has_sep_plane){
+	if(0)if(ovs.has_sep_plane){
 		if(!(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))) {
 			return true;
 			}

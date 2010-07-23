@@ -16,8 +16,8 @@ perf:
 	plot.sh 1:2 log trash/log
 
 animate: test.avi
-	mplayer test.avi
-	#feh *jpg
+	#mplayer test.avi
+	feh *jpg
 
 test.avi: 
 	sh genFrames.sh out* > /dev/null 2>&1

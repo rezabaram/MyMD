@@ -105,8 +105,8 @@ TRY
 	#ifdef VERLET
 	verlet_factor=c.get_param<double>("verletfactor");
 	verlet_distance=verlet_factor*maxr;
-	min_verlet_distance=verlet_distance/10;
-	max_verlet_distance=verlet_distance*10;
+	min_verlet_distance=verlet_distance/5;
+	max_verlet_distance=verlet_distance*5;
 	update_verlet();
 	#else
 	//create for each pair an object for the contact
@@ -243,7 +243,7 @@ TRY
 	CVerlet<CParticle>::iterator neigh;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		(*it1)->forces=G*((*it1)->get_mass())-0.00005*(*it1)->x(1);//gravity plus dumping
+		(*it1)->forces=G*((*it1)->get_mass())-(*it1)->get_mass()*(*it1)->x(1);//gravity plus dumping
 		(*it1)->torques=0.0;
 		}
 
