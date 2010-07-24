@@ -6,7 +6,6 @@ using namespace std;
 
 long RNGSeed;
 void Initialize(){
-	RNGSeed=0;
 	define_parameters();
 	config.parse("config");
 	}
@@ -18,7 +17,12 @@ void Run(){
 	sys.solve();
 }
 
-int main(){
+int main(int pi, char **params){
+	if(pi==1)
+		RNGSeed=0;
+	else
+		RNGSeed=313*atoi(params[1])+1;
+	
 	try {
 	Initialize();
 	Run();
