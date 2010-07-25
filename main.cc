@@ -5,7 +5,10 @@ using namespace std;
 
 
 long RNGSeed;
+MTRand rgen(RNGSeed);
+
 void Initialize(){
+	rgen.seed(RNGSeed);
 	define_parameters();
 	config.parse("config");
 	}

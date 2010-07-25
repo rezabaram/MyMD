@@ -74,7 +74,7 @@ string stringify(T x, int width=15, const char ch=' ')
 using namespace math;
 
 extern long RNGSeed;
-static MTRand rgen(RNGSeed);
+extern MTRand rgen;
 
 vec randomVec(const vec &x1, const vec &x2){
 	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(0)+(x2(2)-x1(2))*rgen());

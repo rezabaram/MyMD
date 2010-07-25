@@ -411,7 +411,9 @@ CATCH
 void CSys::solve(){
 	try{
 	bool stop=false;
+	double dt0=dt;
 	while(true){
+		//dt=(double)((int)t+1)*dt0;
 		if(t+dt>tMax){//to stop exactly at tMax
 			dt=tMax-t;
 			stop=true;
@@ -462,7 +464,7 @@ int CSys::read_packing3(string infilename, const vec &shift, double scale){
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
-		double ran=drand48();
+		double ran=rgen();
                 add(p);
                 }
 
@@ -499,11 +501,11 @@ int CSys::read_packing2(string infilename, const vec &shift, double scale){
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
-		double ran=drand48();
+		double ran=rgen();
 		if(ran<0.05)p->shape->identifier=1;
 		else if(ran<0.2)p->shape->identifier=2;
 		else p->shape->identifier=3;
-		p->material.color=stringify(drand48())+stringify(drand48())+stringify(drand48());
+		p->material.color=stringify(rgen())+stringify(rgen())+stringify(rgen());
 		p->shape->Xc=p->x(0);
 		p->x(1)=0.0;
 		p->x(2)=0.0;
@@ -627,28 +629,28 @@ TRY
 			for(double j=1-margin/2; j>margin/2; j-=margin){
 				if(particles.size()==maxNParticle)break;
 
-				x(1)=i+size*drand48()/10; 
-				x(0)=j+size*drand48()/10;
-				x(2)=k+size*drand48()/10; 
-				double alpha=drand48()*M_PI;
+				x(1)=i+size*rgen()/10; 
+				x(0)=j+size*rgen()/10;
+				x(2)=k+size*rgen()/10; 
+				double alpha=rgen()*M_PI;
 				Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
-				//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*drand48())));
-				//GeomObject<tellipsoid> E(x, 1-0.0*drand48(), 1-0.0*drand48(),1-0.0*drand48(), size*(1+0.0*drand48()));
+				//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*rgen())));
+				//GeomObject<tellipsoid> E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
 				//CParticle *p = new CParticle(E);
-				double r=size*(1-0.1*drand48());
+				double r=size*(1-0.1*rgen());
 				GeomObject<tsphere> E1(x,r);
 				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
 				double ee=0.55;
 				double a =1;
-				double b =1;//*drand48();
-				double c =1-ee;//*drand48();
+				double b =1;//*rgen();
+				double c =1-ee;//*rgen();
 				GeomObject<tellipsoid> E2(x, a,b,c, r);
 				CParticle *p = new CParticle(E2);
-				p->w(1)(1)=10*(1-2*drand48());
-				p->w(1)(0)=10*(1-2*drand48());
-				p->x(1)(1)=0.5*(1-2*drand48());
-				p->x(1)(0)=0.5*(1-2*drand48());
+				p->w(1)(1)=10*(1-2*rgen());
+				p->w(1)(0)=10*(1-2*rgen());
+				p->x(1)(1)=0.5*(1-2*rgen());
+				p->x(1)(0)=0.5*(1-2*rgen());
 				add(p);
 				
 				}
