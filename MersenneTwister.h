@@ -381,7 +381,7 @@ inline std::istream& operator>>( std::istream& is, MTRand& mtrand )
 }
 
 //---------------------------by reza------------------
-extern MTRand rgen;
+MTRand rgen;
 //----------------------------------------------------
 
 #endif  // MERSENNETWISTER_H

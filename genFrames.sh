@@ -11,7 +11,9 @@ do
 	then
 		continue
 	fi
-	coord2pr3d -x0 -y0 -s1 $file | render -size $w"x"$h -jpeg > _$file.jpg 
+	analysis/convert2raster $file > r$file
+	coord2pr3d -x0 -y0 -s1 r$file | render -size $w"x"$h -jpeg > _$file.jpg 
+	rm r$file
 
 done
 

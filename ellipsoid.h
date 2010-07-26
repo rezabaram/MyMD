@@ -5,7 +5,6 @@
 #include"geombase.h"
 
 ////FIXME added interaction between classes. this is not so good. make a better struture
-#include"eigen.h"
 #include"polynom.h"
 #include"ray.h"
 #include"plane.h"

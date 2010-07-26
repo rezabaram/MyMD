@@ -5,7 +5,7 @@ using namespace std;
 
 
 long RNGSeed;
-MTRand rgen;
+extern MTRand rgen;
 
 void Initialize(){
 	rgen.seed(RNGSeed);

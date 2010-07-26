@@ -71,7 +71,7 @@ class CWindow
 		if(win.uright(2) < uright(2) ) uright(2)=win.uright(2);
 		//assert(uright(0)(0)>=lleft.x(0) && uright.x(1)>=lleft.x(1));
 		}
-	CCoord lleft, uright;//the name is misleading, these are actually two opposite corners of a cube
+	CCoord lleft, uright;//FIXME the name is misleading, these are actually two opposite corners of a cube
 	private:
 };
 
@@ -143,7 +143,6 @@ CRecGrid::CRecGrid(const vec & _corner, const vec & _L, double _d):
 	top_nodes=(int *)NULL;
 	ERROR(N(0)==0||N(1)==0, "No grid will be created.");
 	nodes=new CNode3D[N(0)*N(1)*N(2)];
-	assert(nodes);
 	top_nodes=new int[N(0)*N(1)];
 	ERROR(nodes==NULL || top_nodes==NULL, "No grid will be created.");
 

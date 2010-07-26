@@ -226,7 +226,8 @@ TRY
 	CVerlet<CParticle>::iterator neigh;
 	//reset forces
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		(*it1)->forces=G*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus dumping
+	//	(*it1)->forces=G*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
+		(*it1)->forces=-G.abs()*((**it1).x(0)-vec(0.5, 0.5, 0.5))*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
 		(*it1)->torques=0.0;
 		}
 
@@ -394,7 +395,6 @@ CATCH
 void CSys::solve(){
 	try{
 	bool stop=false;
-	double dt0=dt;
 	while(true){
 		//dt=(double)((int)t+1)*dt0;
 		if(t+dt>tMax){//to stop exactly at tMax

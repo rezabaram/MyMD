@@ -3,8 +3,9 @@
 #include"../ellipsoid.h"
 #include"../MersenneTwister.h"
 
+
 vec randomVec(const vec &x1, const vec &x2){
-	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(0)+(x2(2)-x1(2))*rgen());
+	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(2)+(x2(2)-x1(2))*rgen());
 	}
 
 class CPacking : public vector <GeomObjectBase *>
@@ -19,6 +20,7 @@ class CPacking : public vector <GeomObjectBase *>
 	void print(std::ostream& out, bool raster=false)const;
 	void printRaster3D(std::ostream& out)const{print(out, true);}
 	void parse(string infilename);
+	void parse(istream &inputFile);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
 	double totalVolume();
 
@@ -46,7 +48,10 @@ TRY
 		x=randomVec(x1,x2);
 		for(it=this->begin(); it!=this->end(); it++){
 			d=(**it)(x);
-			if(d<0) ++n;
+			if(d<0) {
+				++n;
+				break;
+				}
 			}
 		}
 	return n/nt;
@@ -63,12 +68,16 @@ void CPacking::print(std::ostream& out, bool raster)const{
 
 void CPacking::parse(string infilename) {
 	ifstream inputFile(infilename.c_str());
-
 	if(!inputFile.good())
 	{
 	cerr << "Unable to open input file: " << infilename << endl;
 	return;
 	}
+	parse(inputFile);
+	inputFile.close();
+	}
+
+void CPacking::parse(istream &inputFile) {
 
 	string line;
 
@@ -86,6 +95,11 @@ void CPacking::parse(string infilename) {
 		shape->parse(ss);
 		push_back(shape);
 		}
+	//else if(id==14){
+		//GeomObjectBase *shape=new GeomObject<tsphere>();
+		//shape->parse(ss);
+		//push_back(shape);
+		//}
 	else{
 		WARNING("Skip reading shape with id: "<< id);
 		continue;
@@ -94,6 +108,5 @@ void CPacking::parse(string infilename) {
 
 	//Read up to second whitespace
 	}
-	inputFile.close();
 }
 #endif /* PACKING_H */
