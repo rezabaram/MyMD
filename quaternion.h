@@ -57,6 +57,7 @@ friend Quaternion operator*(const Quaternion &,const Quaternion &);
 friend Quaternion operator*(const Quaternion &,const vec &);
 friend Quaternion operator*(const vec &,const Quaternion &);
 friend std::ostream &operator<<(std::ostream & out, const Quaternion &q);
+void parse(std::istream &in);
 };
 
 
@@ -200,4 +201,11 @@ return ((*this)*_v*(~(*this))).getAxis();
 inline vec Quaternion::toBody(const vec &_v)const{
 return ((~(*this))*_v*(*this)).v;
 }
+
+inline void Quaternion::parse(std::istream &in){
+	in>>u;
+	in>>v(0);
+	in>>v(1);
+	in>>v(2);
+	}
 #endif /* QUATERNION_H */

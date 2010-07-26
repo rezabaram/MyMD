@@ -1,10 +1,13 @@
 #ifndef EIGEN_H
 #define EIGEN_H 
 #include <stdio.h>
+#include <vector>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_eigen.h>
 #include "matrix.h"
 #include "vec.h"
+
+using namespace std;
 
 //FIXME not goood. put things in a better place
 using namespace math;

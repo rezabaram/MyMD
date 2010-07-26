@@ -21,6 +21,7 @@ class GeomObjectBase
 
 	virtual void scale(double)=0;
 	virtual void print(std::ostream &out)const=0;
+	virtual void printRaster3D(std::ostream &out)const{};
 	virtual void parse(std::istream &in)=0;
 	virtual void fixToBody(const HomVec &point){};
 	virtual double operator()(const vec &point)const{return 1e+100;};

@@ -380,6 +380,10 @@ inline std::istream& operator>>( std::istream& is, MTRand& mtrand )
 	return is;
 }
 
+//---------------------------by reza------------------
+extern MTRand rgen;
+//----------------------------------------------------
+
 #endif  // MERSENNETWISTER_H
 
 // Change log:

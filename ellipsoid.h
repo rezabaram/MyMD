@@ -8,6 +8,8 @@
 #include"eigen.h"
 #include"polynom.h"
 #include"ray.h"
+#include"plane.h"
+
 typedef GeomObject<tellipsoid> CEllipsoid;
 CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E);
 ////
@@ -96,24 +98,18 @@ template<>
 class GeomObject<tellipsoid>: public GeomObjectBase{
 	public:	
 		
-	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c), R(_a,_b,_c) {
+	GeomObject():GeomObjectBase(vec(0,0,0),tellipsoid, Quaternion(1,0,0,0)), a(1), b(1), c(1){
 		identifier=14;
-		radius=tmax(a, tmax(b,c));
+		}
+
+	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c){
+		identifier=14;
 		a*=_r;
 		b*=_r;
 		c*=_r;
-		radius*=_r;
+		radius=tmax(a, tmax(b,c));
 		setup();
 
-		//put a point on the surface of the ellipse	
-		
-		CRay<HomVec> ray(HomVec(0,0,0, 1) , HomVec(0,0,1, 1) );
-		CQuadratic quartic(intersect(ray, *this));
-		//the roots are sorted ascending
-		//P0= ray(quartic.root(0).real()); //on the surface of E1
-		//quartic.print_roots(cerr);
-		//ray2.print(cerr);
-		//cerr<< P0 <<endl;
 		rotateTo(q);
 		update_tranlation_mat();
 		}
@@ -130,9 +126,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		P0=(rotat_mat*trans_mat)*point;
 		}
 
-	void setup(){
-		//Elements of the rotational matrix
-
+	void mat_init(){
 		double temp=0;
 		for(int i=0; i<4; ++i)
 		for(int j=0; j<4; ++j){
@@ -145,6 +139,11 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  inert_mat(i,j)= temp;
 		  trans_mat(i,j)= temp;
 		}
+		}
+
+	void setup(){
+
+		 mat_init();
 
 		  //Elements of the scaling matrix
 		  scale_mat(0,0)=1.0/(a*a);
@@ -166,9 +165,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		  inert_mat(1,1)=0.2*(a*a+c*c);
 		  inert_mat(2,2)=0.2*(a*a+b*b);
 
-
-
 		}
+
 	vec gradient (const vec &X)const {
 		return 2.0*ellip_mat*(X-Xc);
 		}
@@ -285,13 +283,18 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 
 	void print(std::ostream &out)const{
+		out<<setprecision(12)<< identifier<< "   ";
+		out<< Xc<< "  "<< a<<"  "<<b<<"  "<< c <<"  ";
+		out<< q;
+		}
+
+	void printRaster3D(std::ostream &out)const{
 		//FIXME temporary 
 //		CSphere S(P.project(), 0.01);
 //		S.print(out); 
 	//	return;
 //		out<<endl;
 		///
-
 		out<<setprecision(12)<< identifier<< "   ";
 		out<< Xc<< "  "<<radius+0.001<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
@@ -302,9 +305,17 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		}
 	
 	void parse(std::istream &in){//FIXME
-			ERROR(true,"not implemented");
-			//in>>identifier;
-			}
+		in>>Xc;
+		in>> a >> b >> c;
+		q.parse(in);
+
+		radius=tmax(a, tmax(b,c));
+		setup();
+
+		rotateTo(q);
+		update_tranlation_mat();
+
+		}
 
 	Matrix rotat_mat;
 	Matrix trans_mat;
@@ -316,10 +327,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	Matrix inert_mat;
 
 	double a,b,c;
-	vec R;
 	private:
 	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
-	GeomObject<tellipsoid> ();
 	};
 
 ////FIXME added interaction between classes. this is not so good. make a better struture

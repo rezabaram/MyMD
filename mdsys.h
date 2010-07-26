@@ -41,7 +41,6 @@ class CSys{
 	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
 	void write_packing(string infilename);
 	double total_volume();
-	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
@@ -129,22 +128,6 @@ double CSys::total_volume(){
 		v+=(*it)->shape->vol();
 		}
 	return v;
-	}
-//calculating packing fraction inside cube with x1, x2 az opposite corners
-double CSys::packFraction(const vec &x1, const vec &x2, unsigned long N){
-TRY
-	double n=0, nt=0;
-	vec x;
-	double d=1;
-	for(unsigned long i=0; i<N; i++){
-		++nt;
-		x=randomVec(x1,x2);
-		for(unsigned long j=0; j<particles.size(); j++) 
-			d=(*(particles.at(j)->shape))(x);
-			if(d<0) ++n;
-		}
-	return n/nt;
-CATCH
 	}
 
 //void CSys::setup_grid(double _d){
@@ -427,7 +410,6 @@ void CSys::solve(){
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
 		}
-	cerr<<"packing fraction:  "<< total_volume()/box.vol() <<"\t"<<packFraction(vec(0,0,0), vec(1,1,1)) <<endl;
 	}
 
 void CSys::write_packing(string outfilename){
