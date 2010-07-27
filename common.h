@@ -60,6 +60,7 @@ void define_parameters()
 	config.add_param<double>("verletfactor", 0.5); 
 	config.add_param<size_t>("nParticle", 5); 
 	config.add_param<string>("particleShape", "sphere"); 
+	config.add_param<double>("e", 0.5); 
 }
 
 template <class T>

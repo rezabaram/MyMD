@@ -1,13 +1,14 @@
 particleShape 	sphere
 density  	0.5
 Gravity  	0   0   -10
-outDt  		0.02
+outDt  		0.2
 timeStep 	0.00005
-maxTime		2
-particleSize 	0.06
+maxTime		5
+particleSize 	0.07
 nParticle 	1000
 stiffness  	5e+03
 damping		1e+1
-friction	0.5
+friction	0.0
 cohesion	0.0
 verletfactor 	0.1
+e		0.5

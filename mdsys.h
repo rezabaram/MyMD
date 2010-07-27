@@ -34,7 +34,8 @@ class CSys{
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
 	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
-	vec contactForce(const Contact &c, const vec &dv, CProperty &m)const;
+	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
+	vec center_of_mass()const;
 
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
@@ -87,6 +88,21 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		delete (*it);
 		}
+CATCH
+	}
+
+vec CSys::center_of_mass()const{
+TRY
+	vec cm(0,0,0);
+	double M=0;
+	ParticleContainer::const_iterator it;
+	for(it=particles.begin(); it!=particles.end(); ++it){
+		
+		M+=(*it)->get_mass();
+		cm+=(*it)->get_mass()*(*it)->x(0);
+		}
+		cm/=M;
+	return cm;
 CATCH
 	}
 
@@ -174,7 +190,7 @@ void CSys::update_verlet(){
 	if(verlet_distance>max_verlet_distance)verlet_distance=max_verlet_distance;
 
 	verlet_need_update=false;
-	cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
+	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
 	}
 
 //construct the verlet list of one particle 
@@ -225,9 +241,11 @@ TRY
 	ParticleContainer::iterator it1, it2, ittemp;
 	CVerlet<CParticle>::iterator neigh;
 	//reset forces
+	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-	//	(*it1)->forces=G*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
-		(*it1)->forces=-G.abs()*((**it1).x(0)-vec(0.5, 0.5, 0.5))*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
+		(*it1)->forces=G*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
+		//(*it1)->forces=-G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
+		//(*it1)->forces=-50*G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())+G*(*it1)->get_mass();
 		(*it1)->torques=0.0;
 		}
 
@@ -260,16 +278,16 @@ CATCH
 };
 
 inline
-vec CSys::contactForce(const Contact &c, const vec &dv, CProperty &m)const{
+vec CSys::contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp)const{
 TRY
 	double proj=(dv*c.n);
 	double ksi=c.dx_n;
 	
 
-	ksi=(m.stiffness*ksi+m.damping*proj)*sqrt(ksi); 
+	ksi=(m.stiffness*ksi+tmp*m.damping*proj)*sqrt(ksi); 
 	if(ksi<0)ksi=0;//to eliminate artifical attractions
 	vec fn=-ksi*c.n;//normal force
-	vec ft=-m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
+	vec ft=-tmp*m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
 	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
 
 	static int i2=0;
@@ -577,7 +595,7 @@ TRY
 		r1=overlaps(i).x-p1->x(0);
 		dv=p1->x(1)+cross(p1->w(1), r1);
 
-		force=contactForce(overlaps(i), dv, p1->material);
+		force=contactForce(overlaps(i), dv, p1->material, 0);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
@@ -604,6 +622,8 @@ TRY
 
 	double k=0;
 
+	double ee=config.get_param<double>("e");
+
 	while(particles.size()<maxNParticle){
 		k=maxh+margin;
 		if(k==1+10*margin)break;
@@ -613,21 +633,21 @@ TRY
 
 				x(1)=i+size*rgen()/10; 
 				x(0)=j+size*rgen()/10;
-				x(2)=k+size*rgen()/10; 
+				x(2)=0.5+k+size*rgen()/10; 
 				double alpha=rgen()*M_PI;
 				Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
 				//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*rgen())));
 				//GeomObject<tellipsoid> E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
 				//CParticle *p = new CParticle(E);
-				double r=size*(1-0.1*rgen());
+				double r=size;//*(1-0.1*rgen());
 				GeomObject<tsphere> E1(x,r);
 				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
-				double ee=0.55;
-				double a =1;
-				double b =1;//*rgen();
-				double c =1-ee;//*rgen();
-				GeomObject<tellipsoid> E2(x, a,b,c, r);
+				//to implement constant volume (4/3 Pi r^3) while changing the shape
+				double a =r/pow(ee,1./3.);
+				double b =a;//*rgen();
+				double c =ee*a;//*rgen();
+				GeomObject<tellipsoid> E2(x, a,b,c);
 				CParticle *p = new CParticle(E2);
 				p->w(1)(1)=10*(1-2*rgen());
 				p->w(1)(0)=10*(1-2*rgen());

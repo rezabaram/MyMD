@@ -101,11 +101,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		identifier=14;
 		}
 
-	GeomObject(const vec &v,double _a, double _b, double _c, double _r=1, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c){
+	GeomObject(const vec &v,double _a, double _b, double _c, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c){
 		identifier=14;
-		a*=_r;
-		b*=_r;
-		c*=_r;
 		radius=tmax(a, tmax(b,c));
 		setup();
 
