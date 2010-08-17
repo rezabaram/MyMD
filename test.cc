@@ -1,7 +1,8 @@
 #include<iostream>
 using namespace std;
+#include"/home/reza/workstation/mysrc/CStat.h"
 #include"polynom.h"
-#include"eigen.h"
+//#include"eigen.h"
 #include"vec.h"
 #include"MersenneTwister.h"
 #include"common.h"
@@ -104,10 +105,13 @@ void mysort(int val[], int ind[] , int n){
 int main(int argc, char **argv){
 long seed=0;
 MTRand rgen(seed);
+CStat stat;
+stat.set_hist(-3, 8, 500);
 
-for(int i=0; i<100; i++){
-	cerr<< rgen() <<endl;
+for(int i=0; i<10000000; i++){
+	stat<<rgen.randNorm(2.5, 0.5);
 	}
+stat.print_hist("hist.dat");
 
 return 0;
 }

@@ -614,6 +614,19 @@ TRY
 CATCH
 	}
 
+double rand_aspect_ratio(double asphericity, double asphericityWidth){
+
+	double temp=asphericity-2*asphericityWidth;
+	int randtry=0;
+	while(randtry<10 and (temp<asphericity-asphericityWidth or temp>asphericity+asphericityWidth) ){
+		temp=rgen.randNorm(asphericity, asphericityWidth);
+		++randtry;
+		}
+
+	if(asphericityWidth<1e-3)return exp(asphericity);
+	else return exp(rgen.randNorm(asphericity, asphericityWidth) );
+	}
+
 void CSys::particles_on_grid(){ 
 TRY
 	double size=maxr;
@@ -622,7 +635,10 @@ TRY
 
 	double k=0;
 
-	double ee=config.get_param<double>("e");
+	
+	double ee;
+	double asphericity=config.get_param<double>("asphericity");
+	double asphericityWidth=config.get_param<double>("asphericityWidth");
 
 	while(particles.size()<maxNParticle){
 		k=maxh+margin;
@@ -644,6 +660,8 @@ TRY
 				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
 				//to implement constant volume (4/3 Pi r^3) while changing the shape
+				ee=rand_aspect_ratio(asphericity, asphericityWidth);
+				cerr<< ee <<endl;
 				double a =r/pow(ee,1./3.);
 				double b =a;//*rgen();
 				double c =ee*a;//*rgen();

@@ -61,6 +61,8 @@ void define_parameters()
 	config.add_param<size_t>("nParticle", 5); 
 	config.add_param<string>("particleShape", "sphere"); 
 	config.add_param<double>("e", 0.5); 
+	config.add_param<double>("asphericity", -0.5); 
+	config.add_param<double>("asphericityWidth", 0.1); 
 }
 
 template <class T>
