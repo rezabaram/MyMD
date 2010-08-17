@@ -649,7 +649,7 @@ TRY
 
 				x(1)=i+size*rgen()/10; 
 				x(0)=j+size*rgen()/10;
-				x(2)=0.5+k+size*rgen()/10; 
+				x(2)=0.2+k+size*rgen()/10; 
 				double alpha=rgen()*M_PI;
 				Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
 				//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*rgen())));
@@ -661,7 +661,6 @@ TRY
 
 				//to implement constant volume (4/3 Pi r^3) while changing the shape
 				ee=rand_aspect_ratio(asphericity, asphericityWidth);
-				cerr<< ee <<endl;
 				double a =r/pow(ee,1./3.);
 				double b =a;//*rgen();
 				double c =ee*a;//*rgen();

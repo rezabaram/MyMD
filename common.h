@@ -15,7 +15,7 @@
 #include<vector>
 #include<list>
 #include"exception.h"
-#include"config.h"
+#include"params.h"
 
 //#include"vec3d.h"
 typedef size_t indexType;

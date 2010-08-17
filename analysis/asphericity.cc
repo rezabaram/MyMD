@@ -1,7 +1,7 @@
 #include<iostream>
 #include"../ellipsoid.h"
 #include"../MersenneTwister.h"
-#include"/home/reza/workstation/mysrc/CStat.h"
+#include<CStat.h>
 
 using namespace std;
 
@@ -31,7 +31,7 @@ void Initialize(){
 
 void Run(){
 
-	for(double ee=0.01; ee<100; ee*=5){
+	for(double ee=0.01; ee<100; ee*=1.2){
 	double r=1.0;
 	double a =r/pow(ee,1./3.);
 	double b =a;//*rgen();
@@ -40,7 +40,7 @@ void Run(){
 
 
 	CStat stat;
-	for(int i=0; i<10000000; i++){
+	for(int i=0; i<100000; i++){
 	vec xs=randomVecSurfaceSphere(E.Xc, r);
 	CRay<HomVec> ray(HomVec(0,0,0,1), HomVec(xs,1));
 	CQuadratic q=intersect(ray, E);
