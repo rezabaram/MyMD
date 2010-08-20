@@ -4,12 +4,12 @@ Gravity  	0   0   -10
 outDt  		0.01
 timeStep 	0.0001
 maxTime		5
-particleSize 	0.06
-nParticle 	180
+particleSize 	0.04
+nParticle 	800
 stiffness  	1e+02
 damping		5e+0
 friction	1.0e-1
 cohesion	0.0
 verletfactor 	0.1
-asphericity	-0.5
-asphericityWidth	0.1
+asphericity	-0.8
+asphericityWidth	0.2

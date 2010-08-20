@@ -650,17 +650,16 @@ TRY
 	double i=0, j=0;
 	while(particles.size()<maxNParticle){
 		if(particles.size()==maxNParticle)break;
-		if(k>1+10*size)break;
 		ee=rand_aspect_ratio(asphericity, asphericityWidth);
 		double r=size;//*(1-0.1*rgen());
 		double a =r/pow(ee,1./3.);
 		double b =a;//*rgen();
 		double c =ee*a;//*rgen();
 
-		r=max(a,max(b,c));
+		r=max(r,max(a,max(b,c)));
 		i+=2.5*r;
-		if(j<r)j=2.5*r;
-		if(k<r)k=2.5*r;
+		if(j<r)j=1.5*r;
+		if(k<r)k=1.5*r;
 		if(i>1-1.2*r){
 			i=2.5*r;
 			j+=2.5*r;
@@ -668,7 +667,7 @@ TRY
 		if(j>1-1.2*r){
 			i=2.5*r;
 			j=2.5*r;
-			k+=2.5*r;
+			k+=1.5*r;
 			}
 
 		x(0)=i+size*rgen()/10;
