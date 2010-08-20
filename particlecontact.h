@@ -4,11 +4,13 @@
 template<class particleT>
 class ParticleContactHolder : public ShapeContact{
 	public:
-	ParticleContactHolder(particleT &_p1, particleT& _p2):ShapeContact(), p1(&_p1), p2(&_p2){}
-	ParticleContactHolder(particleT *_p1, particleT * _p2):ShapeContact(), p1(_p1), p2(_p2){}
-	ParticleContactHolder():ShapeContact(), p1(NULL), p2(NULL){}
+	ParticleContactHolder(particleT &_p1, particleT& _p2):ShapeContact(), p1(&_p1), p2(&_p2), in_contact(false){}
+	ParticleContactHolder(particleT *_p1, particleT * _p2):ShapeContact(), p1(_p1), p2(_p2), in_contact(false){}
+	ParticleContactHolder():ShapeContact(), p1(NULL), p2(NULL), in_contact(false){}
 
 	particleT * const p1, * const p2;
+	bool in_contact;
+	double col_time;
  	private:
 	};
 

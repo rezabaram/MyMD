@@ -261,6 +261,16 @@ TRY
 		assert(*it1==(*it1)->vlist.self_p);
 		for(neigh=(*it1)->vlist.begin(); neigh!=(*it1)->vlist.end(); ++neigh){
 			if(interact(*it1,(*neigh).first)){
+				if(!neigh->second.in_contact){
+					neigh->second.in_contact=true;
+					neigh->second.col_time=t;
+					}
+				}
+			else{
+				if(neigh->second.in_contact){
+					neigh->second.in_contact=false;
+					//cerr<< (t-neigh->second.col_time)/dt <<endl;
+					}
 				}
 			}
 		#else
@@ -630,7 +640,7 @@ double rand_aspect_ratio(double asphericity, double asphericityWidth){
 void CSys::particles_on_grid(){ 
 TRY
 	double size=maxr;
-	double margin=2.3*size;
+	double margin=4.3*size;
 	vec x(0.0, 0.0, .0);
 
 	double k=0;
@@ -646,30 +656,30 @@ TRY
 		for(double i=margin/2; i<1-margin/2; i+=margin){
 			for(double j=1-margin/2; j>margin/2; j-=margin){
 				if(particles.size()==maxNParticle)break;
+				ee=rand_aspect_ratio(asphericity, asphericityWidth);
+				double r=size;//*(1-0.1*rgen());
+				double a =r/pow(ee,1./3.);
+				double b =a;//*rgen();
+				double c =ee*a;//*rgen();
 
 				x(1)=i+size*rgen()/10; 
 				x(0)=j+size*rgen()/10;
-				x(2)=0.2+k+size*rgen()/10; 
+				x(2)=k+size*rgen()/10; 
 				double alpha=rgen()*M_PI;
 				Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
 				//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*rgen())));
 				//GeomObject<tellipsoid> E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
 				//CParticle *p = new CParticle(E);
-				double r=size;//*(1-0.1*rgen());
 				GeomObject<tsphere> E1(x,r);
 				//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
 
 				//to implement constant volume (4/3 Pi r^3) while changing the shape
-				ee=rand_aspect_ratio(asphericity, asphericityWidth);
-				double a =r/pow(ee,1./3.);
-				double b =a;//*rgen();
-				double c =ee*a;//*rgen();
 				GeomObject<tellipsoid> E2(x, a,b,c);
 				CParticle *p = new CParticle(E2);
 				p->w(1)(1)=10*(1-2*rgen());
 				p->w(1)(0)=10*(1-2*rgen());
-				p->x(1)(1)=0.5*(1-2*rgen());
-				p->x(1)(0)=0.5*(1-2*rgen());
+				p->x(1)(1)=2*(1-2*rgen());
+				p->x(1)(0)=2*(1-2*rgen());
 				add(p);
 				
 				}
