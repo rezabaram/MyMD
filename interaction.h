@@ -345,8 +345,8 @@ TRY
 		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
 
 		updatecontact(*ovs, *E1, *E2);
-		findMin(ovs->x1, *E1, *E2, 50);
-		findMin(ovs->x2, *E2, *E1, 50);
+		findMin(ovs->x1, *E1, *E2, 500);
+		findMin(ovs->x2, *E2, *E1, 500);
 		//updateplane(*ovs, *E1, *E2);
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);

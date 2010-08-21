@@ -5,11 +5,11 @@ outDt  		0.01
 timeStep 	0.0001
 maxTime		5
 particleSize 	0.04
-nParticle 	800
+nParticle 	3000
 stiffness  	1e+02
 damping		5e+0
 friction	1.0e-1
 cohesion	0.0
 verletfactor 	0.1
-asphericity	-0.8
+asphericity	1.0
 asphericityWidth	0.2
