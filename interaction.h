@@ -319,7 +319,7 @@ TRY
 	
 
 	if(!converged)WARNING("minimization not converged: "<<(xp-xp0).abs());
-	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<E2(xp)<<endl<<E1<<endl<<E2);
+	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<xp<<". E(x)= "<<E2(xp)<<endl<<E1<<endl<<E2);
 	x(0)=xp(0);
 	x(1)=xp(1);
 	x(2)=xp(2);
