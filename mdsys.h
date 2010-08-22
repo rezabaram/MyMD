@@ -242,7 +242,7 @@ TRY
 	//reset forces
 	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		(*it1)->forces=G*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
+		(*it1)->forces=G*((*it1)->get_mass())-4.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping (coef of dumping is ad hoc)
 		//(*it1)->forces=-G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
 		//(*it1)->forces=-50*G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())+G*(*it1)->get_mass();
 		(*it1)->torques=0.0;
