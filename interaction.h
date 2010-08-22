@@ -162,13 +162,13 @@ CATCH
 	}
 
 
-//this functions take two intersection ellipsoids, and give the intersection of a 
+//this function takes two intersection ellipsoids, and gives back the intersection of a 
 //ray through midpoint mp (which should be inside both of them) in direction of the average gradient 
 // at point mp. the intersecting points are X1 on E1 and X2 on E2
 void intersect(HomVec &X1, HomVec &X2,  const CEllipsoid &E1, const CEllipsoid &E2){
 TRY
 	HomVec mp=(X1+X2)/2;
-	ERROR(E1(mp)>0 or E2(mp) > 0, "contact point is not inside both ellipsoids");
+	ERROR(E1(mp)>1e-10 or E2(mp) > 1e-10, "contact point is not inside both ellipsoids");
 	
 	HomVec g1=HomVec(E1.gradient(mp.project() ),0);
 	HomVec g2=HomVec(E2.gradient(mp.project() ), 0);
@@ -207,7 +207,6 @@ TRY
 		dx=diff.abs();
 		diff.normalize();
 		}
-
 
 	ovs.add(Contact(mp, diff, dx));
 
@@ -320,7 +319,7 @@ TRY
 	
 
 	if(!converged)WARNING("minimization not converged: "<<(xp-xp0).abs());
-	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<E2(xp));
+	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<E2(xp)<<endl<<E1<<endl<<E2);
 	x(0)=xp(0);
 	x(1)=xp(1);
 	x(2)=xp(2);

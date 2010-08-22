@@ -658,7 +658,7 @@ TRY
 		double c =ee*a;//*rgen();
 
 		r=max(r,max(a,max(b,c)));
-		i+=2.5*r;
+		i+=3.0*r;
 		if(j<r)j=1.5*r;
 		if(k<r)k=1.5*r;
 		if(i>1-1.2*r){

@@ -313,6 +313,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		}
 
+	friend std::ostream & operator<< (std::ostream &out, const GeomObject<tellipsoid> &E);
 	Matrix rotat_mat;
 	Matrix trans_mat;
 	Matrix scale_mat;
@@ -326,6 +327,11 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	private:
 	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
 	};
+  
+std::ostream & operator<< (std::ostream &out, const GeomObject<tellipsoid> &E){
+		E.print(out);
+		return out;
+		};
 
 ////FIXME added interaction between classes. this is not so good. make a better struture
 CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E){
