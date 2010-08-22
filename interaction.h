@@ -168,7 +168,10 @@ CATCH
 void intersect(HomVec &X1, HomVec &X2,  const CEllipsoid &E1, const CEllipsoid &E2){
 TRY
 	HomVec mp=(X1+X2)/2;
-	ERROR(E1(mp)>1e-10 or E2(mp) > 1e-10, "contact point is not inside both ellipsoids");
+	if(E1(mp)>1e-12 or E2(mp) > 1e-12){
+		WARNING("contact point is not inside both ellipsoids: "<<E1(mp)<<"   "<<E2(mp));
+		return;
+		}
 	
 	HomVec g1=HomVec(E1.gradient(mp.project() ),0);
 	HomVec g2=HomVec(E2.gradient(mp.project() ), 0);
@@ -295,7 +298,7 @@ void CInteraction::append(ShapeContact &v, ShapeContact &v2){
 // find min of x on E1, in the potentional of E2
 void findMin(HomVec &x,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
 TRY
-	double lambda;
+	double lambda, lambda0;
 	vec xp0, xp=x.project();
 	static Matrix Em1(3,3), Em2(3,3);
 	for(size_t i=0; i<3; i++){
@@ -307,12 +310,14 @@ TRY
 	
 	long iter=0;
 	bool converged=false;
+	lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
 	do{
 		++iter;
 		xp0=xp;
+		lambda0=lambda;
 		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
 		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
-		converged= (xp-xp0).abs()<1e-13;
+		converged= (xp-xp0).abs()<1e-13 and fabs(lambda0-lambda)<1e-13;
 		}
 	while(iter<nIter and !converged);
 	//	cout<<setprecision(14)<<iter<<"  lambda="<< lambda<<"   Xp="<<xp <<"  C1="<< E1.Xc<<"  C2="<<E2.Xc<<endl;
