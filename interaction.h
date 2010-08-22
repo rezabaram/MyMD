@@ -313,13 +313,13 @@ TRY
 		xp0=xp;
 		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
 		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
-		converged= (xp-xp0).abs()<1e-14;
+		converged= (xp-xp0).abs()<1e-13;
 		}
 	while(iter<nIter and !converged);
 	//	cout<<setprecision(14)<<iter<<"  lambda="<< lambda<<"   Xp="<<xp <<"  C1="<< E1.Xc<<"  C2="<<E2.Xc<<endl;
 	
 
-	if(!converged)WARNING("minimization not converged: "<<E2(xp));
+	if(!converged)WARNING("minimization not converged: "<<(xp-xp0).abs());
 	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<E2(xp));
 	x(0)=xp(0);
 	x(1)=xp(1);

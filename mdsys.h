@@ -260,6 +260,7 @@ TRY
 		assert(*it1==(*it1)->vlist.self_p);
 		for(neigh=(*it1)->vlist.begin(); neigh!=(*it1)->vlist.end(); ++neigh){
 			if(interact(*it1,(*neigh).first)){
+				//this to calculate contact duration
 				if(!neigh->second.in_contact){
 					neigh->second.in_contact=true;
 					neigh->second.col_time=t;
@@ -268,7 +269,7 @@ TRY
 			else{
 				if(neigh->second.in_contact){
 					neigh->second.in_contact=false;
-					cerr<< (t-neigh->second.col_time)/dt <<endl;
+					//cerr<< (t-neigh->second.col_time)/dt <<endl;
 					}
 				}
 			}
