@@ -25,6 +25,8 @@ int main(int pi, char **params){
 		RNGSeed=0;
 	else
 		RNGSeed=313*atoi(params[1])+1;
+
+	cerr<<"RNG Seed: "<<RNGSeed<<endl;
 	
 	try {
 	Initialize();

@@ -685,12 +685,12 @@ TRY
 		//to implement constant volume (4/3 Pi r^3) while changing the shape
 		GeomObject<tellipsoid> E2(x, a,b,c);
 		CParticle *p = new CParticle(E2);
-		p->w(1)(0)=10.0*(1-2*rgen());
-		p->w(1)(1)=10.0*(1-2*rgen());
+		p->w(1)(0)=5.0*(1-2*rgen());
+		p->w(1)(1)=5.0*(1-2*rgen());
 
-		p->x(1)(0)=0.5*(1-2*rgen());
-		p->x(1)(1)=0.5*(1-2*rgen());
-		p->x(1)(2)=0.5*(1-2*rgen());
+		p->x(1)(0)=0.3*(1-2*rgen());
+		p->x(1)(1)=0.3*(1-2*rgen());
+		p->x(1)(2)=0.3*(1-2*rgen());
 		add(p);
 		
 		}

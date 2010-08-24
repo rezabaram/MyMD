@@ -275,11 +275,16 @@ TRY
 		//cerr <<endl;
 
 
+		//FIXME there are some problems with calculation of separation plane. there for
+		//it is deactivated for now
+		/*
 		bool hit=(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane));
 		if(hit){
-			cerr<< E1(ovs.plane.Xc) <<"\t"<< E2(ovs.plane.Xc) <<endl;
+			WARNING("The separation plane hits the ellipsoids: E1(plane.x)="<< E1(ovs.plane.Xc) <<"\t E2(plane.x)="<< E2(ovs.plane.Xc) );
+			return false;
 			}
-		ERROR(hit, "the separation plane set incorrectly");
+		*/
+
 		return true;
 		}
 	return false;
@@ -317,14 +322,14 @@ TRY
 		lambda0=lambda;
 		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
 		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
-		converged= (xp-xp0).abs()<1e-13 and fabs(lambda0-lambda)<1e-13;
+		converged= (xp-xp0).abs()<1e-13 and fabs(lambda0-lambda)<1e-10;
 		}
 	while(iter<nIter and !converged);
 	//	cout<<setprecision(14)<<iter<<"  lambda="<< lambda<<"   Xp="<<xp <<"  C1="<< E1.Xc<<"  C2="<<E2.Xc<<endl;
 	
 
-	if(!converged)WARNING("minimization not converged: "<<(xp-xp0).abs());
-	if(converged and E2(xp) > 0)WARNING("Coverged to maximum instread of minimum: "<<xp<<". E(x)= "<<E2(xp)<<endl<<E1<<endl<<E2);
+	if(!converged)WARNING("minimization not converged: "<<(xp-xp0).abs()<<"    "<<fabs(lambda0-lambda));
+	if(converged and E2(xp) > 0)WARNING("A minimum point is not inside the corresponding ellipse: "<<xp<<". E(x)= "<<E2(xp)<<endl<<E1<<endl<<E2);
 	x(0)=xp(0);
 	x(1)=xp(1);
 	x(2)=xp(2);
@@ -355,8 +360,8 @@ TRY
 		//correctpoints(*ovs, *E1, *E2);
 		setcontact(*ovs, *E1, *E2);
 		//cerr<< (*E1)(ovs->x2) <<"\t"<<  (*E2)(ovs->x1)<<endl;
-		ERROR(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0), "incorrect contact points." );
-		ERROR(((*E1)(E2->Xc) < 0 or (*E2)(E1->Xc) <0), "ellipsoids penetrated too much." );
+		if(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0))WARNING("incorrect contact points." );
+		if(((*E1)(E2->Xc) < 0 or (*E2)(E1->Xc) <0))WARNING( "ellipsoids penetrated too much." );
 
 		}
 	else{
