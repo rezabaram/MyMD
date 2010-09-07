@@ -1,7 +1,7 @@
 
 files=$*
-w=500
-h=500
+w=1500
+h=1500
 
 echo "Generating jpg frames "
 for file in $files

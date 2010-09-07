@@ -38,3 +38,6 @@ pov:
 
 zip:
 	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
+
+sync:
+	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/ results
