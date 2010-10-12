@@ -1,18 +1,43 @@
 
 CC=g++
-INCLUDES=-I/sw/include/ -I/Users/reza/workstation/mysrc/
-LIBS=-L/sw/lib/ -L/Users/reza/workstation/mysrc/
-FLAGS=-Wall -lmylibs -lgsl -lgslcblas
 
-all: convert2raster packing_density 
+run: a.out
+	time ./run.sh
 
-packing_density:	*.cc *h ../ellipsoid.h
-	$(CC) -o packing_density $(INCLUDES) $(LIBS) $(FLAGS) packing_density.cc 
+a.out:	*.cc *h
+	$(CC) -O2  main.cc -Wall  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
 
-convert2raster: convert2raster.cc packing.h
-		g++ -o convert2raster convert2raster.cc 
+test:	
+	plot.sh 1:2 log_energy trash/log_energy 
+	#$(CC)  test.cc  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
+diff:
+	diff log_energy trash/log_energy
+perf:
+	plot.sh 1:2 log trash/log
 
-asphericity:asphericity.cc
-	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) asphericity.cc -o asphericity
+animate: test.avi
+	mplayer test.avi
+	#feh *jpg
+
+test.avi: 
+	sh genFrames.sh out* > /dev/null 2>&1
+
 clean:
-	rm -f packing_density *.o
+	rm -f log_energy log out* *jpg test.avi 
+
+mv:
+	mv -f trash/* trash2/ &> /dev/null
+	mv -f log_energy log out* *jpg test.avi trash &> /dev/null
+
+aclean:
+	rm -rf test.avi 
+
+pov:
+	coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
+	#coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
+
+zip:
+	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
+
+sync:
+	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/ results

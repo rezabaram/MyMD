@@ -203,7 +203,7 @@ TRY
 	diff.normalize();
 
 	//if the contact points are not along the normal direction, correct them
-	if(fabs(g1*diff/g1.abs()) <0.95 or fabs(g2*diff/g1.abs())<0.95 ){
+	if(fabs(g1*diff/g1.abs()) <0.999 or fabs(g2*diff/g1.abs())<0.999 ){
 		intersect(ovs.x1, ovs.x2, E1, E2);
 		diff=(ovs.x1.project()-ovs.x2.project());
 		mp=((ovs.x1.project()+ovs.x2.project())/2.0);
@@ -374,6 +374,8 @@ TRY
 		//cerr<< (*E1)(ovs->x2) <<"\t"<<  (*E2)(ovs->x1)<<endl;
 		if(((*E1)(ovs->x2) > 0 or (*E2)(ovs->x1) >0))WARNING("incorrect contact points." );
 		if(((*E1)(E2->Xc) < 0 or (*E2)(E1->Xc) <0))WARNING( "ellipsoids penetrated too much." );
+
+		//cerr<<(*E1).gradient(ovs->at(0).x).normalized()*ovs->at(0).n.normalized()<<endl;;
 
 		}
 	else{

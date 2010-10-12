@@ -4,6 +4,7 @@ INCLUDES=-I/sw/include/ -I/Users/reza/workstation/mysrc/
 LIBS=-L/sw/lib/ -L/Users/reza/workstation/mysrc/
 FLAGS=-Wall -lmylibs -lgsl -lgslcblas
 
+all: convert2raster packing_density 
 
 packing_density:	*.cc *h ../ellipsoid.h
 	$(CC) -o packing_density $(INCLUDES) $(LIBS) $(FLAGS) packing_density.cc 
