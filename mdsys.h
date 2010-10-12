@@ -52,8 +52,9 @@ class CSys{
 	inline bool exist(int i);
 
 	double t, tMax, dt, outDt;
-	ParticleContainer particles;
 
+	//contains the pointers to the particles
+	ParticleContainer particles;
 	
 	#ifndef VERLET
 	ParticleContactHolder<CParticle>  **pairs;
@@ -70,6 +71,7 @@ class CSys{
 	vec G;
 	const unsigned maxNParticle;
 	bool verlet_need_update;
+	double fluiddampping;
  	private:
 	double epsFreeze;
 	ofstream outEnergy;
@@ -106,18 +108,37 @@ TRY
 CATCH
 	}
 
-void CSys::initialize(const CConfig &c){
+void CSys::initialize(const CConfig &config){
 TRY
-	outDt=c.get_param<double>("outDt");
-	maxr=c.get_param<double>("particleSize");
+	outDt=config.get_param<double>("outDt");
+	fluiddampping=config.get_param<double>("fluiddampping");
 
-	G=c.get_param<vec>("Gravity");
+	//calculating the maximum radius
+		double asphericity=config.get_param<double>("asphericity");
+		double asphericityWidth=config.get_param<double>("asphericityWidth");
+
+                double ee=exp(asphericity+asphericityWidth);
+                double r=config.get_param<double>("particleSize");
+                double a =r/pow(ee,1./3.);
+                double b =a;//*rgen();
+                double c =ee*a;//*rgen();
+                maxr=max(r,max(a,max(b,c)));
+
+                ee=exp(asphericity-asphericityWidth);
+                r=config.get_param<double>("particleSize");
+                a =r/pow(ee,1./3.);
+                b =a;
+                c =ee*a;
+                maxr=max(r,maxr);
+
+
+	G=config.get_param<vec>("Gravity");
 
 	particles_on_grid();
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
 
 	#ifdef VERLET
-	verlet_factor=c.get_param<double>("verletfactor");
+	verlet_factor=config.get_param<double>("verletfactor");
 	verlet_distance=verlet_factor*maxr;
 	min_verlet_distance=verlet_distance/5;
 	max_verlet_distance=verlet_distance*5;
@@ -242,7 +263,8 @@ TRY
 	//reset forces
 	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		(*it1)->forces=G*((*it1)->get_mass())-4.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping (coef of dumping is ad hoc)
+		//FIXME make it dimensionless
+		(*it1)->forces=G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping (coef of dumping is ad hoc)
 		//(*it1)->forces=-G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
 		//(*it1)->forces=-50*G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())+G*(*it1)->get_mass();
 		(*it1)->torques=0.0;
@@ -292,22 +314,14 @@ vec CSys::contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp
 TRY
 	double proj=(dv*c.n);
 	double ksi=c.dx_n;
-	
 
 	ksi=(m.stiffness*ksi+tmp*m.damping*proj)*sqrt(ksi); 
-	if(ksi<0)ksi=0;//to eliminate artifical attractions
-	vec fn=-ksi*c.n;//normal force
+	
+	if(ksi<0)ksi=0; //to eliminate artifical attractions
+	vec fn=-ksi*c.n; //normal force
 	vec ft=-tmp*m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
-	//cerr<< ft.abs()/(fn+ft).abs()<<"   "<<ft.abs()<<"  "<<fn.abs()<<endl;
 
-	static int i2=0;
-	i2++;
-	//if(i2==160)exit(0);
-	//cerr<< t<<"  "<<setprecision(14)<<c.x<<"  "<<c.n<<"  "<< c.dx_n << "  dv="<<dv<<"  Fn="<<fn<<endl;
-	//cerr<< ft.abs()/fn.abs() <<endl;
-
-	//ERROR((fn+ft).abs()>20, "divergence in force");
-	return fn+ft;//visco-elastic Hertz law
+	return fn+ft; //visco-elastic Hertz law
 CATCH
 	}
 
@@ -362,13 +376,10 @@ TRY
 	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
 
-	if(0)if(t>0.5){
-		print_verlet(cout);
-		exit(0);
-		}
 
 	ParticleContainer::iterator it;
 
+	//this is for a messure of performance
 	static double starttime=clock();
 	if((10*count)%outPutN==0)
 		cout<<(clock()-starttime)/CLOCKS_PER_SEC<< "   "<<t<<endl;
@@ -605,7 +616,7 @@ TRY
 		r1=overlaps(i).x-p1->x(0);
 		dv=p1->x(1)+cross(p1->w(1), r1);
 
-		force=contactForce(overlaps(i), dv, p1->material, 0);
+		force=contactForce(overlaps(i), dv, p1->material, 1);
 		p1->addforce(force);
 
 		torque=cross(r1, force);

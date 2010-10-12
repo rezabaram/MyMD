@@ -50,7 +50,6 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
 		}
 	//vector< complex >
 
-
        gsl_matrix_view m = gsl_matrix_view_array (data, N, N);
        gsl_vector_complex *eval = gsl_vector_complex_alloc (N);
        gsl_matrix_complex *evec = gsl_matrix_complex_alloc (N, N);
@@ -61,7 +60,6 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
        gsl_eigen_nonsymmv_free (w);
        //gsl_eigen_nonsymmv_sort (eval, evec, GSL_EIGEN_SORT_VAL_ASC);
 	
-
 ///     sorting the eigenvalues 
 	indexType ind[N];//for holding sorted indeces 
 	for(indexType i=0; i<N; ++i){
@@ -76,6 +74,7 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
 
 		eigenvals.push_back(complex<double> (GSL_REAL(eval_i), GSL_IMAG(eval_i)));
 		eigenvecs.push_back(
+			//convert to my format
 			HomVec(
 				GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 0)),
 				GSL_REAL(gsl_vector_complex_get (&evec_i.vector, 1)),
@@ -87,7 +86,6 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
      
        gsl_vector_complex_free (eval);
        gsl_matrix_complex_free (evec);
-
 	
      }
 

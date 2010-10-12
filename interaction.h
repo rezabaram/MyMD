@@ -219,6 +219,17 @@ TRY
 CATCH
 	}
 
+/*
+void charpolynom(const CEllipsoid &A, const CEllipsoid &B){
+
+	double a=1/A.a/A.a;
+	double b=1/A.b/A.b;
+	double c=1/A.c/A.c;
+	
+	u=
+
+	}
+*/
 
 bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
@@ -241,7 +252,10 @@ TRY
 		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
 
 		// eigenvec 3 is inside E1, and 2 inside E2
-		ERROR(E1(eigenvecs.at(3))>0 or E2(eigenvecs.at(2))>0, "error in calculation of poles.");
+		if(E1(eigenvecs.at(3))>0 or E2(eigenvecs.at(2))>0){
+			WARNING("error in calculation of poles.");
+			return true;
+			}
 
 		//line through two poles (from E1 to E2)
 		CRay<HomVec> ray(eigenvecs.at(3).project4d(),eigenvecs.at(2).project4d());
@@ -261,7 +275,6 @@ TRY
 		ovs.x01=E1.toBody(X1);
 		ovs.x02=E2.toBody(X2);
 
-
 		//calculating the separating plane
 
 		vec n1=HomVec(E1.ellip_mat*X1).project();
@@ -273,7 +286,6 @@ TRY
 		//cerr<< ovs.plane.n*(E2.Xc-E1.Xc).normalize() <<endl;
 		//cerr<< (X2.project()-X1.project()).normalize()*(E2.Xc-E1.Xc).normalize() <<endl;
 		//cerr <<endl;
-
 
 		//FIXME there are some problems with calculation of separation plane. there for
 		//it is deactivated for now
