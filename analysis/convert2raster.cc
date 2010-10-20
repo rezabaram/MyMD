@@ -11,7 +11,7 @@ int main(int n_params, char **params){
 	ifstream inputFile(params[1]);
 	ERROR(!inputFile.good(), "Unable to open input file");
 	
-	CPacking packing;
+	CPacking<GeomObjectBase> packing;
 	packing.parse(inputFile);
 	packing.printRaster3D(cout);
 

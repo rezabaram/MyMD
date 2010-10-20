@@ -1,7 +1,8 @@
 #ifndef ELLIPS_CONTACT_H
 #define ELLIPS_CONTACT_H 
+#include "exception.h"
+
 #include "eigen.h"
-#include "shapes.h"
 #include"shapecontact.h"
 
 void fixcontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){

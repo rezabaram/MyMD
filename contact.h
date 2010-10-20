@@ -1,8 +1,8 @@
 #ifndef CONTACT_H
 #define CONTACT_H 
+#include<iostream>
 #include"vec.h"
 #include"plane.h"
-#include<iostream>
 
 class Contact{
 	public:

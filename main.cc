@@ -1,5 +1,6 @@
 #include<iostream>
 #include<stdlib.h>
+#include"main.h"
 #include"mdsys.h"
 using namespace std;
 

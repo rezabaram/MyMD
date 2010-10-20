@@ -1,7 +1,10 @@
 #ifndef GRID_H
 #define GRID_H
-#include "common.h"
-#include "particle.h"
+#include"vec.h"
+#include<list>
+#include<vector>
+using namespace std;
+
 
 enum {
 	Periodic=1,
@@ -75,37 +78,39 @@ class CWindow
 	private:
 };
 
-typedef std::list<CParticle *> Container;
 
 //this class is for nodes which keeps the information of their neighborhood 
 //the node is unaware where in the grid it is. this information is kept in grid class (CRecGrid).
-class CNode3D : public Container 
+template <class T>
+class CNode3D : public std::list<T *> 
 	{
 	public:
 	CNode3D():neighs(std::vector<CNode3D*>(27,(CNode3D *)NULL)){}
 	~CNode3D(){};
 	
-	std::vector<CNode3D*> neighs;
+	std::vector<CNode3D<T> *> neighs;
 	//vector<CNode3D*> extend_neighs;
 	private:
-	CNode3D(const CNode3D &);
+	CNode3D(const CNode3D<T> &);
 };
 
 //and the Grid class
+template<class T>
 class CRecGrid
 	{
 	public:
+	typedef T particle_type;
 	CRecGrid(const vec &_corner, const vec & _L, double _d);
 	~CRecGrid();
-	CNode3D &operator ()(int i, int j, int k); //returns the ith node
-	CNode3D *node(int i, int j, int k); //returns the ith node
+	CNode3D<particle_type> &operator ()(int i, int j, int k); //returns the ith node
+	CNode3D<particle_type> *node(int i, int j, int k); //returns the ith node
 
-	CNode3D* top_filled_node(double x, double y);
-	inline CNode3D* top_node(int i, int y);
-	void add(CParticle *part);
-	void add(CParticle *part, const CWindow &win);
-	CNode3D* which(const vec &p) {
-		return node (floor((p-corner)(0)/dL(0)), floor((p-corner)(1)/dL(1)), floor((p-corner)(2)/dL(2)));
+	CNode3D<particle_type> * top_filled_node(double x, double y);
+	inline CNode3D<particle_type> * top_node(int i, int y);
+	void add(particle_type *part);
+	void add(particle_type *part, const CWindow &win);
+	CNode3D<particle_type> * which(const vec &p) {
+		return node ((int)floor((p-corner)(0)/dL(0)), (int)floor((p-corner)(1)/dL(1)), (int)floor((p-corner)(2)/dL(2)));
 		}
 
 	void print(std::ostream &out=std::cout){
@@ -119,12 +124,14 @@ class CRecGrid
 	//private:
 	CWindow window;
 	void setup_neighs();
-	CNode3D *nodes;
+	CNode3D<particle_type>  *nodes;
 	int *top_nodes;//keeps the k's of the topest node
 };
 
 
-CRecGrid::CRecGrid(const vec & _corner, const vec & _L, double _d):
+
+template<class T>
+CRecGrid<T>::CRecGrid(const vec & _corner, const vec & _L, double _d):
 	corner(_corner), L(_L)
 	{
 	
@@ -139,32 +146,35 @@ CRecGrid::CRecGrid(const vec & _corner, const vec & _L, double _d):
 	dL(1)=L(1)/(double)(N(1));
 	dL(2)=L(1)/(double)(N(2));
 
-	nodes=(CNode3D *)NULL;
+	nodes=(CNode3D<particle_type>  *)NULL;
 	top_nodes=(int *)NULL;
 	ERROR(N(0)==0||N(1)==0, "No grid will be created.");
-	nodes=new CNode3D[N(0)*N(1)*N(2)];
+	nodes=new CNode3D<particle_type> [N(0)*N(1)*N(2)];
 	top_nodes=new int[N(0)*N(1)];
 	ERROR(nodes==NULL || top_nodes==NULL, "No grid will be created.");
 
 	setup_neighs();
 	for(int i=0; i<N(0)*N(1); i++){
-                top_nodes[i]=NULL;
+                top_nodes[i]=0;
                 }
 	window=CWindow(0,0,0, N(0)-1,N(1)-1, N(2)-1);
 }
 
-CRecGrid::~CRecGrid()
+template<class T>
+CRecGrid<T>::~CRecGrid()
 	{
 	if(nodes!=NULL) delete [] nodes;
 	if(top_nodes!=NULL) delete [] top_nodes;
 	}
 
-CNode3D & CRecGrid::operator ()(int i, int j, int k)
+template<class T>
+CNode3D<typename CRecGrid<T>::particle_type>  & CRecGrid<T>::operator ()(int i, int j, int k)
 	{
 	return *node(i,j, k);
 	}
 
-void CRecGrid::add(CParticle *p,const CWindow &win)
+template<class T>
+void CRecGrid<T>::add(particle_type *p,const CWindow &win)
 	{
 	assert(p);
 	for(int i=win.lleft(0); i<=win.uright(0); i++){
@@ -177,19 +187,21 @@ void CRecGrid::add(CParticle *p,const CWindow &win)
 		}
 	}
 
-void CRecGrid::add(CParticle *part)
+template<class T>
+void CRecGrid<T>::add(particle_type *part)
 	{
 	assert(part);
 	vec R=part->x(0)-corner;
 	double r=part->shape->radius;
-	CWindow win(floor((R(0)-r)/dL(0)), floor((R(1)-r)/dL(1)), floor((R(2)-r)/dL(2)),
-	            floor((R(0)+r)/dL(0)), floor((R(1)+r)/dL(1)), floor((R(2)+r)/dL(2))
+	CWindow win((int)floor((R(0)-r)/dL(0)), (int)floor((R(1)-r)/dL(1)), (int)floor((R(2)-r)/dL(2)),
+	            (int)floor((R(0)+r)/dL(0)), (int)floor((R(1)+r)/dL(1)), (int)floor((R(2)+r)/dL(2))
 		   );
 	win.trim(window);
 	add(part,win);
 	}
 
-inline CNode3D * CRecGrid::node(int i, int j, int k)
+template<class T>
+inline CNode3D<typename CRecGrid<T>::particle_type>  * CRecGrid<T>::node(int i, int j, int k)
 	{
 	if(0  /*flags&Periodic*/){//FIX ME
 		while (i<0)i+=N(0);
@@ -218,7 +230,8 @@ inline CNode3D * CRecGrid::node(int i, int j, int k)
 }
 
 
-void CRecGrid::setup_neighs()
+template<class T>
+void CRecGrid<T>::setup_neighs()
 	{
 	for(int i=0; i<N(0); i++){
 		for(int j=0; j<N(1); j++){
@@ -259,16 +272,18 @@ void CRecGrid::setup_neighs()
 		}
 	}
 
-CNode3D * CRecGrid::top_node(int i, int j)
+template<class T>
+CNode3D<typename CRecGrid<T>::particle_type>  * CRecGrid<T>::top_node(int i, int j)
         {
         assert(top_nodes);
         return node(i, j, top_nodes[j*N(0)+i]);
         }
 
 
-CNode3D* CRecGrid::top_filled_node(double x, double y)
+template<class T>
+CNode3D<typename CRecGrid<T>::particle_type> * CRecGrid<T>::top_filled_node(double x, double y)
 	{
-	return top_node(floor((x-corner(0))/dL(0)), floor((y-corner(1))/dL(1)));
+	return top_node((int)floor((x-corner(0))/dL(0)), (int)floor((y-corner(1))/dL(1)));
 	}
 	
 #endif

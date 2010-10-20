@@ -2,7 +2,6 @@
 #define SHAPES_H 
 #include"quaternion.h"
 
-#include"geombase.h"
 #include"plane.h"
 #include"sphere.h"
 #include"composite.h"

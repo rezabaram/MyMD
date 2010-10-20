@@ -1,6 +1,7 @@
 #ifndef COMPOSITE_H
 #define COMPOSITE_H 
 #include"geombase.h"
+
 template<>
 class GeomObject<tcomposite>: public GeomObjectBase{
 	public:	

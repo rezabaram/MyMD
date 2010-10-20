@@ -1,8 +1,8 @@
 #ifndef SHAPECONTACT_H
 #define SHAPECONTACT_H 
 #include<vector>
-#include"contact.h"
 #include"exception.h"
+#include"contact.h"
 
 class ShapeContact : public std::vector<Contact>
 	{
@@ -18,6 +18,7 @@ class ShapeContact : public std::vector<Contact>
 		//else 
 		push_back(contact);
 		}
+
 	Contact &operator()(size_t i){
 		return (this->at(i));
 		}

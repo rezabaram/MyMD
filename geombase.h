@@ -1,4 +1,5 @@
 #ifndef GEOMBASE_H
+#define GEOMBASE_H 
 #include<ostream>
 #include"vec.h"
 #include"quaternion.h"
@@ -57,5 +58,4 @@ class GeomObject:public GeomObjectBase{//empty class. all the shapes are created
 		virtual ~GeomObject(){};
 		GeomObject(GeomObject const &);
 		};
-#define GEOMBASE_H 
 #endif /* GEOMBASE_H */

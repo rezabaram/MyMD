@@ -1,5 +1,6 @@
 #ifndef BOX_H
 #define BOX_H 
+#include<limits>
 #include"geombase.h"
 
 template<>

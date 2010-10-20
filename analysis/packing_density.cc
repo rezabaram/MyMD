@@ -4,7 +4,7 @@ using namespace std;
 
 long RNGSeed;
 extern MTRand rgen;
-CPacking packing;
+CPacking<GeomObjectBase> packing;
 
 void Initialize(int n_params, char **params){
 	rgen.seed(RNGSeed);
