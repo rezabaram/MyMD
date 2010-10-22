@@ -15,7 +15,12 @@ class CPacking : public vector <T *>
 	{
 
 	//member classes for contact network
-	class Contact : public BasicContact{ public: Contact(T *_p, vec _x, vec _n):BasicContact(_x, _n), p(_p){} ; T * p; }; 
+	class Contact : public BasicContact{ 
+		public: 
+		Contact(T *_p1, T *_p2, vec _x, vec _n):BasicContact(_x, _n), p1(_p1){} ; 
+		Contact(T *_p1, T *_p2, const BasicContact &bc):BasicContact(bc), p1(_p1){} ; 
+		T * p1, *p2; 
+		}; 
 	class ContactNetwork : public vector < vector <Contact> >{};
 
 	public:
@@ -30,6 +35,7 @@ class CPacking : public vector <T *>
 	void parse(string infilename);
 	void parse(istream &inputFile);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
+	void output_contact_network(ostream &out);
 	double totalVolume();
 	void BuildContactNetwork();
 
@@ -134,17 +140,34 @@ void CPacking<T>::BuildContactNetwork() {
 		typename CPacking::const_iterator it1, it2;
 		for(it1=this->begin();  it1<this->end(); it1++){
 				contacts.push_back(vector<Contact>() );
+		return;
 			for(it2=it1+1;  it2<this->end(); it2++){
 				ShapeContact ovs(*it1, *it2);
 				//ovs.back();
-				CInteraction::overlaps(&ovs, *it1, *it2); 
+				//CInteraction::overlaps(&ovs, *it1, *it2); 
 				if(!ovs.empty()) {
-						assert(ovs.size()==1);
-						contacts.back()->push_back(Contact(*ovs.back()));
+					assert(ovs.size()==1);
+					contacts.back().push_back(Contact(*it1, *it2, static_cast<BasicContact>(ovs.back()) ));
 					}
 		
 				}
 			}
+
+			cerr<< contacts.size() <<endl;
+	}
+
+template<class T>
+void CPacking<T>::output_contact_network(ostream &out){
+		for(int i=0; i<contacts.size(); i++){
+		cerr<< contacts.size() <<endl;
+		for(int j=0; j<contacts.at(i).size(); j++){
+		
+			out<<"5  ";
+			out<<contacts.at(i).at(j).p1->Xc<<"  0.005";
+			out<<contacts.at(i).at(j).p2->Xc<<"  0.005  50000 50000 50000"<<endl;;
+			}
+			}
+
 	}
 /*
 void print_connectivity(vector<CCircle> &packing, const char * name){

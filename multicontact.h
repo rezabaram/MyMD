@@ -12,7 +12,7 @@ class MultiContact : public std::vector<Contact>
 	{
 	public:
 	explicit MultiContact(T *_p1=NULL, T *_p2=NULL, const CPlane &p=CPlane(vec(0,0,0), vec(0,0,1)) )
-		:std::vector<Contact >(), p1(_p1), p2(_p2), plane(p), x1(HomVec(0,0,0,1)), x2(HomVec(0,0,0,1)), has_sep_plane(false)
+		:std::vector<Contact >(), p1(_p1), p2(_p2), plane(p), x1(HomVec(0,0,0,1)), x2(HomVec(0,0,0,1)), has_sep_plane(false), set(false)
 		{
 		N++;
 		}
@@ -39,6 +39,7 @@ class MultiContact : public std::vector<Contact>
 	HomVec x1, x2;
 	HomVec x01, x02;
 	bool has_sep_plane;
+	bool set;
  	private:
 	static long N;
 	};
