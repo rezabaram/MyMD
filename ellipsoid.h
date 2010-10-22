@@ -9,7 +9,7 @@
 #include"ray.h"
 #include"plane.h"
 
-typedef GeomObject<tellipsoid> CEllipsoid;
+class CEllipsoid;
 CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E);
 ////
 
@@ -93,15 +93,16 @@ CATCH
 	}
 
 
-template<>
-class GeomObject<tellipsoid>: public GeomObjectBase{
+class CEllipsoid: public GeomObjectBase
+	{
 	public:	
 		
-	GeomObject():GeomObjectBase(vec(0,0,0),tellipsoid, Quaternion(1,0,0,0)), a(1), b(1), c(1){
+	CEllipsoid():GeomObjectBase(vec(0,0,0),tellipsoid, Quaternion(1,0,0,0)), a(1), b(1), c(1){
 		identifier=14;
 		}
 
-	GeomObject(const vec &v,double _a, double _b, double _c, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c){
+	CEllipsoid(const vec &v,double _a, double _b, double _c, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c)
+		{
 		identifier=14;
 		radius=tmax(a, tmax(b,c));
 		setup();
@@ -110,64 +111,72 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		update_tranlation_mat();
 		}
 
-	~GeomObject(){}
-	HomVec toWorld(const HomVec &point)const{
+	~CEllipsoid(){}
+	HomVec toWorld(const HomVec &point)const
+		{
 		return (!(rotat_mat*trans_mat))*point;
 		}
-	HomVec toBody(const HomVec &point)const{
+
+	HomVec toBody(const HomVec &point)const
+		{
 		return (rotat_mat*trans_mat)*point;
 		}
-	void fixToBody(const HomVec &point){
+	void fixToBody(const HomVec &point)
+		{
 		P=point;
 		P0=(rotat_mat*trans_mat)*point;
 		}
 
-	void mat_init(){
+	void mat_init()
+		{
 		double temp=0;
 		for(int i=0; i<4; ++i)
-		for(int j=0; j<4; ++j){
-		  if(i==j)temp=1.0;
-		  else temp=0;
-		  
-		  rotat_mat(i,j)= temp;
-		  scale_mat(i,j)=temp;
-		  inv_scale_mat(i,j)=temp;
-		  inert_mat(i,j)= temp;
-		  trans_mat(i,j)= temp;
-		}
+		for(int j=0; j<4; ++j)
+			{
+			if(i==j)temp=1.0;
+			else temp=0;
+			  
+			rotat_mat(i,j)= temp;
+			scale_mat(i,j)=temp;
+			inv_scale_mat(i,j)=temp;
+			inert_mat(i,j)= temp;
+			trans_mat(i,j)= temp;
+			}
 		}
 
 	void setup(){
 
-		 mat_init();
+		mat_init();
 
-		  //Elements of the scaling matrix
-		  scale_mat(0,0)=1.0/(a*a);
-		  scale_mat(1,1)=1.0/(b*b);
-		  scale_mat(2,2)=1.0/(c*c);
-		  scale_mat(3,3)=-1;//in homogeneous formulation
-		  ellip_mat=scale_mat;
+		//Elements of the scaling matrix
+		scale_mat(0,0)=1.0/(a*a);
+		scale_mat(1,1)=1.0/(b*b);
+		scale_mat(2,2)=1.0/(c*c);
+		scale_mat(3,3)=-1;//in homogeneous formulation
+		ellip_mat=scale_mat;
 
-		  inv_scale_mat(0,0)=(a*a);
-		  inv_scale_mat(1,1)=(b*b);
-		  inv_scale_mat(2,2)=(c*c);
+		inv_scale_mat(0,0)=(a*a);
+		inv_scale_mat(1,1)=(b*b);
+		inv_scale_mat(2,2)=(c*c);
 
-		  inv_scale_vec(0)=(a*a);
-		  inv_scale_vec(1)=(b*b);
-		  inv_scale_vec(2)=(c*c);
+		inv_scale_vec(0)=(a*a);
+		inv_scale_vec(1)=(b*b);
+		inv_scale_vec(2)=(c*c);
 
-		  //angular moment of inertial
-		  inert_mat(0,0)=0.2*(b*b+c*c);
-		  inert_mat(1,1)=0.2*(a*a+c*c);
-		  inert_mat(2,2)=0.2*(a*a+b*b);
+		//angular moment of inertial
+		inert_mat(0,0)=0.2*(b*b+c*c);
+		inert_mat(1,1)=0.2*(a*a+c*c);
+		inert_mat(2,2)=0.2*(a*a+b*b);
 
 		}
 
-	vec gradient (const vec &X)const {
+	vec gradient (const vec &X)const 
+		{
 		return 2.0*ellip_mat*(X-Xc);
 		}
 
-	HomVec gradient (const HomVec &X)const {
+	HomVec gradient (const HomVec &X)const 
+		{
 		return 2.0*ellip_mat*X;
 		}
 
@@ -182,7 +191,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		return (~rotat_mat*inv_scale_mat*rotat_mat); 
 		}
 
-	void update_tranlation_mat(){
+	void update_tranlation_mat() {
 	TRY	
 		trans_mat(0,3)=-Xc(0);
 		trans_mat(1,3)=-Xc(1);
@@ -203,7 +212,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	CATCH
 		}
 
-	void rotateTo(const Quaternion &q){
+	void rotateTo(const Quaternion &q) {
 	TRY
 		quaternionToMatrix(q, rotat_mat);
 		//Matrix temp=(rotat_mat*(~rotat_mat));
@@ -226,7 +235,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		return 4.0/3.0*M_PI*a*b*c;
 		}
 
-	void rotate(const vec& n , double alpha){//FIXME
+	void rotate(const vec& n, double alpha){//FIXME
 		//q.setRotation(n, alpha);
 		//orientation=q.rotate(orientation);
 		}
@@ -236,7 +245,8 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		update_tranlation_mat();
 		}
 
-	void scale(double scale){
+	void scale(double scale)
+		{
 		a*=scale;
 		b*=scale;
 		c*=scale;
@@ -244,7 +254,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 		setup();
 		}
 
-	bool doesHit(const CPlane &plane)const{//FIXME needs to be obtimized
+	bool doesHit(const CPlane &plane)const {//FIXME needs to be obtimized
 	TRY
 		double alpha;
 		alpha=(plane.n*(this->inv())*plane.n);
@@ -313,7 +323,7 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 
 		}
 
-	friend std::ostream & operator<< (std::ostream &out, const GeomObject<tellipsoid> &E);
+	friend std::ostream & operator<< (std::ostream &out, const CEllipsoid &E);
 	Matrix rotat_mat;
 	Matrix trans_mat;
 	Matrix scale_mat;
@@ -324,11 +334,13 @@ class GeomObject<tellipsoid>: public GeomObjectBase{
 	Matrix inert_mat;
 
 	double a,b,c;
+	
 	private:
-	GeomObject<tellipsoid> (const GeomObject<tcomposite> & p);//not allow copies
+	//CEllipsoid (const CEllipsoid & p);//not allow copies
+
 	};
   
-std::ostream & operator<< (std::ostream &out, const GeomObject<tellipsoid> &E){
+std::ostream & operator<< (std::ostream &out, const CEllipsoid &E){
 		E.print(out);
 		return out;
 		};

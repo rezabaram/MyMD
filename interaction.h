@@ -1,7 +1,7 @@
 #ifndef OVERLAPPING_H
 #define OVERLAPPING_H 
 #include "shapes.h"
-#include"shapecontact.h"
+#include"multicontact.h"
 #include"ellips_contact.h"
 
 class CInteraction{
@@ -11,13 +11,13 @@ class CInteraction{
 	static void overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBase *p2);
 
 	//every new kind of particle needs to define two functions
-	static void overlaps(ShapeContact* ovs, const GeomObject <tsphere>     *p1, const GeomObject <tbox>        *b );
-	static void overlaps(ShapeContact* ovs, const GeomObject <tsphere>     *p1, const GeomObject <tsphere>     *p2);
-	static void overlaps(ShapeContact* ovs, GeomObject<tellipsoid>   *p1, const GeomObject <tplane>   *plane);
-	static void overlaps(ShapeContact* ovs, GeomObject <tellipsoid>  *p1, const GeomObject <tbox>        *b );
-	static void overlaps(ShapeContact* ovs, GeomObject <tellipsoid>  *p1, GeomObject <tellipsoid>  *p2);
-	static void overlaps(ShapeContact* ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tcomposite>  *p2);
-	static void overlaps(ShapeContact* ovs, const GeomObject <tcomposite>  *p1, const GeomObject <tbox>        *b );
+	static void overlaps(ShapeContact* ovs, const CSphere     *p1, const CBox        *b );
+	static void overlaps(ShapeContact* ovs, const CSphere     *p1, const CSphere     *p2);
+	static void overlaps(ShapeContact* ovs, CEllipsoid   *p1, const CPlane   *plane);
+	static void overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CBox        *b );
+	static void overlaps(ShapeContact* ovs, CEllipsoid  *p1, CEllipsoid  *p2);
+	static void overlaps(ShapeContact* ovs, const CComposite  *p1, const CComposite  *p2);
+	static void overlaps(ShapeContact* ovs, const CComposite  *p1, const CBox        *b );
 
 	static void append(ShapeContact&v, ShapeContact&v2);
 
@@ -26,7 +26,7 @@ class CInteraction{
 	};
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, const GeomObject<tsphere>  * p2){
+void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CSphere  * p2){
 	static vec v;
 	static double d, dd;
 	v=p2->Xc-p1->Xc;
@@ -42,21 +42,21 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 inline
 void CInteraction::overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBase *p2){
 		if(p1->type==tsphere && p2->type==tsphere)
-			overlaps(ovs, static_cast<const GeomObject<tsphere> *>(p1), static_cast<const GeomObject<tsphere> *>(p2));
+			overlaps(ovs, static_cast<const CSphere *>(p1), static_cast<const CSphere *>(p2));
 		else if(p1->type==tsphere && p2->type==tbox)
-			overlaps(ovs, static_cast<const GeomObject<tsphere> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
+			overlaps(ovs, static_cast<const CSphere *>(p1), static_cast<const CBox *>(p2));
 		else if(p1->type==tcomposite && p2->type==tcomposite)
-			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tcomposite> *>(p2));
+			overlaps(ovs, static_cast<const CComposite *>(p1), static_cast<const CComposite *>(p2));
 		else if(p1->type==tcomposite && p2->type==tbox)//FIXME
-			overlaps(ovs, static_cast<const GeomObject<tcomposite> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
+			overlaps(ovs, static_cast<const CComposite *>(p1), static_cast<const CBox *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tbox)//FIXME
-			overlaps(ovs, static_cast<GeomObject<tellipsoid> *>(p1), static_cast<const GeomObject<tbox> *>(p2));
+			overlaps(ovs, static_cast<CEllipsoid *>(p1), static_cast<const CBox *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tellipsoid)//FIXME
-			overlaps(ovs, static_cast<GeomObject<tellipsoid> *>(p1), static_cast<GeomObject<tellipsoid> *>(p2));
+			overlaps(ovs, static_cast<CEllipsoid *>(p1), static_cast<CEllipsoid *>(p2));
 		else ERROR(true, "Not Implemented");
 		};
 inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, const GeomObject<tbox> *b){
+void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CBox *b){
 	static vec v;
 	static double d, dd;
 	for(size_t i=0; i<b->nFaces; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
@@ -73,7 +73,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tsphere>  *p1, c
 
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tcomposite>  * p2){
+void CInteraction::overlaps(ShapeContact* ovs, const CComposite  *p1, const CComposite  * p2){
 TRY
 
 	ERROR(p1==p2, "A particle is checked against itself for overlapping.")
@@ -88,7 +88,7 @@ CATCH
 	}
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1, const GeomObject<tbox>  * b){
+void CInteraction::overlaps(ShapeContact* ovs, const CComposite  *p1, const CBox  * b){
 	static double d;
 	bool need_to_check=false;
 	for(indexType i=0; i<b->nFaces; ++i){
@@ -106,7 +106,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const GeomObject<tcomposite>  *p1
 	}
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, const GeomObject<tplane> *plane){
+void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CPlane *plane){
 	static vec v, vp;
 	static double dx;
 	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
@@ -121,7 +121,7 @@ void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, cons
 	}
 
 inline
-void CInteraction::overlaps(ShapeContact* ovs, GeomObject<tellipsoid>  *p1, const GeomObject<tbox> *b){
+void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CBox *b){
 TRY
 	for(size_t i=0; i<b->nFaces; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
 		overlaps(ovs, p1, b->face[i]);
@@ -150,7 +150,7 @@ TRY
 	//if(ovs->set)if( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)) return;
 	 //ovs->set=true;
 
-	ovs->has_sep_plane=separatingPlane(*ovs, *E1, *E2);
+	ovs->has_sep_plane=!doOverlap(*ovs, *E1, *E2);
 	if(!ovs->has_sep_plane){
 		
 		//cerr<< E1->doesHit(ovs->plane) <<"\t"<< E2->doesHit(ovs->plane) <<endl;

@@ -2,10 +2,10 @@
 #define COMPOSITE_H 
 #include"geombase.h"
 
-template<>
-class GeomObject<tcomposite>: public GeomObjectBase{
+
+class CComposite : public GeomObjectBase{
 	public:	
-	GeomObject<tcomposite> (const GeomObject<tcomposite> & p):GeomObjectBase(p.Xc,tcomposite){
+	CComposite (const CComposite & p):GeomObjectBase(p.Xc,tcomposite){
 		for(indexType i=0; i<p.elems.size(); i++){
 			elems.push_back(new CSphere(*(p.elems.at(i))));
 			}
@@ -13,7 +13,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		Xc=p.Xc;
 		}
 		
-	GeomObject<tcomposite> (const vec &v, double r):GeomObjectBase(v,tcomposite){
+	CComposite (const vec &v, double r):GeomObjectBase(v,tcomposite){
 
 		radius=r;
 		CSphere *s1=NULL;
@@ -61,7 +61,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 		}
 
 	
-	~GeomObject<tcomposite>(){
+	~CComposite(){
 		for(indexType i=0; i<elems.size(); i++){
 			delete elems.at(i);
 			elems.at(i)=NULL;
@@ -128,7 +128,7 @@ class GeomObject<tcomposite>: public GeomObjectBase{
 	
 	vector<CSphere *> elems;
 	private:
-	GeomObject<tcomposite> ();
+	CComposite ();
 	};
 
 #endif /* COMPOSITE_H */

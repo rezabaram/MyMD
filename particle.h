@@ -34,9 +34,9 @@ class CParticle{
 	CParticle(const CParticle&);
 	public:
 	//template<GType shapeType>
-	//CParticle(const vec & _x0, double r):shape(new GeomObject<shapeType>(_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
-	template<GType shapeType>
-	explicit CParticle(const GeomObject<shapeType> &_shape):shape(new GeomObject<shapeType>(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this){init();}
+	//CParticle(const vec & _x0, double r):shape(new T (_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
+	template<class T>
+	explicit CParticle(const T &_shape):shape(new T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this){init();}
 	~CParticle(){
 		delete shape;
 		}

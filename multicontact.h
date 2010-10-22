@@ -4,29 +4,37 @@
 #include"exception.h"
 #include"contact.h"
 
-class ShapeContact : public std::vector<Contact>
+
+
+
+template <class T>
+class MultiContact : public std::vector<Contact>
 	{
 	public:
-	ShapeContact(GeomObjectBase *_p1=NULL, GeomObjectBase *_p2=NULL, const CPlane &p=CPlane(vec(0,0,0), vec(0,0,1)) )
+	explicit MultiContact(T *_p1=NULL, T *_p2=NULL, const CPlane &p=CPlane(vec(0,0,0), vec(0,0,1)) )
 		:std::vector<Contact >(), p1(_p1), p2(_p2), plane(p), x1(HomVec(0,0,0,1)), x2(HomVec(0,0,0,1)), has_sep_plane(false)
 		{
 		N++;
 		}
 
-	void add(const Contact &contact){
+	void add(const Contact &contact)
+		{
 		//if(this->size()>0)this->at(0)=contact;
 		//else 
 		push_back(contact);
 		}
 
-	Contact &operator()(size_t i){
+	Contact &operator()(size_t i)
+		{
 		return (this->at(i));
 		}
 
-	~ShapeContact(){
+	~MultiContact()
+		{
 		N--;
 		}
-	GeomObjectBase  *const p1, * const p2;
+
+	T *const p1, * const p2;
 	CPlane plane;
 	HomVec x1, x2;
 	HomVec x01, x02;
@@ -34,7 +42,9 @@ class ShapeContact : public std::vector<Contact>
  	private:
 	static long N;
 	};
-	long ShapeContact::N=0;
+	template<class T>
+	long MultiContact<T>::N=0;
 
+typedef MultiContact<GeomObjectBase> ShapeContact ;
 
 #endif /* SHAPECONTACT_H */

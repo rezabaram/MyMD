@@ -5,10 +5,9 @@
 
 using namespace math;
 
-template<>
-class GeomObject<tcylinder>: public GeomObjectBase{
+class CCylinder: public GeomObjectBase{
 	public:	
-	GeomObject(const vec &v1,const vec &v2, double _r):GeomObjectBase((v1+v2)/2.0,tcylinder), X1(v1), X2(v2), r(_r){
+	CCylinder(const vec &v1,const vec &v2, double _r):GeomObjectBase((v1+v2)/2.0,tcylinder), X1(v1), X2(v2), r(_r){
 		identifier=5;
 		}
 
@@ -31,5 +30,4 @@ class GeomObject<tcylinder>: public GeomObjectBase{
 
 	};
 
-typedef GeomObject<tcylinder> CCylinder;
 #endif

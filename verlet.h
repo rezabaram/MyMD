@@ -3,7 +3,7 @@
 #include<map>
 #include"exception.h"
 #include"vec.h"
-#include"shapecontact.h"
+#include"multicontact.h"
 #include"particlecontact.h"
 
 using namespace std;

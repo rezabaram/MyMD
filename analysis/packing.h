@@ -1,9 +1,9 @@
 #ifndef PACKING_H
 #define PACKING_H 
 #include"../grid.h"
-#include"../ellipsoid.h"
 #include"../ellips_contact.h"
 #include"../MersenneTwister.h"
+#include"../interaction.h"
 
 
 vec randomVec(const vec &x1, const vec &x2){
@@ -13,6 +13,11 @@ vec randomVec(const vec &x1, const vec &x2){
 template < class T>
 class CPacking : public vector <T *>
 	{
+
+	//member classes for contact network
+	class Contact : public BasicContact{ public: Contact(T *_p, vec _x, vec _n):BasicContact(_x, _n), p(_p){} ; T * p; }; 
+	class ContactNetwork : public vector < vector <Contact> >{};
+
 	public:
 	~CPacking(){
 		typename vector<T *>::iterator it;
@@ -26,6 +31,9 @@ class CPacking : public vector <T *>
 	void parse(istream &inputFile);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
 	double totalVolume();
+	void BuildContactNetwork();
+
+	ContactNetwork contacts;
 	
  	private:
 	};
@@ -39,6 +47,7 @@ double CPacking<T>::totalVolume(){
 		}
 	return v;
 	}
+
 //calculating packing fraction inside cube with x1, x2 az opposite corners
 template < class T>
 double CPacking<T>::packFraction(const vec &x1, const vec &x2, unsigned long N){
@@ -100,10 +109,11 @@ void CPacking<T>::parse(istream &inputFile) {
 	int id;
 	ss>>id;
 	if(id==14){
-		GeomObjectBase *shape=new GeomObject<tellipsoid>();
+		T *shape=new T();
 		shape->parse(ss);
 		this->push_back(shape);
 		}
+
 	//else if(id==14){
 		//GeomObjectBase *shape=new GeomObject<tsphere>();
 		//shape->parse(ss);
@@ -118,6 +128,24 @@ void CPacking<T>::parse(istream &inputFile) {
 	//Read up to second whitespace
 	}
 }
+template < class T>
+void CPacking<T>::BuildContactNetwork() {
+		contacts.clear();
+		typename CPacking::const_iterator it1, it2;
+		for(it1=this->begin();  it1<this->end(); it1++){
+				contacts.push_back(vector<Contact>() );
+			for(it2=it1+1;  it2<this->end(); it2++){
+				ShapeContact ovs(*it1, *it2);
+				//ovs.back();
+				CInteraction::overlaps(&ovs, *it1, *it2); 
+				if(!ovs.empty()) {
+						assert(ovs.size()==1);
+						contacts.back()->push_back(Contact(*ovs.back()));
+					}
+		
+				}
+			}
+	}
 /*
 void print_connectivity(vector<CCircle> &packing, const char * name){
   // !!! C++ style Numbering starting with 0

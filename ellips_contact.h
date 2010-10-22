@@ -1,9 +1,9 @@
 #ifndef ELLIPS_CONTACT_H
 #define ELLIPS_CONTACT_H 
 #include "exception.h"
-
 #include "eigen.h"
-#include"shapecontact.h"
+#include"multicontact.h"
+#include"ellipsoid.h"
 
 void fixcontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
 TRY
@@ -106,12 +106,12 @@ void charpolynom(const CEllipsoid &A, const CEllipsoid &B){
 	}
 */
 
-bool separatingPlane(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
+bool doOverlap(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 
 	if(0)if(ovs.has_sep_plane){
 		if(!(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))) {
-			return true;
+			return false;
 			}
 		}
 	
@@ -129,7 +129,7 @@ TRY
 		// eigenvec 3 is inside E1, and 2 inside E2
 		if(E1(eigenvecs.at(3))>0 or E2(eigenvecs.at(2))>0){
 			WARNING("error in calculation of poles.");
-			return true;
+			return false;
 			}
 
 		//line through two poles (from E1 to E2)
@@ -172,9 +172,9 @@ TRY
 			}
 		*/
 
-		return true;
+		return false ;
 		}
-	return false;
+	return true;
 CATCH
 	}
 

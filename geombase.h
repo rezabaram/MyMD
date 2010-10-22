@@ -50,12 +50,14 @@ class GeomObjectBase
 	protected:
  	private:
 	};
-
+/*
 template <GType T>
-class GeomObject:public GeomObjectBase{//empty class. all the shapes are created through template specialization
+class GeomObject:public GeomObjectBase{ //empty class. all the shapes are created through template specialization
 		private:
 		GeomObject();
 		virtual ~GeomObject(){};
 		GeomObject(GeomObject const &);
 		};
+*/
+
 #endif /* GEOMBASE_H */

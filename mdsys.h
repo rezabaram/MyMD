@@ -33,7 +33,7 @@ class CSys{
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
-	inline bool interact(CParticle *p1, GeomObject<tbox> *p2)const;
+	inline bool interact(CParticle *p1, CBox *p2)const;
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
 	vec center_of_mass()const;
 
@@ -63,7 +63,7 @@ class CSys{
 			}
 	#endif
 
-	GeomObject<tbox> box;
+	CBox box;
 	CPlane *sp;
 	//CRecGrid *grid;
 	double maxr, maxh;
@@ -604,7 +604,7 @@ void CSys::interactions(){
 		}
 
 
-inline bool CSys::interact(CParticle *p1, GeomObject<tbox> *p2)const{
+inline bool CSys::interact(CParticle *p1, CBox *p2)const{
 TRY
 	static ShapeContact overlaps;
 	overlaps.clear();
@@ -687,14 +687,14 @@ TRY
 		x(2)=k+size*rgen()/10; 
 		double alpha=rgen()*M_PI;
 		Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
-		//CParticle *p = new CParticle(GeomObject<tsphere>(x,size*(1-0.0*rgen())));
-		//GeomObject<tellipsoid> E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
+		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
+		//CEllipsoid E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
 		//CParticle *p = new CParticle(E);
-		GeomObject<tsphere> E1(x,r);
-		//GeomObject<tellipsoid> E2(x, 1, 1, 1, size, q);
+		CSphere E1(x,r);
+		//CEllipsoid E2(x, 1, 1, 1, size, q);
 
 		//to implement constant volume (4/3 Pi r^3) while changing the shape
-		GeomObject<tellipsoid> E2(x, a,b,c);
+		CEllipsoid E2(x, a,b,c);
 		CParticle *p = new CParticle(E2);
 		p->w(1)(0)=5.0*(1-2*rgen());
 		p->w(1)(1)=5.0*(1-2*rgen());

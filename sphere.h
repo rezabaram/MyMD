@@ -2,13 +2,12 @@
 #define SPHERE_H 
 #include"geombase.h"
 
-template<>
-class GeomObject<tsphere>: public GeomObjectBase
+class CSphere: public GeomObjectBase
 	{
 	public:	
-	GeomObject<tsphere> (const vec &v, double r):GeomObjectBase(v,tsphere){radius=r;}
-	GeomObject<tsphere> ():GeomObjectBase(vec(0,0,0),tsphere){radius=1;}
-	virtual ~GeomObject(){};
+	CSphere (const vec &v, double r):GeomObjectBase(v,tsphere){radius=r;}
+	CSphere ():GeomObjectBase(vec(0,0,0),tsphere){radius=1;}
+	virtual ~CSphere(){};
 
 	void rotate(const vec&, double alpha){};
 	void shift(const vec& v){Xc+=v;};
@@ -34,6 +33,5 @@ class GeomObject<tsphere>: public GeomObjectBase
 	private:
 	};
 
-typedef GeomObject<tsphere> CSphere;
 
 #endif /* SPHERE_H */

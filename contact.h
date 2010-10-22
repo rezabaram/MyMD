@@ -4,11 +4,17 @@
 #include"vec.h"
 #include"plane.h"
 
-class Contact{
+class BasicContact{
 	public:
-	Contact(const vec &_x, const vec &_n , double dd, bool pers=false):x(_x), n(_n), dx_n(dd), persist(pers){
+	BasicContact(const vec &_x, const vec &_n):x(_x), n(_n){
 		}
 	vec x, n;
+	};
+
+class Contact : public BasicContact{
+	public:
+	Contact(const vec &_x, const vec &_n , double dd, bool pers=false):BasicContact(_x, _n), dx_n(dd), persist(pers){
+		}
 	double dx_n;
 	bool persist;
 	};

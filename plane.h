@@ -2,12 +2,11 @@
 #define PLANE_H 
 #include"geombase.h"
 
-template<>
-class GeomObject<tplane> : public GeomObjectBase
+class CPlane : public GeomObjectBase
 	{
 	public:
-		GeomObject(const vec &x0, const vec &n0):GeomObjectBase(x0, tplane), n(n0){identifier=6; n.normalize();};
-		virtual ~GeomObject(){};
+		CPlane(const vec &x0, const vec &n0):GeomObjectBase(x0, tplane), n(n0){identifier=6; n.normalize();};
+		virtual ~CPlane(){};
 		void shift(const vec & v){Xc+=v;};
 		void rotate(const vec &_n, double alpha){};//FIXME
 		void scale(double s){Xc*=s;};//FIXME if necessary
@@ -46,7 +45,6 @@ class GeomObject<tplane> : public GeomObjectBase
  	private:
 	};
 
-typedef GeomObject<tplane> CPlane;
 
 class HomPlane
 	{
