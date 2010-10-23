@@ -1,0 +1,43 @@
+#!/bin/bash
+current=`pwd`
+rootDir=$current/$1
+
+queue=LONG
+flags="-S /bin/bash -V -cwd -b y -q "$queue
+
+asph="-0.6 -0.4 -0.2 0.0 0.2 0.4 0.6"
+asphW="0.1"
+
+
+for a in $asph
+do
+	baseDir=$rootDir/"e_""$a"_$asphW
+	if [ ! -d $baseDir ];
+	then
+	    mkdir -p $baseDir ;
+	fi
+	cd $baseDir
+	cat $current/config_base > config
+	echo asphericity	$a >> config
+	echo asphericityWidth	$asphW >> config
+	
+
+	for ((  i = 1;  i <= 10;  i++  ))
+	do
+		dir=$baseDir/$i
+		if [ ! -d $dir ];
+		then
+		    mkdir -p $dir ;
+		fi
+		cd $dir
+
+		echo $dir
+		cp $baseDir/config $dir
+		#/home/lynxgav/MD/a.out $i
+		qsub $flags /home/reza/workstation/MD/a.out $i
+		#cd $rootDir
+		#echo "done."
+	done
+
+done
+
