@@ -157,18 +157,19 @@ void CPacking<T>::BuildContactNetwork() {
 	}
 
 template<class T>
-void CPacking<T>::output_contact_network(ostream &out){
-		for(int i=0; i<contacts.size(); i++){
-		cerr<< contacts.size() <<endl;
-		for(int j=0; j<contacts.at(i).size(); j++){
-		
-			out<<"5  ";
-			out<<contacts.at(i).at(j).p1->Xc<<"  0.005";
-			out<<contacts.at(i).at(j).p2->Xc<<"  0.005  50000 50000 50000"<<endl;;
-			}
-			}
+void CPacking<T>::output_contact_network(ostream &out)
+{
+	for(int i=0; i<contacts.size(); i++){
+	cerr<< contacts.size() <<endl;
+	for(int j=0; j<contacts.at(i).size(); j++){
+	
+		out<<"5  ";
+		out<<contacts.at(i).at(j).p1->Xc<<"  0.005";
+		out<<contacts.at(i).at(j).p2->Xc<<"  0.005  50000 50000 50000"<<endl;;
+		}
+		}
+}
 
-	}
 /*
 void print_connectivity(vector<CCircle> &packing, const char * name){
   // !!! C++ style Numbering starting with 0
