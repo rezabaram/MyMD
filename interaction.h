@@ -157,6 +157,9 @@ TRY
 		//ERROR(( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)), " ");
 
 		updatecontact(*ovs, *E1, *E2);
+		CRay<HomVec> ray(ovs->x1=HomVec(E1->Xc, 1), ovs->x2=HomVec(E2->Xc, 1));
+		intersect(0, ovs->x1, ray, *E1);
+		intersect(1, ovs->x2, ray, *E2);
 		findMin(ovs->x1, *E1, *E2, 500);
 		findMin(ovs->x2, *E2, *E1, 500);
 		//updateplane(*ovs, *E1, *E2);

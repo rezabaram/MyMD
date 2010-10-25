@@ -352,5 +352,11 @@ CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E){
 	double c=ray(0)*E.ellip_mat*ray(0);
 	return CQuadratic(a, b, c);
 }
+bool intersect (size_t i, HomVec &X, const CRay<HomVec> &ray, const CEllipsoid &E){
+	CQuadratic q=intersect(ray, E);
+	if(q.root(0).imag()>0.0000001) return false;
+	X=ray(q.root(i).real());
+	return true;
+}
 //----------------
 #endif /* ELLIPSOID_H */

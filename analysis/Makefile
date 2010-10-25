@@ -15,8 +15,13 @@ convert2raster: convert2raster.cc packing.h
 #asphericity:asphericity.cc
 #	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) asphericity.cc -o asphericity
 
-fabric: fabric.cc ../ellips_contact.h
+fabric: fabric.cc packing.h ../ellips_contact.h ../interaction.h
 	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) fabric.cc -o fabric
 
 clean:
 	rm -f fabric convert2raster packing_density *.o
+
+network:fabric
+	./fabric packing.dat
+plot: network
+	coord2pr3d  -x0 -y0 -z0  -s1 network | render -size 700x700 -jpeg > _out.jpg && display _out.jpg

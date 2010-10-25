@@ -11,9 +11,9 @@ do
 	then
 		continue
 	fi
-	analysis/convert2raster $file > r$file
-	coord2pr3d -x0 -y0 -z0  -s1 r$file | render -size $w"x"$h -jpeg > _$file.jpg 
-	rm -f r$file
+	/Users/reza/workstation/MD/analysis/convert2raster $file > $file".r"
+	coord2pr3d -x0 -y0 -z0  -s1 $file".r" | render -size $w"x"$h -jpeg > _$file.jpg 
+	rm -f $file".r"
 	#coord2pr3d -x0 -y0 -s1 $file | render -size $w"x"$h -jpeg > _$file.jpg 
 	
 

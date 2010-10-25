@@ -21,7 +21,8 @@ void Initialize(int n_params, char **params)
 void Run()
 {
 	packing.BuildContactNetwork();
-	//packing.output_contact_network(cout);
+	ofstream out("network");
+	packing.output_contact_network(out);
 }
 
 int main(int n_params, char **params){
