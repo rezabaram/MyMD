@@ -58,6 +58,8 @@ double CPacking<T>::packFraction(const vec &x1, const vec &x2, unsigned long N){
 TRY
 	double n=0, nt=0;
 	vec x;
+	vec l=x2-x1;
+	double boxvolume=fabs(l(0)*l(1)*l(2));
 	double d=1;
 	typename CPacking<T>::const_iterator it;
 
@@ -72,7 +74,7 @@ TRY
 				}
 			}
 		}
-	return n/nt;
+	return n/nt/boxvolume;
 CATCH
 	}
 
