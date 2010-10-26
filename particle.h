@@ -4,6 +4,7 @@
 #include<sstream>
 #include<fstream>
 #include<vector>
+#include<set>
 #include<string>
 #include<iomanip>
 
@@ -36,7 +37,7 @@ class CParticle{
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new T (_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<class T>
-	explicit CParticle(const T &_shape):shape(new T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this){init();}
+	explicit CParticle(const T &_shape):shape(new T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this) {init();}
 	~CParticle(){
 		delete shape;
 		}
@@ -89,6 +90,7 @@ class CParticle{
 
 	void calPos(double dt);
 	void calVel(double dt);
+	void get_grid_neighbours(set<CParticle *> &neigh)const;
 
 	GeomObjectBase *shape;
 	CProperty material;
@@ -102,11 +104,26 @@ class CParticle{
 	tState state;
 	CVerlet<CParticle> vlist;
 	CVerlet<CParticle> vlistold;
+	vector< CNode3D<CParticle> *> grid_nodes;
+
+	//to hold neighbours on the grid
+	//set is chosen to avoid repeatition
+	set<CParticle *> neighbours;
 	protected:
 	double mass, Ixx, Iyy, Izz;
  	private:
 	CDFreedom<5> RotationalDFreedom;
 	};
+
+void CParticle::get_grid_neighbours(set<CParticle *> &neigh)const{
+	CNode3D<CParticle>::iterator it;
+	for(size_t i=0; i<grid_nodes.size(); i++){
+	for(it=grid_nodes.at(i)->begin(); it!= grid_nodes.at(i)->end(); it++){
+		if(this!=(*it))neigh.insert(*it);
+		}
+		}
+	
+	}
 
 ostream &operator <<(ostream &out, const CParticle &p){
 	p.shape->print(out);

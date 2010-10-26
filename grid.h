@@ -1,6 +1,7 @@
 #ifndef GRID_H
 #define GRID_H
 #include"vec.h"
+#include"exception.h"
 #include<list>
 #include<vector>
 using namespace std;
@@ -117,6 +118,8 @@ class CRecGrid
 		out<< "print not yet implemented for this class" <<std::endl;
         	}
 
+	void reset();
+
 	vec corner;
 	vec L, dL;//dimensions of the grid L, and cells dL 
 	CCoord N;//number of cells in each direction
@@ -134,6 +137,7 @@ template<class T>
 CRecGrid<T>::CRecGrid(const vec & _corner, const vec & _L, double _d):
 	corner(_corner), L(_L)
 	{
+TRY
 	
 	if(_d>L(0))_d=L(0);
 	if(_d>L(1))_d=L(1);
@@ -158,7 +162,16 @@ CRecGrid<T>::CRecGrid(const vec & _corner, const vec & _L, double _d):
                 top_nodes[i]=0;
                 }
 	window=CWindow(0,0,0, N(0)-1,N(1)-1, N(2)-1);
+CATCH
 }
+template<class T>
+void CRecGrid<T>::reset(){
+TRY
+	for(int i=0; i<N(0)*N(1)*N(2); i++){
+		nodes[i].clear();
+		}
+CATCH
+		}
 
 template<class T>
 CRecGrid<T>::~CRecGrid()
@@ -176,20 +189,23 @@ CNode3D<typename CRecGrid<T>::particle_type>  & CRecGrid<T>::operator ()(int i, 
 template<class T>
 void CRecGrid<T>::add(particle_type *p,const CWindow &win)
 	{
-	assert(p);
+TRY
 	for(int i=win.lleft(0); i<=win.uright(0); i++){
 	for(int j=win.lleft(1); j<=win.uright(1); j++){
 	for(int k=win.lleft(2); k<=win.uright(2); k++){
 		node(i,j,k)->push_back(p);
+		p->grid_nodes.push_back(node(i,j,k));
 		//if(k>top_nodes[j*N(0)+i])top_nodes[j*N(0)+i]=k;
 		}
 		}
 		}
+CATCH
 	}
 
 template<class T>
 void CRecGrid<T>::add(particle_type *part)
 	{
+TRY
 	assert(part);
 	vec R=part->x(0)-corner;
 	double r=part->shape->radius;
@@ -198,11 +214,13 @@ void CRecGrid<T>::add(particle_type *part)
 		   );
 	win.trim(window);
 	add(part,win);
+CATCH
 	}
 
 template<class T>
 inline CNode3D<typename CRecGrid<T>::particle_type>  * CRecGrid<T>::node(int i, int j, int k)
 	{
+TRY
 	if(0  /*flags&Periodic*/){//FIX ME
 		while (i<0)i+=N(0);
 		while (i>N(0)-1)i-=N(0);
@@ -227,12 +245,14 @@ inline CNode3D<typename CRecGrid<T>::particle_type>  * CRecGrid<T>::node(int i, 
 //origin is considered at lower left
 	assert(nodes);
 	return (&nodes[k*(N(0)*N(1))+j*N(0)+i]);
+CATCH
 }
 
 
 template<class T>
 void CRecGrid<T>::setup_neighs()
 	{
+TRY
 	for(int i=0; i<N(0); i++){
 		for(int j=0; j<N(1); j++){
 		for(int k=0; k<N(2); k++){
@@ -270,6 +290,7 @@ void CRecGrid<T>::setup_neighs()
 			}
 		}
 		}
+CATCH
 	}
 
 template<class T>
