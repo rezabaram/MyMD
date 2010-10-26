@@ -20,10 +20,14 @@ class CPacking : public vector <T *>
 	{
 
 	public:
-	CPacking():contacts(ContactNetwork<T>(this)){
+	CPacking():contacts(ContactNetwork<T>(this))
+		{
+		maxr=0.0;
+		grid_built=false;
 		}
 	~CPacking(){
 		typename vector<T *>::iterator it;
+		delete grid;
 		for(it=this->begin(); it!=this->end(); it++)
 			delete (*it);
 		}
@@ -36,10 +40,19 @@ class CPacking : public vector <T *>
 	void output_contact_network(ostream &out);
 	double totalVolume();
 	void BuildContactNetwork();
+	void BuildGrid(){
+		if(grid_built)return;
+		grid=(new CRecGrid<T>(this, vec(0.0, 0.0, 0.0), vec(1.5, 1.5, 1.5), 1.1*maxr));
+		grid->build();
+		grid_built=true;
+		};
 
 	ContactNetwork<T> contacts;
 	
+	CRecGrid<T> * grid;
  	private:
+	double maxr;
+	bool grid_built;
 	};
 
 template < class T>
@@ -56,17 +69,20 @@ double CPacking<T>::totalVolume(){
 template < class T>
 double CPacking<T>::packFraction(const vec &x1, const vec &x2, unsigned long N){
 TRY
+	BuildGrid();
 	double n=0, nt=0;
 	vec x;
-	vec l=x2-x1;
-	double boxvolume=fabs(l(0)*l(1)*l(2));
+	//vec l=x2-x1;
+	//double boxvolume=fabs(l(0)*l(1)*l(2));
 	double d=1;
-	typename CPacking<T>::const_iterator it;
+	typename CNode3D<T>::const_iterator it;
 
 	for(unsigned long i=0; i<N; i++){
 		++nt;
 		x=randomVec(x1,x2);
-		for(it=this->begin(); it!=this->end(); it++){
+		CNode3D<T> *node=grid->which(x);
+		assert(node);
+		for(it=node->begin(); it!=node->end(); it++){
 			d=(**it)(x);
 			if(d<0) {
 				++n;
@@ -74,7 +90,7 @@ TRY
 				}
 			}
 		}
-	return n/nt/boxvolume;
+	return n/nt;
 CATCH
 	}
 
@@ -118,6 +134,7 @@ void CPacking<T>::parse(istream &inputFile) {
 		T *shape=new T();
 		shape->parse(ss);
 		this->push_back(shape);
+		if(shape->radius>maxr)maxr=shape->radius;
 		}
 
 	//else if(id==14){

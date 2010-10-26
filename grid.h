@@ -4,6 +4,8 @@
 #include"exception.h"
 #include<list>
 #include<vector>
+#include"analysis/packing.h"
+
 using namespace std;
 
 
@@ -101,7 +103,7 @@ class CRecGrid
 	{
 	public:
 	typedef T particle_type;
-	CRecGrid(const vec &_corner, const vec & _L, double _d);
+	CRecGrid(vector<T *> *p, const vec &_corner, const vec & _L, double _d);
 	~CRecGrid();
 	CNode3D<particle_type> &operator ()(int i, int j, int k); //returns the ith node
 	CNode3D<particle_type> *node(int i, int j, int k); //returns the ith node
@@ -110,7 +112,8 @@ class CRecGrid
 	inline CNode3D<particle_type> * top_node(int i, int y);
 	void add(particle_type *part);
 	void add(particle_type *part, const CWindow &win);
-	CNode3D<particle_type> * which(const vec &p) {
+	void build();
+	CNode3D<particle_type> * which(const vec &p){
 		return node ((int)floor((p-corner)(0)/dL(0)), (int)floor((p-corner)(1)/dL(1)), (int)floor((p-corner)(2)/dL(2)));
 		}
 
@@ -129,16 +132,18 @@ class CRecGrid
 	void setup_neighs();
 	CNode3D<particle_type>  *nodes;
 	int *top_nodes;//keeps the k's of the topest node
+	const vector <particle_type *> *packing;
 };
 
 
 
 template<class T>
-CRecGrid<T>::CRecGrid(const vec & _corner, const vec & _L, double _d):
-	corner(_corner), L(_L)
+CRecGrid<T>::CRecGrid(vector<T *> *p, const vec &_corner, const vec & _L, double _d):
+	corner(_corner), L(_L), packing(p)
 	{
 TRY
 	
+	ERROR(_d<0.00000001,"Grid size either negative or too small");
 	if(_d>L(0))_d=L(0);
 	if(_d>L(1))_d=L(1);
 	if(_d>L(2))_d=L(2);
@@ -194,7 +199,6 @@ TRY
 	for(int j=win.lleft(1); j<=win.uright(1); j++){
 	for(int k=win.lleft(2); k<=win.uright(2); k++){
 		node(i,j,k)->push_back(p);
-		p->grid_nodes.push_back(node(i,j,k));
 		//if(k>top_nodes[j*N(0)+i])top_nodes[j*N(0)+i]=k;
 		}
 		}
@@ -207,8 +211,8 @@ void CRecGrid<T>::add(particle_type *part)
 	{
 TRY
 	assert(part);
-	vec R=part->x(0)-corner;
-	double r=part->shape->radius;
+	vec R=part->Xc-corner;
+	double r=part->radius;
 	CWindow win((int)floor((R(0)-r)/dL(0)), (int)floor((R(1)-r)/dL(1)), (int)floor((R(2)-r)/dL(2)),
 	            (int)floor((R(0)+r)/dL(0)), (int)floor((R(1)+r)/dL(1)), (int)floor((R(2)+r)/dL(2))
 		   );
@@ -291,6 +295,16 @@ TRY
 		}
 		}
 CATCH
+	}
+
+template<class T>
+void CRecGrid<T>::build(){
+		typename vector<T *>::const_iterator it;
+		size_t Np=packing->size();
+		//assert(elems);
+		for(size_t i=0;  i<Np; i++){
+			this->add(packing->at(i));
+			}
 	}
 
 template<class T>
