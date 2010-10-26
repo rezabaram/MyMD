@@ -4,7 +4,6 @@
 #include"exception.h"
 #include<list>
 #include<vector>
-#include"analysis/packing.h"
 
 using namespace std;
 

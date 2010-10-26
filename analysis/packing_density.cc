@@ -21,7 +21,7 @@ void Initialize(int n_params, char **params){
 void Run(){
 
 	cerr<< packing.size() <<endl;
-	cerr<< packing.packFraction(vec(0.1,0.1,0.1),vec(.9,.9,.9), 1000000 ) <<endl;
+	cerr<< packing.packFraction(vec(0.1,0.1,0.1),vec(.9,.9,.9), 100000 ) <<endl;
 	cerr<< packing.totalVolume()<<endl;
 }
 

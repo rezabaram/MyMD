@@ -23,6 +23,8 @@ void Run()
 	packing.BuildContactNetwork();
 	ofstream out("network");
 	packing.output_contact_network(out);
+	cerr<< packing.contacts.cal_fabric_tensor() <<endl;
+	
 }
 
 int main(int n_params, char **params){
