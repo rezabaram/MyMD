@@ -9,7 +9,7 @@ all: convert2raster packing_density fabric
 packing_density:	*.cc *h ../ellipsoid.h
 	$(CC) -O2 -o packing_density $(INCLUDES) $(LIBS) $(FLAGS) packing_density.cc 
 
-convert2raster: convert2raster.cc packing.h
+convert2raster: convert2raster.cc packing.h ../grid.h
 		g++ -o convert2raster $(INCLUDES) $(LIBS) $(FLAGS) convert2raster.cc 
 
 #asphericity:asphericity.cc
