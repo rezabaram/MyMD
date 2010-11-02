@@ -288,10 +288,17 @@ class CEllipsoid: public GeomObjectBase
 	CATCH
 		}
 
+
 	void print(std::ostream &out)const{
 		out<<setprecision(12)<< identifier<< "   ";
 		out<< Xc<< "  "<< a<<"  "<<b<<"  "<< c <<"  ";
 		out<< q;
+		}
+
+	void print_in_euler(std::ostream &out)const{
+		out<<setprecision(12)<< identifier<< "   ";
+		out<< Xc<< "  "<< a<<"  "<<b<<"  "<< c <<"  ";
+		out<< this->euler();
 		}
 
 	void printRaster3D(std::ostream &out)const{

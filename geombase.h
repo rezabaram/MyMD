@@ -40,6 +40,17 @@ class GeomObjectBase
 	const vec displacement(const GeomObjectBase *p)const{
 		return (Xc-p->Xc);
 		};
+	vec euler()const{
+		vec angles;
+		//from wiki 
+		//phi
+		angles(0)=atan2 (2.0*(q(0)*q(1) + q(2)*q(3)), 1 - 2*(q(1)*q(1) + q(2)*q(2))) ;
+		//theta
+		angles(1)=asin(2.0*(q(0)*q(2) - q(3)*q(1)));
+		//phi
+		angles(2)=atan2(2.0*(q(0)*q(3) + q(2)*q(1)), 1 - 2*(q(2)*q(2) + q(3)*q(3))) ;
+		return angles;
+		}
 
 	double radius;
 	vec Xc, Xc0; //center 

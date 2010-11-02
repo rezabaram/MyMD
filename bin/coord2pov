@@ -1,0 +1,182 @@
+#!/usr/bin/perl
+use Math::Trig;
+
+$xoffset=0;
+$yoffset=0;
+$scale=1;
+$linewidth=0.005;
+$auto_xoffset=0;
+$auto_yoffset=0;
+$auto_xsize=0;
+$auto_ysize=0;
+$autoscale=0;
+$nparticle=0;
+
+srand(0);
+for($i = 1; $i < 50000; $i++) {
+	$rcolor[$i]=rand();
+	$gcolor[$i]=rand();
+	$bcolor[$i]=rand();
+	}
+
+foreach (@ARGV) {
+ chomp;
+ if (/-x(.*)/) {
+  $xoffset=$1;
+ }
+ if (/-y(.*)/) {
+  $yoffset=$1;
+ }
+ if (/-s(.*)/) {
+  $scale=$1;
+ }
+ if (/-a/) {
+  $autoscale=1;
+ }
+ if (/-l(.*)/) {
+  $linewidth=$1;
+ }
+ $cut=0;
+ if (/^-c/){
+	$cut=1;
+	}
+ if (/^-h/ or /^--h/ or /^-\?/) {
+  print "Usage: xbps [-x0] [-y0] [-s1] [-l0.01] FILE\n";
+  print "\t-x\toffset in x\n";
+  print "\t-y\toffset in y\n";
+  print "\t-s\tscale factor\n";
+  print "\t-a\ttry to autoscale\n";
+  print "\t-l\tline width\n";
+  exit;
+ }
+}
+foreach (@ARGV) {
+ chomp;
+ if (/^[^-]/){
+  $filename=$_;
+  open(INPUT,$filename) or die "Can't open $FOO: $!";
+  $nparticle++;
+
+
+printf( "#include \"colors.inc\"
+#include \"shapes.inc\"
+#include \"textures.inc\" 
+#include \"rad_def.inc\"
+global_settings {
+   //radiosity {
+     //Rad_Settings(Radiosity_Normal,off,off)
+   //}
+}
+#default {finish{ambient 0}}
+
+
+\n");
+
+
+print " \n";
+print "light_source {\n";
+print "    <5, 8, 5>\n";
+print "    color White\n";
+print "    area_light <8, 0, 0>, <0, 0, 8>, 2, 4\n";
+print "    adaptive 1\n";
+print "  }\n";
+
+print "light_source {\n";
+print "    <3, 8, 5>\n";
+print "    color White\n";
+print "  }\n";
+
+print "camera {\n";
+print "	    right 1*x\n";
+print "     location<4,5.5, 2.5>\n";
+print "     sky<0,0, 1>\n";
+print "     angle 14\n";
+print "     look_at   <0.65, 0.75, 0.6>}\n";
+print " \n";
+                      
+print "plane {-x, 0  \n";
+print "       texture{ \n";
+print "       pigment{checker color White, color White}\n";
+print "       finish{ambient 0.01}\n";
+print "              }\n";
+print "        }\n";
+print "plane {-y, 0  \n";
+print "       texture{ \n";
+print "       pigment{checker color White, color White}\n";
+print "       finish{ambient 0.01}\n";
+print "              }\n";
+print "        }\n";
+print "plane {z, 0  \n";
+print "       texture{ \n";
+print "       pigment{checker color White, color White}\n";
+print "       finish{ambient .01}\n";
+print "              }\n";
+print "        }\n";
+
+
+
+  open(INPUT,$filename) or die "Can't open $FOO: $!";
+  while(<INPUT>){
+   if(/^#echo (.*)/){
+    print $1;
+   } 
+   next if(/^#/);
+   chomp;
+
+    /^\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)/;
+    if($1==14){
+    $nparticle++;
+	$red=$rcolor[$nparticle]; $green=$gcolor[$nparticle]; $blue=$bcolor[$nparticle];
+	$x=$xoffset+$scale*$2;
+	$y=$yoffset+$scale*$3;
+	$z=$yoffset+$scale*$4;
+	$a=$scale*$5;
+	$b=$scale*$6;
+	$c=$scale*$7;
+	$phi=$8*180.0/pi;
+	$theta=$9*180.0/pi;
+	$psi=$10*180.0/pi;
+	if($cut==1)
+	{
+	printf("
+	difference{
+		sphere {o, 1 scale<%f, %f, %f> rotate<%f,%f,%f> translate <%f, %f, %f>}
+		//sphere { <0.5,0.5,1.2>, 0.5 } 
+		//cylinder{ <1,-2,1>, <1,2,1>, 0.5 } 
+		box{ <-5,-5,-2>, <2,2,2> rotate<0,40,0> translate<1.,0,3.> } 
+		texture{ pigment {color  red %f green %f blue %f} }
+	}
+	\n",  $a, $b, $c, $phi, $theta, $psi, $x, $y, $z, $red, $green, $blue);
+	}
+	else
+	{
+	printf("
+		sphere {o, 1 scale<%f, %f, %f> rotate<%f,%f,%f> translate <%f, %f, %f>
+		texture{ pigment {color  red %f green %f blue %f} }}
+	\n",  $a, $b, $c, $phi, $theta, $psi, $x, $y, $z, $red, $green, $blue);
+	}
+	}
+   else{
+	$x=$xoffset+$scale*$1;
+	$y=$yoffset+$scale*$2;
+	$z=$yoffset+$scale*$3;
+	$r=$scale*$4;
+	$blue=$7;
+	$green=$6;
+	$red=$5;
+	printf("
+	sphere { <%f, %f, %f>, %f
+
+	texture{
+	 pigment {color  red %f green %f blue %f}
+	 }
+	finish {phong .22
+	ambient 0.25
+	} }
+	\n",  $x, $y, $z, $r, $red, $green, $blue);
+	$particle_counter--;
+	}
+  }
+  exit;
+ }
+}

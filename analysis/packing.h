@@ -34,6 +34,7 @@ class CPacking : public vector <T *>
 
 	void print(std::ostream& out, bool raster=false)const;
 	void printRaster3D(std::ostream& out)const{print(out, true);}
+	void printEuler(std::ostream& out)const;
 	void parse(string infilename);
 	void parse(istream &inputFile);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
@@ -100,6 +101,15 @@ void CPacking<T>::print(std::ostream& out, bool raster)const{
 		for(it=this->begin(); it!=this->end(); it++){
 			if(raster) (*it)->printRaster3D(out);
 			else (*it)->print(out);
+			out<<endl;
+			}
+		}
+
+template < class T>
+void CPacking<T>::printEuler(std::ostream& out)const{
+		typename CPacking::const_iterator it;
+		for(it=this->begin(); it!=this->end(); it++){
+			(*it)->print_in_euler(out);
 			out<<endl;
 			}
 		}

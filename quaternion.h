@@ -46,6 +46,10 @@ Quaternion& operator-=(const Quaternion &);
 Quaternion& operator*=(double);
 Quaternion& operator/=(double);
 Quaternion& operator=(const vec &);
+double  operator()(size_t i)const{
+		if(i==0)return u;
+		return v(i-1);
+		};
 
 friend Quaternion operator~(const Quaternion &);
 friend Quaternion operator+(const Quaternion &,const Quaternion &);

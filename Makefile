@@ -16,7 +16,7 @@ perf:
 	plot.sh 1:2 log trash/log
 
 animate: test.avi
-	mplayer test.avi
+	mplayer -loop 0 test.avi
 	#feh *jpg
 
 test.avi: 
@@ -33,8 +33,7 @@ aclean:
 	rm -rf test.avi 
 
 pov:
-	coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
-	#coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
+	analysis/coord_convert -p $(FILE) > out.dat && bin/coord2pov -c out.dat > out.pov && povray -A0.05 Antialias_Threshold=20  -w500 -h500 out.pov && feh out.png
 
 zip:
 	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
