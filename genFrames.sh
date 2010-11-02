@@ -3,11 +3,14 @@ files=$*
 w=500
 h=500
 
+rasterconverter=$HOME/workstation/MD/analysis/convert2raster
 echo "Generating jpg frames "
 for file in $files
 do
 	#/Users/reza/bin/test.perl -x0 -y0 -s1  -rx75  $file | render -size $w"x"$h -jpeg > $file.jpg 
-	if [ -f _$file.jpg ]
+	filename=`basename $file`
+	filedir=`dirname $file`
+	if [ -f _$filename.jpg ]
 	then
 		continue
 	fi

@@ -8,12 +8,12 @@ CPacking<CEllipsoid> packing;
 
 void Initialize(int n_params, char **params){
 	rgen.seed(RNGSeed);
-	cerr<< "RNG Seed: "<< RNGSeed <<endl;
+//	cerr<< "RNG Seed: "<< RNGSeed <<endl;
 
 	ERROR(n_params!=2, "Usage: convert2raster input-file");
 	
 	ifstream inputFile(params[1]);
-	ERROR(!inputFile.good(), "Unable to open input file");
+	ERROR(!inputFile.good(), "Unable to open input file"+(string)(params[1]));
 	
 	packing.parse(inputFile);
 	}
