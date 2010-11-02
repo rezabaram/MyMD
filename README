@@ -1,0 +1,9 @@
+still need to write it
+
+
+
+expressions for sphericities of prolate (s1) and oblate (s2) spheriods
+source: http://planetcalc.com/149/ 
+c(x)=(3/4./pi/x**2)**(1./3.); ae(x)=acos(x)
+s1(x)=((x*c(x))**2 + x*c(x)*c(x)*ae(x)/sin(ae(x)))/2/(c(1)**2); s2(x)=((x*c(x))**2 + c(x)*c(x)/sin(ae(1/x))*log( (1+sin(ae(1/x))) /cos(ae(1/x))) )  /2/(c(1)**2)
+plot [1:1500.1] log(s1(1/x)), log(s2(x)), log(x)/3+pi/13, 2*log(x)/3-6*pi/27 

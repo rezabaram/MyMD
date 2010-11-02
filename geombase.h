@@ -11,18 +11,18 @@ class GeomObjectBase
 	public:
 	GeomObjectBase(const vec &v, GType t, const Quaternion &_q=Quaternion(1,0,0,0)):Xc(v),Xc0(v),type(t), q(_q){identifier=1;};
 	virtual ~GeomObjectBase(){};
-	virtual void shift(const vec&)=0;
+	virtual void shift(const vec&)=0;//{WARNING("This function should not be called")};
 	virtual void rotate(const vec& n, double alpha){//maybe overriden by derived class
 		//q.rotateMe(n, alpha);
 		//Xc0=q.rotate(Xc0);
 		};
 	virtual void rotateTo(const Quaternion &q){};
-	virtual double vol()=0;
-	virtual double I(vec n)=0;
+	virtual double vol()=0;//{WARNING("This function should not be called");};
+	virtual double I(vec n)=0;//{WARNING("This function should not be called");};
 
-	virtual void scale(double)=0;
-	virtual void print(std::ostream &out)const=0;
-	virtual void printRaster3D(std::ostream &out)const{};
+	virtual void scale(double)=0;//{WARNING("This function should not be called");};
+	virtual void print(std::ostream &out)const=0;//{WARNING("This function should not be called");};
+	virtual void printRaster3D(std::ostream &out)const{WARNING("This function should not be called");};
 	virtual void parse(std::istream &in)=0;
 	virtual void fixToBody(const HomVec &point){};
 	virtual double operator()(const vec &point)const{return 1e+100;};

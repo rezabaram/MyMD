@@ -8,7 +8,7 @@
 
 #define VERLET
 
-typedef vector<CParticle *> ParticleContainer;
+typedef list <CParticle *> ParticleContainer;
 
 typedef GeomObjectBase * BasePtr;
 class CSys{
@@ -158,10 +158,10 @@ CATCH
 	}
 
 double CSys::total_volume(){
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	double v=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		v+=(*it)->shape->vol();
+		v+=(*it)->vol();
 		}
 	return v;
 	}
@@ -173,12 +173,12 @@ double CSys::total_volume(){
 //minimum distances of the surfaces of the particles (putting them in spherical shells)
 double CSys::min_distance(CParticle *p1, CParticle *p2)const{
 TRY
-	return (p1->x(0)-p2->x(0)).abs() - p1->shape->radius -p2->shape->radius;
+	return (p1->x(0)-p2->x(0)).abs() - p1->radius -p2->radius;
 CATCH
 	}
 
 void CSys::print_verlet(ostream &out){
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	CVerlet<CParticle >::iterator neigh;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		out<< (*it)->id <<": ";
@@ -193,7 +193,7 @@ void CSys::update_verlet(){
 	verlet_distance*=0.99;
 	if(verlet_distance<min_verlet_distance)verlet_distance=min_verlet_distance;
 
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(verlet_need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs() > verlet_distance/2.0-epsilon) verlet_need_update=true;
 		}
@@ -216,7 +216,7 @@ void CSys::update_verlet(){
 //construct the verlet list of one particle 
 void CSys::setup_verlet(CParticle *p){
 TRY
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	CVerlet<CParticle>::iterator v_it_old;
 	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
 	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
@@ -242,7 +242,7 @@ TRY
 		//ERROR("The particle is intially within the box: "<<p->x(0));
 		//return false;
 		//}
-	if(maxr<p->shape->radius)maxr=p->shape->radius;
+	if(maxr<p->radius)maxr=p->radius;
 	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
 
 	particles.push_back(p);
@@ -337,7 +337,7 @@ TRY
 	//ShapeContact overlaps;
 #endif
 	overlaps.clear();
-	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
+	CInteraction::overlaps(&overlaps, p1, p2);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
 	//static double proj, ksi;
 	if(overlaps.size()==0)return false;
@@ -349,7 +349,7 @@ TRY
 		dv=v1-v2;
 
 		force=contactForce(overlaps(ii), dv, p1->material);
-		p1->shape->fixToBody(HomVec(overlaps(ii).x,1));
+		p1->fixToBody(HomVec(overlaps(ii).x,1));
 		//cerr<< (p2->x(0)-p1->x(0)).normalized() <<endl;
 
 
@@ -514,20 +514,20 @@ int CSys::read_packing2(string infilename, const vec &shift, double scale){
                 {
                 stringstream ss(line);
                 CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
+                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
 		//if(exist(p->id))continue;
 		p->frozen=true;//FIXME if it is not frozen it doesnt work, why?
-		p->shape->identifier=0;
+		p->identifier=0;
 		if(particles.size()>1000)break;
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
 		double ran=rgen();
-		if(ran<0.05)p->shape->identifier=1;
-		else if(ran<0.2)p->shape->identifier=2;
-		else p->shape->identifier=3;
+		if(ran<0.05)p->identifier=1;
+		else if(ran<0.2)p->identifier=2;
+		else p->identifier=3;
 		p->material.color=stringify(rgen())+stringify(rgen())+stringify(rgen());
-		p->shape->Xc=p->x(0);
+		p->Xc=p->x(0);
 		p->x(1)=0.0;
 		p->x(2)=0.0;
 		p->x0(1)=0.0;
@@ -564,7 +564,7 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
                 {
                 stringstream ss(line);
                 CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
+                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
 		//if(exist(p->id))continue;
 		if(p->x(0)(2)<270 || p->x(0)(2)>1725)p->frozen=true;
 		dist(0)=p->x(0)(0); dist(1)=p->x(0)(1);
@@ -572,8 +572,8 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
-		//p.shape->radius=44;
-		p->shape->radius*=scale*1.04;
+		//p.radius=44;
+		p->radius*=scale*1.04;
 		p->x0(0)=p->x(0);
                 add(p);
                 }
@@ -596,7 +596,7 @@ void CSys::interactions(){
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 	ittemp=it1;++ittemp;
 	for(it2=ittemp; it2!=particles.end(); ++it2){
-		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->shape->radius - (*it2)->shape->radius;
+		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->radius - (*it2)->radius;
 		if(d<0)cerr<< d<<" "<< (*it1)->id<<"  "<< (*it2)->id <<endl;
 		}
 		}
@@ -608,7 +608,7 @@ inline bool CSys::interact(CParticle *p1, CBox *p2)const{
 TRY
 	static ShapeContact overlaps;
 	overlaps.clear();
-	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)p2);
+	CInteraction::overlaps(&overlaps, p1, (GeomObjectBase*)p2);
 
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;

@@ -31,29 +31,29 @@ class CProperty
 	};
 
 
-class CParticle{
+class CParticle :public CEllipsoid 
+	{
 	CParticle(const CParticle&);
 	public:
 	//template<GType shapeType>
 	//CParticle(const vec & _x0, double r):shape(new T (_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
 	template<class T>
-	explicit CParticle(const T &_shape):shape(new T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this) {init();}
+	explicit CParticle(const T &_shape): CEllipsoid(T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this) {init();}
 	~CParticle(){
-		delete shape;
 		}
 
 	void init(){
-		x(0)=shape->Xc;
+		x(0)=Xc;
 		w(0)=0.0;
 		for(int i=1; i<6; ++i){
 			x(i)=0.0;
 			w(i)=0.0;
 			}
 		
-		mass=material.density*shape->vol();
-		Ixx=mass*shape->I(vec(1,0,0));
-		Iyy=mass*shape->I(vec(0,1,0));
-		Izz=mass*shape->I(vec(0,0,1));
+		mass=material.density*this->vol();
+		Ixx=mass*this->I(vec(1,0,0));
+		Iyy=mass*this->I(vec(0,1,0));
+		Izz=mass*this->I(vec(0,0,1));
 		};
 
 	double kEnergy(){
@@ -64,7 +64,7 @@ class CParticle{
 		return -mass*(g*x(0));
 		}
 	double rEnergy(){
-		vec wp=shape->q.toBody(w(1));
+		vec wp=this->q.toBody(w(1));
 		return 0.5*(Ixx*wp(0)*wp(0)+Iyy*wp(1)*wp(1)+Izz*wp(2)*wp(2));
 		}
 
@@ -83,8 +83,8 @@ class CParticle{
 		};
 
 	void parse(std::istream &in){
-			shape->parse(in);
-			x(0)=shape->Xc;
+			this->parse(in);
+			x(0)=this->Xc;
 			//mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
 			}
 
@@ -92,7 +92,6 @@ class CParticle{
 	void calVel(double dt);
 	void get_grid_neighbours(set<CParticle *> &neigh)const;
 
-	GeomObjectBase *shape;
 	CProperty material;
 	CDFreedom<3> x, x0, x_p;//TranslationalDFreedom;
 	CDFreedom<3> w, w0, w_p;//Rotational;
@@ -126,7 +125,7 @@ void CParticle::get_grid_neighbours(set<CParticle *> &neigh)const{
 	}
 
 ostream &operator <<(ostream &out, const CParticle &p){
-	p.shape->print(out);
+	p.print(out);
 	//out<<"  "<<p.x(1);
 	return out;
 	}
@@ -146,19 +145,19 @@ TRY
 	static Quaternion dq(0,0,0,0);
 
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
-	wp=shape->q.toBody(w(1));//FIXME make sure which should be used
+	wp=this->q.toBody(w(1));//FIXME make sure which should be used
 	//wp=w(1);			or this
-	dq.u =    -shape->q.v(0)*wp(0) - shape->q.v(1)*wp(1) - shape->q.v(2)*wp(2);
-	dq.v(0) =  shape->q.u  * wp(0) - shape->q.v(2)*wp(1) + shape->q.v(1)*wp(2);
-	dq.v(1) =  shape->q.v(2)*wp(0) + shape->q.u *  wp(1) - shape->q.v(0)*wp(2);
-	dq.v(2) = -shape->q.v(1)*wp(0) + shape->q.v(0)*wp(1) + shape->q.u *  wp(2);
+	dq.u =    -this->q.v(0)*wp(0) - this->q.v(1)*wp(1) - this->q.v(2)*wp(2);
+	dq.v(0) =  this->q.u  * wp(0) - this->q.v(2)*wp(1) + this->q.v(1)*wp(2);
+	dq.v(1) =  this->q.v(2)*wp(0) + this->q.u *  wp(1) - this->q.v(0)*wp(2);
+	dq.v(2) = -this->q.v(1)*wp(0) + this->q.v(0)*wp(1) + this->q.u *  wp(2);
 
-	shape->q+=dq*dt*0.5;
-	shape->q.normalize();
+	this->q+=dq*dt*0.5;
+	this->q.normalize();
 	
 	
-	shape->rotateTo(shape->q);
-	shape->moveto(x(0));
+	this->rotateTo(this->q);
+	this->moveto(x(0));
 CATCH
 	}
 
@@ -170,13 +169,13 @@ void CParticle::calVel(double dt){
 	
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
-	torquep=shape->q.toBody(torques);
+	torquep=this->q.toBody(torques);
 
-	wp=shape->q.toBody(w(1));
+	wp=this->q.toBody(w(1));
 	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
 	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;
 	wwp(2)=(torquep(2)+wp(0)*wp(1)*(Ixx-Iyy))/Izz;
-	w(2)=shape->q.toWorld(wwp);
+	w(2)=this->q.toWorld(wwp);
 
 
 	w(1)+=w(2)*(dt*2*c);
