@@ -3,14 +3,14 @@ density  	0.1
 Gravity  	0   0  -10
 outDt  		0.01
 timeStep 	0.0001
-maxTime		20
-particleSize 	0.06
-nParticle 	500
+maxTime		4
+particleSize 	0.2
+nParticle 	10
 stiffness  	5e+03
-damping		3e+0
+damping		3e+1
 fluiddampping   .1
 friction	0.1
 cohesion	0.0
 verletfactor 	1
-asphericity	0.2
+asphericity	0.3
 asphericityWidth	0.3

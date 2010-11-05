@@ -11,7 +11,7 @@ vec randomVec(const vec &x1, const vec &x2){
 
 vec randomVecSurfaceSphere(const vec &x, const double r){
 	
-	vec X( rgen.randNorm(0, 0.5),rgen.randNorm(0, 0.5), rgen.randNorm(0, 0.5));
+	vec X( rgen.randNorm(0, 0.5), rgen.randNorm(0, 0.5), rgen.randNorm(0, 0.5));
 	X.normalize();
 	X*=r;
 	X+=x;
@@ -36,7 +36,7 @@ void Run(){
 	double a =r/pow(ee,1./3.);
 	double b =a;//*rgen();
 	double c =ee*a;//*rgen();
-	GeomObject<tellipsoid> E(vec(0,0,0), a,b,c);
+	CEllipsoid E(vec(0,0,0), a,b,c);
 
 
 	CStat stat;

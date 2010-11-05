@@ -309,11 +309,12 @@ class CEllipsoid: public GeomObjectBase
 //		out<<endl;
 		///
 		out<<setprecision(12)<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+0.001<<"  ";
+		out<< Xc<< "  "<<radius+0.00001<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
-		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
-		out<<-1;
+		out<< ellip_mat(0,3) << "  " << ellip_mat(1,3) <<  "  " <<ellip_mat(2,3)<< "  ";
+		out<<ellip_mat(3,3);
+		//cerr<< trans_mat<<endl;
 		return ;
 		}
 	
