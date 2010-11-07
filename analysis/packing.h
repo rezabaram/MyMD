@@ -27,7 +27,7 @@ class CPacking : public vector <T *>
 		}
 	~CPacking(){
 		typename vector<T *>::iterator it;
-		delete grid;
+		if(grid_built)delete grid;
 		for(it=this->begin(); it!=this->end(); it++)
 			delete (*it);
 		}
@@ -153,7 +153,7 @@ void CPacking<T>::parse(istream &inputFile) {
 		//push_back(shape);
 		//}
 	else{
-		WARNING("Skip reading shape with id: "<< id);
+		//WARNING("Skip reading shape with id: "<< id);
 		continue;
 		}
 		

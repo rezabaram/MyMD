@@ -180,6 +180,7 @@ CATCH
 template<class T>
 CRecGrid<T>::~CRecGrid()
 	{
+
 	if(nodes!=NULL) delete [] nodes;
 	if(top_nodes!=NULL) delete [] top_nodes;
 	}
