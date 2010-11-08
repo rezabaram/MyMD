@@ -3,6 +3,8 @@
 #include<limits>
 #include"geombase.h"
 
+typedef enum{wall, periodic} BoundaryType;
+
 class CBox: public GeomObjectBase
 	{
 	public:
@@ -49,9 +51,30 @@ class CBox: public GeomObjectBase
 	vec corner, L;
 	const size_t nFaces;
 	CPlane ** face;
+	protected:
+	vec u0, u1, u2;
  	private:
 	CBox();
-	vec u0, u1, u2;
+	};
+
+class BoxContainer : public CBox
+	{
+	public:
+	BoxContainer(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string btype="wall"):
+	CBox(corner, _L), btype(btype)
+		{
+		//assert(corner<L); FIXME make this work
+		if(btype=="periodic")
+			{
+			face[0]->vec_to_shadow=L(0)*u0;
+			face[3]->vec_to_shadow=-L(0)*u0;
+			face[1]->vec_to_shadow=L(1)*u1;
+			face[4]->vec_to_shadow=-L(1)*u1;
+			}
+		}	
+
+	string btype;
+ 	private:
 	};
 
 

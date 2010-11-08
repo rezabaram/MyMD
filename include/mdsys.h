@@ -3,19 +3,20 @@
 #include "common.h"
 #include"grid.h"
 #include"particle.h"
+#include"packing.h"
 #include"interaction.h"
 #include"particlecontact.h"
 
 #define VERLET
 
-typedef vector<CParticle *> ParticleContainer;
+typedef CPacking<CParticle> ParticleContainer;
 
 typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0), maxh(0), G(vec(0.0)), 
-		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"){
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), maxr(0), maxh(0), G(vec(0.0)), 
+		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"), TotalParticlesN(0){
 	TRY
 	#ifndef VERLET
 		pairs=new ParticleContactHolder<CParticle> *[maxNParticle*maxNParticle];
@@ -33,7 +34,7 @@ class CSys{
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
-	inline bool interact(CParticle *p1, CBox *p2)const;
+	inline bool interact(CParticle *p1, BoxContainer *p2);
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
 	vec center_of_mass()const;
 
@@ -45,6 +46,7 @@ class CSys{
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
+	void remove(ParticleContainer::iterator &it);
 	double min_distance(CParticle *p1, CParticle *p2)const;
 	void setup_verlet(CParticle *p);
 	void print_verlet(ostream &out);
@@ -63,7 +65,7 @@ class CSys{
 			}
 	#endif
 
-	CBox box;
+	BoxContainer walls;
 	CPlane *sp;
 	//CRecGrid *grid;
 	double maxr, maxh;
@@ -75,6 +77,7 @@ class CSys{
  	private:
 	double epsFreeze;
 	ofstream outEnergy;
+	long TotalParticlesN;
 	};
 
 CSys::~CSys(){
@@ -135,6 +138,7 @@ TRY
 	G=config.get_param<vec>("Gravity");
 
 	particles_on_grid();
+	//particles.parse("input.dat");
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
 
 	#ifdef VERLET
@@ -158,7 +162,7 @@ CATCH
 	}
 
 double CSys::total_volume(){
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	double v=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		v+=(*it)->shape->vol();
@@ -178,7 +182,7 @@ CATCH
 	}
 
 void CSys::print_verlet(ostream &out){
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	CVerlet<CParticle >::iterator neigh;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		out<< (*it)->id <<": ";
@@ -193,7 +197,7 @@ void CSys::update_verlet(){
 	verlet_distance*=0.99;
 	if(verlet_distance<min_verlet_distance)verlet_distance=min_verlet_distance;
 
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(verlet_need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs() > verlet_distance/2.0-epsilon) verlet_need_update=true;
 		}
@@ -216,7 +220,7 @@ void CSys::update_verlet(){
 //construct the verlet list of one particle 
 void CSys::setup_verlet(CParticle *p){
 TRY
-	vector<CParticle *>::iterator it;
+	ParticleContainer::iterator it;
 	CVerlet<CParticle>::iterator v_it_old;
 	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
 	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
@@ -234,10 +238,18 @@ TRY
 CATCH
 	}
 
+void CSys::remove(ParticleContainer::iterator &it){
+TRY
+	delete (*it);
+	*it=particles.back();
+	particles.pop_back();
+CATCH
+	}
+
 bool CSys::add(CParticle *p){
 TRY
-	ERROR(particles.size()==maxNParticle, "Reached max number of particles.");
-	vec force(0.0);
+	//ERROR(particles.size()==maxNParticle, "Reached max number of particles.");
+	//vec force(0.0);
 	//if(interact(p, box, force)){
 		//ERROR("The particle is intially within the box: "<<p->x(0));
 		//return false;
@@ -246,7 +258,8 @@ TRY
 	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
 
 	particles.push_back(p);
-	particles.back()->id=particles.size()-1;
+	particles.back()->id=TotalParticlesN;
+	++TotalParticlesN;
 
 	//setup_verlet(particles.back());
 	//assert(grid);
@@ -258,16 +271,15 @@ CATCH
 void CSys::calForces(){
 TRY
 //FROMTIME
+	//FIXME make it dimensionless
+
 	ParticleContainer::iterator it1, it2, ittemp;
 	CVerlet<CParticle>::iterator neigh;
 	//reset forces
 	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		//FIXME make it dimensionless
-		(*it1)->forces=G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping (coef of dumping is ad hoc)
-		//(*it1)->forces=-G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
-		//(*it1)->forces=-50*G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())+G*(*it1)->get_mass();
-		(*it1)->torques=0.0;
+		(*it1)->reset_forces(G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1));//gravity plus damping (coef of dumping is ad hoc)
+		(*it1)->reset_torques(vec(0.0));
 		}
 
 	//interactions
@@ -303,7 +315,7 @@ TRY
 		#endif
 
 		//the walls
-		if(interact(*it1, &box)){  }
+		if(interact(*it1, &walls)){  }
 		}
 //TOTIME
 CATCH
@@ -388,7 +400,7 @@ TRY
 			stringstream outname;
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			out.open(outname.str().c_str());
-			box.print(out);
+			walls.print(out);
 			gout=&out;
 			for(it=particles.begin(); it!=particles.end(); ++it){
 				out<<**it<<endl;
@@ -414,6 +426,11 @@ TRY
 
 	Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
+		if(walls.btype=="periodic" and (*it)->expire()){
+			remove(it);
+			--it;//FIXME to newly replaced particle. this is because of how remove() works and that is because i am using stl vector
+			continue;
+			}
 	//	if(!(*it)->frozen) 
 		(*it)->calVel(dt);
 		if(0)if((*it)->x(1).abs()< epsFreeze  && (*it)->avgforces.abs()< epsFreeze ) {
@@ -517,17 +534,17 @@ int CSys::read_packing2(string infilename, const vec &shift, double scale){
                 ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
 		//if(exist(p->id))continue;
 		p->frozen=true;//FIXME if it is not frozen it doesnt work, why?
-		p->shape->identifier=0;
+		p->identifier=0;
 		if(particles.size()>1000)break;
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
 		double ran=rgen();
-		if(ran<0.05)p->shape->identifier=1;
-		else if(ran<0.2)p->shape->identifier=2;
-		else p->shape->identifier=3;
+		if(ran<0.05)p->identifier=1;
+		else if(ran<0.2)p->identifier=2;
+		else p->identifier=3;
 		p->material.color=stringify(rgen())+stringify(rgen())+stringify(rgen());
-		p->shape->Xc=p->x(0);
+		p->Xc=p->x(0);
 		p->x(1)=0.0;
 		p->x(2)=0.0;
 		p->x0(1)=0.0;
@@ -604,7 +621,7 @@ void CSys::interactions(){
 		}
 
 
-inline bool CSys::interact(CParticle *p1, CBox *p2)const{
+inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
 TRY
 	static ShapeContact overlaps;
 	overlaps.clear();
@@ -613,6 +630,12 @@ TRY
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
+		if(p2->btype=="periodic"){
+			CParticle* newshadow= p1->Shadow( (CPlane*)(overlaps(i).p));
+			if(newshadow)add(newshadow);
+			continue;
+			}
+
 		r1=overlaps(i).x-p1->x(0);
 		dv=p1->x(1)+cross(p1->w(1), r1);
 

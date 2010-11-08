@@ -13,10 +13,10 @@ class BasicContact{
 
 class Contact : public BasicContact{
 	public:
-	Contact(const vec &_x, const vec &_n , double dd, bool pers=false):BasicContact(_x, _n), dx_n(dd), persist(pers){
+	Contact(const vec &_x, const vec &_n , double dd, const void * _p=NULL):BasicContact(_x, _n), dx_n(dd), p(_p){
 		}
 	double dx_n;
-	bool persist;
+	const void *p;
 	};
 
 #endif /* CONTACT_H */

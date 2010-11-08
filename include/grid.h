@@ -211,8 +211,8 @@ void CRecGrid<T>::add(particle_type *part)
 	{
 TRY
 	assert(part);
-	vec R=part->Xc-corner;
-	double r=part->radius;
+	vec R=part->shape->Xc-corner;
+	double r=part->shape->radius;
 	CWindow win((int)floor((R(0)-r)/dL(0)), (int)floor((R(1)-r)/dL(1)), (int)floor((R(2)-r)/dL(2)),
 	            (int)floor((R(0)+r)/dL(0)), (int)floor((R(1)+r)/dL(1)), (int)floor((R(2)+r)/dL(2))
 		   );

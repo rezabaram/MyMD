@@ -1,11 +1,15 @@
+include Makefile.inc
+DIRS= tools
 
-CC=g++
 
 run: a.out
-	time ./run.sh
+	time bin/run.sh
 
-a.out:	*.cc *h
-	$(CC) -O2  main.cc -Wall  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
+a.out:	*.cc include/*.h 
+	$(CC) -O2  main.cc -Wall  $(LDFLAGS)
+
+subsystem:
+	$(MAKE) -C tools
 
 test:	
 	plot.sh 1:2 log_energy trash/log_energy 
@@ -16,14 +20,18 @@ perf:
 	plot.sh 1:2 log trash/log
 
 animate: test.avi
-	mplayer -loop 0 test.avi
-	#feh *jpg
+	#mplayer -loop 0 test.avi
+	feh *jpg
 
 test.avi: 
-	sh genFrames.sh out* > /dev/null 2>&1
+	sh bin/genFrames.sh out* > /dev/null 2>&1
 
 clean:
 	rm -f log_energy log out* *jpg test.avi 
+	$(ECHO) cleaning up in .
+	-$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
+	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
+
 
 mv:
 	mv -f trash/* trash2/ &> /dev/null
@@ -40,3 +48,7 @@ zip:
 
 sync:
 	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/ results
+
+force_look :
+	true
+

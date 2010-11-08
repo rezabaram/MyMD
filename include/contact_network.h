@@ -2,15 +2,15 @@
 #define CONTACT_NETWORK_H 
 #include<vector>
 #include<list>
-#include"../matrix.h"
+#include"matrix.h"
 
 using namespace std;
 
 template<class T>
 class TContact : public BasicContact{ 
 	public: 
-	TContact(T *_p1, T *_p2, vec _x, vec _n):BasicContact(_x, _n), p1(_p1), p2(_p2),l(_x-_p1->Xc){} ; 
-	TContact(T *_p1, T *_p2, const BasicContact &bc):BasicContact(bc), p1(_p1), p2(_p2),l(bc.x-_p1->Xc){} ; 
+	TContact(T *_p1, T *_p2, vec _x, vec _n):BasicContact(_x, _n), p1(_p1), p2(_p2),l(_x-_p1->shape->Xc){} ; 
+	TContact(T *_p1, T *_p2, const BasicContact &bc):BasicContact(bc), p1(_p1), p2(_p2),l(bc.x-_p1->shape->Xc){} ; 
 	T * p1, *p2; 
 	vec l;
 	}; 
@@ -67,8 +67,8 @@ class ContactNetwork : public vector< TNode<T> >
 
 		for(size_t i=0;  i<N; i++){
 			for(size_t j=i+1;  j<N; j++){
-				ShapeContact ovs(packing->at(i),packing->at(i));
-				CInteraction::overlaps(&ovs, packing->at(i), packing->at(j) ); 
+				ShapeContact ovs(packing->at(i)->shape,packing->at(i)->shape);
+				CInteraction::overlaps(&ovs, packing->at(i)->shape, packing->at(j)->shape ); 
 				if(!ovs.empty()) {
 					assert(ovs.size()==1);
 					this->at(i).push_back(TContact<T>(packing->at(i), packing->at(j), static_cast<BasicContact>(ovs.back()) ));
@@ -91,14 +91,14 @@ class ContactNetwork : public vector< TNode<T> >
 		cerr<< N <<endl;
 		for(size_t i=0; i<N; i++){
 			out<<"2  ";
-			out<<packing->at(i)->Xc<<"  0.008"<<endl;;
+			out<<packing->at(i)->shape->Xc<<"  0.008"<<endl;;
 		for(size_t j=0; j<this->at(i).size(); j++){
-			//if(this->[i].at(j).p1->Xc(1)>0.12)continue;
+			//if(this->[i].at(j).p1->shape->Xc(1)>0.12)continue;
 			//out<<"2  ";
 			//out<<this->[i].at(j).x<<"  0.005  0 0 50000"<<endl;;
 
 			out<<"3  ";
-			out<<this->at(i).at(j).p1->Xc<<"  0.001  ";
+			out<<this->at(i).at(j).p1->shape->Xc<<"  0.001  ";
 			out<<this->at(i).at(j).x<<"  0.001"<<endl;;
 
 			}

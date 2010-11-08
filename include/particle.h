@@ -6,12 +6,15 @@
 #include<vector>
 #include<set>
 #include<string>
+#include<algorithm>
 #include<iomanip>
 
 #include"common.h"
+#include"params.h"
 #include"dfreedom.h"
 #include"shapes.h"
 #include"verlet.h"
+#include"grid.h"
 
 
 typedef enum {frozen, onhold, rejected, ready_to_go} tState;
@@ -31,15 +34,40 @@ class CProperty
 	};
 
 
-class CParticle{
-	CParticle(const CParticle&);
+class CParticle 
+	{
+//	CParticle(const CParticle&); disabled to make shallow copies for shadow particles
 	public:
-	//template<GType shapeType>
-	//CParticle(const vec & _x0, double r):shape(new T (_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
+	GeomObjectBase *shape;
 	template<class T>
-	explicit CParticle(const T &_shape):shape(new T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this) {init();}
-	~CParticle(){
+	explicit CParticle(const T &_shape)
+	:shape(new T(_shape)),  id(-1),  state(ready_to_go),vlist(this),vlistold(this)
+	{
+
+		forces= (new vec(0.0));
+		torques=(new vec(0.0)); 
+
+		init();
+	}
+
+	virtual ~CParticle()
+	{
 		delete shape;
+		delete forces;
+		delete torques;
+	}
+	virtual bool expire(){
+		return false;
+		}
+
+	list<void *> shadows;
+	CParticle *Shadow(void *plane);
+
+	virtual void reset_forces(const vec &v=vec(0.0)){
+		*forces=v;
+		}
+	virtual void reset_torques(const vec &v=vec(0.0)){
+		*torques=v;
 		}
 
 	void init(){
@@ -72,35 +100,34 @@ class CParticle{
 
 	void addforce(const vec force){
 		static vec prev(0.0);
-		forces+=force;
+		*forces+=force;
 		avgforces=(force);
 		//avgforces=(prev+force)/2.0;
 		prev=force;
 		};
 
 	void addtorque(const vec torque){
-		torques+=torque;
+		*torques+=torque;
 		};
 
-	void parse(std::istream &in){
+	virtual void parse(std::istream &in){
 			shape->parse(in);
 			x(0)=shape->Xc;
 			//mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
 			}
 
-	void calPos(double dt);
-	void calVel(double dt);
+	virtual void calPos(double dt);
+	virtual void calVel(double dt);
 	void get_grid_neighbours(set<CParticle *> &neigh)const;
 
-	GeomObjectBase *shape;
 	CProperty material;
 	CDFreedom<3> x, x0, x_p;//TranslationalDFreedom;
 	CDFreedom<3> w, w0, w_p;//Rotational;
 	long id;
 	vec test;
 	//Quaternion q;//orientation
-	vec forces, avgforces;
-	vec torques, avgtorque;
+	vec *forces, avgforces;
+	vec *torques, avgtorque;
 	tState state;
 	CVerlet<CParticle> vlist;
 	CVerlet<CParticle> vlistold;
@@ -109,8 +136,8 @@ class CParticle{
 	//to hold neighbours on the grid
 	//set is chosen to avoid repeatition
 	set<CParticle *> neighbours;
-	protected:
 	double mass, Ixx, Iyy, Izz;
+	protected:
  	private:
 	CDFreedom<5> RotationalDFreedom;
 	};
@@ -165,12 +192,12 @@ CATCH
 void CParticle::calVel(double dt){
 	static const double c=1./6.0;
 	x0(2)=x(2);
-	x(2)=forces/mass;
+	x(2)=*forces/mass;
 	x(1)+= x(2)*(dt*2*c);
 	
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
-	torquep=shape->q.toBody(torques);
+	torquep=shape->q.toBody(*torques);
 
 	wp=shape->q.toBody(w(1));
 	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
@@ -182,5 +209,65 @@ void CParticle::calVel(double dt){
 	w(1)+=w(2)*(dt*2*c);
 	}
 
+class ShadowParticle : public CParticle
+	{
+	public:
+	explicit ShadowParticle(CParticle *_p, CPlane *_plane) 
+	:CParticle(*_p)/*shallow copy*/, orig_p(_p), plane(_plane)
+		{
+		assert(orig_p);
+		shape=orig_p->shape->clone();
+		shadow=true;
+		shift=plane->vec_to_shadow;
+		assert(shift.abs()>1e-10);
+		shape->moveto(orig_p->shape->Xc+shift);
+		forces=orig_p->forces;
+		torques=orig_p->torques;
+		}
+
+	virtual ~ShadowParticle(){
+		delete shape;
+		}
+	virtual bool expire(){
+		return !(orig_p->shape->doesHit(*plane));
+		}
+
+	virtual void reset_forces(const vec &v=vec(0.0)){
+		//do nothing
+		}
+	virtual void reset_torques(const vec &v=vec(0.0)){
+		//do nothing
+		}
+	virtual void parse(std::istream &in){
+		WARNING("A shadow particle may not be parsed in directly");
+			}
+
+	virtual void calPos(double dt){
+		x=orig_p->x;
+		x(0)=orig_p->x(0)+shift;
+		shape->q=orig_p->shape->q;
+		shape->rotateTo(shape->q);
+		shape->moveto(orig_p->shape->Xc+shift);
+		};
+	virtual void calVel(double dt){
+		x(1)=orig_p->x(1);
+		x(2)=orig_p->x(2);
+		w=orig_p->w;
+		};
+
+	//mechanism for periodic boundary
+	bool shadow;
+	CParticle *orig_p;//original particle (if this is a shawdow)
+	CPlane  *plane;//the plane being crossed
+	vec shift;//the shift vector
+ 	private:
+	};
+
+	CParticle* CParticle::Shadow(void *plane){
+		if(std::find( shadows.begin(), shadows.end(), plane ) != shadows.end() )return NULL;//already has that shadow
+		shadows.push_back(plane);
+		return (new ShadowParticle(this, (CPlane*)plane));
+		
+		}
 
 #endif /* PARTICLE_H */

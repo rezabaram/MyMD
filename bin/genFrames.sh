@@ -3,6 +3,7 @@ files=$*
 w=500
 h=500
 
+rasterconverter=$HOME/workstation/MD/bin/coord_convert
 echo "Generating jpg frames "
 for file in $files
 do
@@ -21,4 +22,4 @@ do
 
 done
 
-./encodejpg.sh -w=$w -h=$h 
+bin/encodejpg.sh -w=$w -h=$h 

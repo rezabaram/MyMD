@@ -1,10 +1,11 @@
 #include<iostream>
-#include"packing.h"
+#include"../include/particle.h"
+#include"../include/packing.h"
 using namespace std;
 
 long RNGSeed;
 extern MTRand rgen;
-CPacking<CEllipsoid> packing;
+CPacking<CParticle> packing;
 
 void Initialize(int n_params, char **params){
 	rgen.seed(RNGSeed);
