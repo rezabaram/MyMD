@@ -127,8 +127,12 @@ class CEllipsoid: public GeomObjectBase
 		P0=(rotat_mat*trans_mat)*point;
 		}
 
-	virtual GeomObjectBase *clone(){
+	virtual GeomObjectBase *clone()const{
+		WARNING("clone called");
 		return new CEllipsoid(*this);
+		}
+	virtual void destroy(){
+		delete (this);
 		}
 
 	void mat_init()
@@ -313,11 +317,13 @@ class CEllipsoid: public GeomObjectBase
 //		out<<endl;
 		///
 		out<<setprecision(12)<< identifier<< "   ";
-		out<< Xc<< "  "<<radius+0.00001<<"  ";
+		out<< Xc<< "  "<<max(a, max(b,c))+0.01<<"  ";
 		out<< ellip_mat(0,0) << "  " <<ellip_mat(1,1)<< "  "<<ellip_mat(2,2)<< "  ";
 		out<< ellip_mat(1,0) << "  " <<ellip_mat(1,2)<< "  "<<ellip_mat(0,2)<< "  ";
-		out<< ellip_mat(0,3) << "  " << ellip_mat(1,3) <<  "  " <<ellip_mat(2,3)<< "  ";
-		out<<ellip_mat(3,3);
+		out<< 0 << "  " << 0 <<  "  " <<0<< "  ";
+		out<<-1;
+		//out<< ellip_mat(0,3) << "  " << ellip_mat(1,3) <<  "  " <<ellip_mat(2,3)<< "  ";
+		//out<<ellip_mat(3,3);
 		//cerr<< trans_mat<<endl;
 		return ;
 		}

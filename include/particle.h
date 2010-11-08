@@ -11,6 +11,7 @@
 
 #include"common.h"
 #include"params.h"
+#include"define_params.h"
 #include"dfreedom.h"
 #include"shapes.h"
 #include"verlet.h"
@@ -36,12 +37,12 @@ class CProperty
 
 class CParticle 
 	{
-//	CParticle(const CParticle&); disabled to make shallow copies for shadow particles
+	//CParticle(const CParticle&); //disable to make shallow copies for shadow particles
 	public:
 	GeomObjectBase *shape;
 	template<class T>
 	explicit CParticle(const T &_shape)
-	:shape(new T(_shape)),  id(-1),  state(ready_to_go),vlist(this),vlistold(this)
+	:shape(_shape.clone()),  id(-1),  state(ready_to_go),vlist(this),vlistold(this)
 	{
 
 		forces= (new vec(0.0));
@@ -52,10 +53,18 @@ class CParticle
 
 	virtual ~CParticle()
 	{
-		delete shape;
+		//clear();
+		}
+
+	virtual void clear(){
+	TRY
+		WARNING("IN CPARTICLE");
+		shape->destroy();;
 		delete forces;
 		delete torques;
-	}
+	CATCH
+		}
+
 	virtual bool expire(){
 		return false;
 		}
@@ -214,7 +223,8 @@ class ShadowParticle : public CParticle
 	public:
 	explicit ShadowParticle(CParticle *_p, CPlane *_plane) 
 	:CParticle(*_p)/*shallow copy*/, orig_p(_p), plane(_plane)
-		{
+	{
+	TRY
 		assert(orig_p);
 		shape=orig_p->shape->clone();
 		shadow=true;
@@ -223,14 +233,22 @@ class ShadowParticle : public CParticle
 		shape->moveto(orig_p->shape->Xc+shift);
 		forces=orig_p->forces;
 		torques=orig_p->torques;
-		}
+	CATCH
+	}
 
 	virtual ~ShadowParticle(){
+		clear();
+		}
+	virtual void clear(){
+		WARNING("IN Shadow");
 		delete shape;
 		}
-	virtual bool expire(){
+	virtual bool expire()
+	{
+	TRY
 		return !(orig_p->shape->doesHit(*plane));
-		}
+	CATCH
+	}
 
 	virtual void reset_forces(const vec &v=vec(0.0)){
 		//do nothing
@@ -242,18 +260,25 @@ class ShadowParticle : public CParticle
 		WARNING("A shadow particle may not be parsed in directly");
 			}
 
-	virtual void calPos(double dt){
+	virtual void calPos(double dt)
+	{
+	TRY
 		x=orig_p->x;
 		x(0)=orig_p->x(0)+shift;
 		shape->q=orig_p->shape->q;
 		shape->rotateTo(shape->q);
 		shape->moveto(orig_p->shape->Xc+shift);
-		};
-	virtual void calVel(double dt){
+	CATCH
+	};
+
+	virtual void calVel(double dt)
+	{
+	TRY
 		x(1)=orig_p->x(1);
 		x(2)=orig_p->x(2);
 		w=orig_p->w;
-		};
+	CATCH
+	};
 
 	//mechanism for periodic boundary
 	bool shadow;
@@ -263,11 +288,15 @@ class ShadowParticle : public CParticle
  	private:
 	};
 
-	CParticle* CParticle::Shadow(void *plane){
+	CParticle* CParticle::Shadow(void *plane)
+	{
+	TRY
 		if(std::find( shadows.begin(), shadows.end(), plane ) != shadows.end() )return NULL;//already has that shadow
+		if( !((CPlane*)plane)->has_shadow )return NULL;
 		shadows.push_back(plane);
 		return (new ShadowParticle(this, (CPlane*)plane));
 		
-		}
+	CATCH
+	}
 
 #endif /* PARTICLE_H */

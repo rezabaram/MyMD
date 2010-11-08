@@ -8,7 +8,6 @@ typedef enum{wall, periodic} BoundaryType;
 class CBox: public GeomObjectBase
 	{
 	public:
-	virtual ~CBox(){};
 	CBox(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0)):
 		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L), nFaces(5),
 		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
@@ -23,6 +22,12 @@ class CBox: public GeomObjectBase
 		face[4]=new CPlane (corner+L,-u1);
 //		face[5]=new CPlane (corner+L,-u2);
 		};
+	virtual ~CBox(){
+		for(int i=0; i<5; i++){
+			delete face[i];
+			}
+		delete [] face;
+		}
 
 	void shift(const vec &x){corner+=x;}
 	void rotate(const vec &n, double alpha){}//FIXME 
@@ -67,9 +72,13 @@ class BoxContainer : public CBox
 		if(btype=="periodic")
 			{
 			face[0]->vec_to_shadow=L(0)*u0;
+			face[0]->has_shadow=true;
 			face[3]->vec_to_shadow=-L(0)*u0;
+			face[3]->has_shadow=true;
 			face[1]->vec_to_shadow=L(1)*u1;
+			face[1]->has_shadow=true;
 			face[4]->vec_to_shadow=-L(1)*u1;
+			face[4]->has_shadow=true;
 			}
 		}	
 

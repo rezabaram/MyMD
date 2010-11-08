@@ -129,7 +129,8 @@ class CConfig {
 //---------------------------- definitions ------------------------------------------
 CParamBase::~CParamBase(){}
 CConfig::~CConfig(){
-	//cerr<<"don't forget to delete the allocated memory"<<endl;FIXME
+	map<string, CParamBase *>::iterator it;
+	for(it=params.begin(); it!=params.end(); ++it) delete (*it).second;
 	}                                 
 
 

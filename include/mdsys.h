@@ -82,6 +82,7 @@ class CSys{
 
 CSys::~CSys(){
 TRY
+	cerr<< TotalParticlesN<<"  "<<particles.size() <<endl;
 	#ifndef VERLET
 	for(size_t i=0; i<particles.size(); i++)
 	for(size_t j=0; j<particles.size(); j++){
@@ -630,9 +631,14 @@ TRY
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
-		if(p2->btype=="periodic"){
-			CParticle* newshadow= p1->Shadow( (CPlane*)(overlaps(i).p));
-			if(newshadow)add(newshadow);
+		CPlane *hittingplane=(CPlane*)(overlaps(i).p);
+		if(p2->btype=="periodic" and hittingplane->has_shadow){
+			CParticle* newshadow= p1->Shadow(hittingplane);
+			if(newshadow){
+				add(newshadow);
+				verlet_need_update=true;
+				update_verlet();
+					}
 			continue;
 			}
 
@@ -722,10 +728,11 @@ TRY
 		p->w(1)(0)=5.0*(1-2*rgen());
 		p->w(1)(1)=5.0*(1-2*rgen());
 
-		p->x(1)(0)=0.3*(1-2*rgen());
+		p->x(1)(0)=0.8*(1-2*rgen());
 		p->x(1)(1)=0.3*(1-2*rgen());
 		p->x(1)(2)=0.3*(1-2*rgen());
 		add(p);
+		throw 1;
 		
 		}
 CATCH

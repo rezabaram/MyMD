@@ -12,6 +12,7 @@ int main(int n_params, char **params){
 	
 	ifstream inputFile(params[2]);
 	ERROR(!inputFile.good(), "Unable to open input file");
+	define_parameters();
 	
 	CPacking<CParticle> packing;
 	packing.parse(inputFile);

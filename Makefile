@@ -6,7 +6,7 @@ run: a.out
 	time bin/run.sh
 
 a.out:	*.cc include/*.h 
-	$(CC) -O2  main.cc -Wall  $(LDFLAGS)
+	$(CC)  main.cc -Wall  $(LDFLAGS)
 
 subsystem:
 	$(MAKE) -C tools
@@ -28,9 +28,9 @@ test.avi:
 
 clean:
 	rm -f log_energy log out* *jpg test.avi 
-	$(ECHO) cleaning up in .
-	-$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
-	-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
+	#$(ECHO) cleaning up in .
+	#-$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
+	#-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
 
 
 mv:
