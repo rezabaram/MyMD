@@ -1,17 +1,16 @@
 #ifndef PACKING_H
 #define PACKING_H 
-#include"../exception.h"
-#include"../grid.h"
-#include"../ellips_contact.h"
-#include"../MersenneTwister.h"
-#include"../interaction.h"
+#include"exception.h"
+#include"common.h"
+#include"shapes.h"
+#include"grid.h"
+#include"ellips_contact.h"
+#include"MersenneTwister.h"
+#include"interaction.h"
 #include"contact_network.h"
 
 
 
-vec randomVec(const vec &x1, const vec &x2){
-	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(2)+(x2(2)-x1(2))*rgen());
-	}
 
 //member classes for contact network
 
@@ -84,7 +83,7 @@ TRY
 		CNode3D<T> *node=grid->which(x);
 		assert(node);
 		for(it=node->begin(); it!=node->end(); it++){
-			d=(**it)(x);
+			d=(*(**it).shape)(x);
 			if(d<0) {
 				++n;
 				break;
@@ -99,8 +98,8 @@ template < class T>
 void CPacking<T>::print(std::ostream& out, bool raster)const{
 		typename CPacking::const_iterator it;
 		for(it=this->begin(); it!=this->end(); it++){
-			if(raster) (*it)->printRaster3D(out);
-			else (*it)->print(out);
+			if(raster) (*it)->shape->printRaster3D(out);
+			else (*it)->shape->print(out);
 			out<<endl;
 			}
 		}
@@ -109,7 +108,7 @@ template < class T>
 void CPacking<T>::printEuler(std::ostream& out)const{
 		typename CPacking::const_iterator it;
 		for(it=this->begin(); it!=this->end(); it++){
-			(*it)->print_in_euler(out);
+			(*it)->shape->print_in_euler(out);
 			out<<endl;
 			}
 		}
@@ -141,10 +140,11 @@ void CPacking<T>::parse(istream &inputFile) {
 	int id;
 	ss>>id;
 	if(id==14){
-		T *shape=new T();
-		shape->parse(ss);
-		this->push_back(shape);
-		if(shape->radius>maxr)maxr=shape->radius;
+		CEllipsoid shape;
+		T *p=new T(shape);
+		p->shape->parse(ss);
+		this->push_back(p);
+		if(p->shape->radius>maxr)maxr=p->shape->radius;
 		}
 
 	//else if(id==14){

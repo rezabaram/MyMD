@@ -115,8 +115,8 @@ void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CPlane *pl
 	dx=v.abs();
 	v/=dx;
 	if(v*plane->n >0)return;
-	ovs->add(Contact(vp, v, dx) );
-	p1->fixToBody(HomVec(vp,1));
+	ovs->add(Contact(vp, v, dx, plane) );
+	//p1->fixToBody(HomVec(vp,1));
 	return;
 	}
 

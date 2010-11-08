@@ -127,6 +127,10 @@ class CEllipsoid: public GeomObjectBase
 		P0=(rotat_mat*trans_mat)*point;
 		}
 
+	virtual GeomObjectBase *clone(){
+		return new CEllipsoid(*this);
+		}
+
 	void mat_init()
 		{
 		double temp=0;

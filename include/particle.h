@@ -9,9 +9,11 @@
 #include<iomanip>
 
 #include"common.h"
+#include"params.h"
 #include"dfreedom.h"
 #include"shapes.h"
 #include"verlet.h"
+#include"grid.h"
 
 
 typedef enum {frozen, onhold, rejected, ready_to_go} tState;
@@ -31,29 +33,48 @@ class CProperty
 	};
 
 
-class CParticle :public CEllipsoid 
+class CParticle 
 	{
-	CParticle(const CParticle&);
+//	CParticle(const CParticle&); disabled to make shallow copies for shadow particles
 	public:
-	//template<GType shapeType>
-	//CParticle(const vec & _x0, double r):shape(new T (_x0, r)), q(1.0, 0.0, 0.0, 0.0), id(-1), forces(vec(0.0)), frozen(false){init();}
+	GeomObjectBase *shape;
 	template<class T>
-	explicit CParticle(const T &_shape): CEllipsoid(T(_shape)),  id(-1),  forces(vec(0.0)), state(ready_to_go),vlist(this),vlistold(this) {init();}
-	~CParticle(){
+	explicit CParticle(const T &_shape)
+	:shape(new T(_shape)),  id(-1),  state(ready_to_go),vlist(this),vlistold(this)
+	{
+
+		forces= (new vec(0.0));
+		torques=(new vec(0.0)); 
+
+		init();
+	}
+
+	virtual ~CParticle()
+	{
+		delete shape;
+		delete forces;
+		delete torques;
+	}
+
+	virtual void reset_forces(const vec &v=vec(0.0)){
+		*forces=v;
+		}
+	virtual void reset_torques(const vec &v=vec(0.0)){
+		*torques=v;
 		}
 
 	void init(){
-		x(0)=Xc;
+		x(0)=shape->Xc;
 		w(0)=0.0;
 		for(int i=1; i<6; ++i){
 			x(i)=0.0;
 			w(i)=0.0;
 			}
 		
-		mass=material.density*this->vol();
-		Ixx=mass*this->I(vec(1,0,0));
-		Iyy=mass*this->I(vec(0,1,0));
-		Izz=mass*this->I(vec(0,0,1));
+		mass=material.density*shape->vol();
+		Ixx=mass*shape->I(vec(1,0,0));
+		Iyy=mass*shape->I(vec(0,1,0));
+		Izz=mass*shape->I(vec(0,0,1));
 		};
 
 	double kEnergy(){
@@ -64,7 +85,7 @@ class CParticle :public CEllipsoid
 		return -mass*(g*x(0));
 		}
 	double rEnergy(){
-		vec wp=this->q.toBody(w(1));
+		vec wp=shape->q.toBody(w(1));
 		return 0.5*(Ixx*wp(0)*wp(0)+Iyy*wp(1)*wp(1)+Izz*wp(2)*wp(2));
 		}
 
@@ -72,24 +93,24 @@ class CParticle :public CEllipsoid
 
 	void addforce(const vec force){
 		static vec prev(0.0);
-		forces+=force;
+		*forces+=force;
 		avgforces=(force);
 		//avgforces=(prev+force)/2.0;
 		prev=force;
 		};
 
 	void addtorque(const vec torque){
-		torques+=torque;
+		*torques+=torque;
 		};
 
-	void parse(std::istream &in){
-			this->parse(in);
-			x(0)=this->Xc;
+	virtual void parse(std::istream &in){
+			shape->parse(in);
+			x(0)=shape->Xc;
 			//mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
 			}
 
-	void calPos(double dt);
-	void calVel(double dt);
+	virtual void calPos(double dt);
+	virtual void calVel(double dt);
 	void get_grid_neighbours(set<CParticle *> &neigh)const;
 
 	CProperty material;
@@ -98,8 +119,8 @@ class CParticle :public CEllipsoid
 	long id;
 	vec test;
 	//Quaternion q;//orientation
-	vec forces, avgforces;
-	vec torques, avgtorque;
+	vec *forces, avgforces;
+	vec *torques, avgtorque;
 	tState state;
 	CVerlet<CParticle> vlist;
 	CVerlet<CParticle> vlistold;
@@ -108,8 +129,8 @@ class CParticle :public CEllipsoid
 	//to hold neighbours on the grid
 	//set is chosen to avoid repeatition
 	set<CParticle *> neighbours;
-	protected:
 	double mass, Ixx, Iyy, Izz;
+	protected:
  	private:
 	CDFreedom<5> RotationalDFreedom;
 	};
@@ -125,7 +146,7 @@ void CParticle::get_grid_neighbours(set<CParticle *> &neigh)const{
 	}
 
 ostream &operator <<(ostream &out, const CParticle &p){
-	p.print(out);
+	p.shape->print(out);
 	//out<<"  "<<p.x(1);
 	return out;
 	}
@@ -145,41 +166,92 @@ TRY
 	static Quaternion dq(0,0,0,0);
 
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
-	wp=this->q.toBody(w(1));//FIXME make sure which should be used
+	wp=shape->q.toBody(w(1));//FIXME make sure which should be used
 	//wp=w(1);			or this
-	dq.u =    -this->q.v(0)*wp(0) - this->q.v(1)*wp(1) - this->q.v(2)*wp(2);
-	dq.v(0) =  this->q.u  * wp(0) - this->q.v(2)*wp(1) + this->q.v(1)*wp(2);
-	dq.v(1) =  this->q.v(2)*wp(0) + this->q.u *  wp(1) - this->q.v(0)*wp(2);
-	dq.v(2) = -this->q.v(1)*wp(0) + this->q.v(0)*wp(1) + this->q.u *  wp(2);
+	dq.u =    -shape->q.v(0)*wp(0) - shape->q.v(1)*wp(1) - shape->q.v(2)*wp(2);
+	dq.v(0) =  shape->q.u  * wp(0) - shape->q.v(2)*wp(1) + shape->q.v(1)*wp(2);
+	dq.v(1) =  shape->q.v(2)*wp(0) + shape->q.u *  wp(1) - shape->q.v(0)*wp(2);
+	dq.v(2) = -shape->q.v(1)*wp(0) + shape->q.v(0)*wp(1) + shape->q.u *  wp(2);
 
-	this->q+=dq*dt*0.5;
-	this->q.normalize();
+	shape->q+=dq*dt*0.5;
+	shape->q.normalize();
 	
 	
-	this->rotateTo(this->q);
-	this->moveto(x(0));
+	shape->rotateTo(shape->q);
+	shape->moveto(x(0));
 CATCH
 	}
 
 void CParticle::calVel(double dt){
 	static const double c=1./6.0;
 	x0(2)=x(2);
-	x(2)=forces/mass;
+	x(2)=*forces/mass;
 	x(1)+= x(2)*(dt*2*c);
 	
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
-	torquep=this->q.toBody(torques);
+	torquep=shape->q.toBody(*torques);
 
-	wp=this->q.toBody(w(1));
+	wp=shape->q.toBody(w(1));
 	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
 	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;
 	wwp(2)=(torquep(2)+wp(0)*wp(1)*(Ixx-Iyy))/Izz;
-	w(2)=this->q.toWorld(wwp);
+	w(2)=shape->q.toWorld(wwp);
 
 
 	w(1)+=w(2)*(dt*2*c);
 	}
+
+class ShadowParticle : public CParticle
+	{
+	public:
+	explicit ShadowParticle(CParticle *_p, CPlane *_plane) 
+	:CParticle(*_p), orig_p(_p), plane(_plane)
+		{
+		assert(orig_p);
+		shape=orig_p->shape->clone();
+		shadow=true;
+		shift=plane->vec_to_shadow;
+		assert(shift.abs()>1e-10);
+		shape->moveto(orig_p->shape->Xc+shift);
+		forces=orig_p->forces;
+		torques=orig_p->torques;
+		}
+
+	virtual ~ShadowParticle(){
+		delete shape;
+		}
+
+	virtual void reset_forces(const vec &v=vec(0.0)){
+		//do nothing
+		}
+	virtual void reset_torques(const vec &v=vec(0.0)){
+		//do nothing
+		}
+	virtual void parse(std::istream &in){
+		WARNING("A shadow particle may not be parsed in directly");
+			}
+
+	virtual void calPos(double dt){
+		x=orig_p->x;
+		x(0)=orig_p->x(0)+shift;
+		shape->q=orig_p->shape->q;
+		shape->rotateTo(shape->q);
+		shape->moveto(orig_p->shape->Xc+shift);
+		};
+	virtual void calVel(double dt){
+		x(1)=orig_p->x(1);
+		x(2)=orig_p->x(2);
+		w=orig_p->w;
+		};
+
+	//mechanism for periodic boundary
+	bool shadow;
+	CParticle *orig_p;//original particle (if this is a shawdow)
+	CPlane  *plane;//the plane being crossed
+	vec shift;//the shift vector
+ 	private:
+	};
 
 
 #endif /* PARTICLE_H */

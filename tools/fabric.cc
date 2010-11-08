@@ -1,12 +1,17 @@
 #include<iostream>
-#include"packing.h"
+#include"../include/packing.h"
+#include"../include/particle.h"
+#include"../include/ellips_contact.h"
+#include"../include/define_params.h"
 using namespace std;
-#include"../ellips_contact.h"
 
-CPacking<CEllipsoid> packing;
+CPacking<CParticle> packing;
 
 void Initialize(int n_params, char **params)
 {
+	define_parameters();
+	config.parse("config");
+
 	if(n_params!=2){
 		cerr<< "Usage: "+(string)params[0]+"  input-file"<<endl;
 		exit(1);

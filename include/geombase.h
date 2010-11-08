@@ -16,16 +16,18 @@ class GeomObjectBase
 		//q.rotateMe(n, alpha);
 		//Xc0=q.rotate(Xc0);
 		};
-	virtual void rotateTo(const Quaternion &q){};
-	virtual double vol()=0;//{WARNING("This function should not be called");};
-	virtual double I(vec n)=0;//{WARNING("This function should not be called");};
+	virtual void rotateTo(const Quaternion &q){}
+	virtual double vol()=0;//{WARNING("This function should not be called");}
+	virtual double I(vec n)=0;//{WARNING("This function should not be called");}
 
-	virtual void scale(double)=0;//{WARNING("This function should not be called");};
-	virtual void print(std::ostream &out)const=0;//{WARNING("This function should not be called");};
-	virtual void printRaster3D(std::ostream &out)const{WARNING("This function should not be called");};
+	virtual void scale(double)=0;//{WARNING("This function should not be called");}
+	virtual void print(std::ostream &out)const=0;//{WARNING("This function should not be called");}
+	virtual void printRaster3D(std::ostream &out)const{WARNING("This function should not be called");}
+	virtual void print_in_euler(std::ostream &out)const{WARNING("This function should not be called");}
 	virtual void parse(std::istream &in)=0;
-	virtual void fixToBody(const HomVec &point){};
-	virtual double operator()(const vec &point)const{return 1e+100;};
+	virtual void fixToBody(const HomVec &point){WARNING("This function should not be called");}
+	virtual double operator()(const vec &point)const{return 1e+100;}
+	virtual GeomObjectBase *clone()const{WARNING("This function should not be called");return NULL;}
 
 	virtual void moveto(const vec& v){//derived classes can override this. especially composite particles should!
 		Xc=v;

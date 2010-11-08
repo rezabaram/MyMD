@@ -1,7 +1,8 @@
 #include<iostream>
 using namespace std;
-#include"../exception.h"
-#include"packing.h"
+#include"../include/exception.h"
+#include"../include/particle.h"
+#include"../include/packing.h"
 
  
 int main(int n_params, char **params){
@@ -12,7 +13,7 @@ int main(int n_params, char **params){
 	ifstream inputFile(params[2]);
 	ERROR(!inputFile.good(), "Unable to open input file");
 	
-	CPacking<CEllipsoid> packing;
+	CPacking<CParticle> packing;
 	packing.parse(inputFile);
 	if(params[1][1]=='r')
 		packing.printRaster3D(cout);

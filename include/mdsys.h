@@ -3,18 +3,19 @@
 #include "common.h"
 #include"grid.h"
 #include"particle.h"
+#include"packing.h"
 #include"interaction.h"
 #include"particlecontact.h"
 
 #define VERLET
 
-typedef list <CParticle *> ParticleContainer;
+typedef CPacking<CParticle> ParticleContainer;
 
 typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), box(vec(0.0), vec(1.0)), maxr(0), maxh(0), G(vec(0.0)), 
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), maxr(0), maxh(0), G(vec(0.0)), 
 		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
 	#ifndef VERLET
@@ -33,7 +34,7 @@ class CSys{
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
-	inline bool interact(CParticle *p1, CBox *p2)const;
+	inline bool interact(CParticle *p1, BoxContainer *p2)const;
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
 	vec center_of_mass()const;
 
@@ -63,7 +64,7 @@ class CSys{
 			}
 	#endif
 
-	CBox box;
+	BoxContainer walls;
 	CPlane *sp;
 	//CRecGrid *grid;
 	double maxr, maxh;
@@ -135,6 +136,7 @@ TRY
 	G=config.get_param<vec>("Gravity");
 
 	particles_on_grid();
+	//particles.parse("input.dat");
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
 
 	#ifdef VERLET
@@ -161,7 +163,7 @@ double CSys::total_volume(){
 	ParticleContainer::iterator it;
 	double v=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		v+=(*it)->vol();
+		v+=(*it)->shape->vol();
 		}
 	return v;
 	}
@@ -173,7 +175,7 @@ double CSys::total_volume(){
 //minimum distances of the surfaces of the particles (putting them in spherical shells)
 double CSys::min_distance(CParticle *p1, CParticle *p2)const{
 TRY
-	return (p1->x(0)-p2->x(0)).abs() - p1->radius -p2->radius;
+	return (p1->x(0)-p2->x(0)).abs() - p1->shape->radius -p2->shape->radius;
 CATCH
 	}
 
@@ -242,7 +244,7 @@ TRY
 		//ERROR("The particle is intially within the box: "<<p->x(0));
 		//return false;
 		//}
-	if(maxr<p->radius)maxr=p->radius;
+	if(maxr<p->shape->radius)maxr=p->shape->radius;
 	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
 
 	particles.push_back(p);
@@ -258,16 +260,15 @@ CATCH
 void CSys::calForces(){
 TRY
 //FROMTIME
+	//FIXME make it dimensionless
+
 	ParticleContainer::iterator it1, it2, ittemp;
 	CVerlet<CParticle>::iterator neigh;
 	//reset forces
 	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-		//FIXME make it dimensionless
-		(*it1)->forces=G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping (coef of dumping is ad hoc)
-		//(*it1)->forces=-G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())-2.0*(*it1)->get_mass()*(*it1)->x(1);//gravity plus damping
-		//(*it1)->forces=-50*G.abs()*((**it1).x(0)-cm)*((*it1)->get_mass())+G*(*it1)->get_mass();
-		(*it1)->torques=0.0;
+		(*it1)->reset_forces(G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1));//gravity plus damping (coef of dumping is ad hoc)
+		(*it1)->reset_torques(vec(0.0));
 		}
 
 	//interactions
@@ -303,7 +304,7 @@ TRY
 		#endif
 
 		//the walls
-		if(interact(*it1, &box)){  }
+		if(interact(*it1, &walls)){  }
 		}
 //TOTIME
 CATCH
@@ -337,7 +338,7 @@ TRY
 	//ShapeContact overlaps;
 #endif
 	overlaps.clear();
-	CInteraction::overlaps(&overlaps, p1, p2);
+	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
 	//static double proj, ksi;
 	if(overlaps.size()==0)return false;
@@ -349,7 +350,7 @@ TRY
 		dv=v1-v2;
 
 		force=contactForce(overlaps(ii), dv, p1->material);
-		p1->fixToBody(HomVec(overlaps(ii).x,1));
+		p1->shape->fixToBody(HomVec(overlaps(ii).x,1));
 		//cerr<< (p2->x(0)-p1->x(0)).normalized() <<endl;
 
 
@@ -388,7 +389,7 @@ TRY
 			stringstream outname;
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			out.open(outname.str().c_str());
-			box.print(out);
+			walls.print(out);
 			gout=&out;
 			for(it=particles.begin(); it!=particles.end(); ++it){
 				out<<**it<<endl;
@@ -514,7 +515,7 @@ int CSys::read_packing2(string infilename, const vec &shift, double scale){
                 {
                 stringstream ss(line);
                 CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
+                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
 		//if(exist(p->id))continue;
 		p->frozen=true;//FIXME if it is not frozen it doesnt work, why?
 		p->identifier=0;
@@ -564,7 +565,7 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
                 {
                 stringstream ss(line);
                 CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->radius;
+                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
 		//if(exist(p->id))continue;
 		if(p->x(0)(2)<270 || p->x(0)(2)>1725)p->frozen=true;
 		dist(0)=p->x(0)(0); dist(1)=p->x(0)(1);
@@ -572,8 +573,8 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
 		
 		p->x(0)+=shift;
 		p->x(0)*=scale;
-		//p.radius=44;
-		p->radius*=scale*1.04;
+		//p.shape->radius=44;
+		p->shape->radius*=scale*1.04;
 		p->x0(0)=p->x(0);
                 add(p);
                 }
@@ -596,7 +597,7 @@ void CSys::interactions(){
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 	ittemp=it1;++ittemp;
 	for(it2=ittemp; it2!=particles.end(); ++it2){
-		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->radius - (*it2)->radius;
+		double d=((*it1)->x(0)-(*it2)->x(0)).abs()- (*it1)->shape->radius - (*it2)->shape->radius;
 		if(d<0)cerr<< d<<" "<< (*it1)->id<<"  "<< (*it2)->id <<endl;
 		}
 		}
@@ -604,11 +605,11 @@ void CSys::interactions(){
 		}
 
 
-inline bool CSys::interact(CParticle *p1, CBox *p2)const{
+inline bool CSys::interact(CParticle *p1, BoxContainer *p2)const{
 TRY
 	static ShapeContact overlaps;
 	overlaps.clear();
-	CInteraction::overlaps(&overlaps, p1, (GeomObjectBase*)p2);
+	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)p2);
 
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;

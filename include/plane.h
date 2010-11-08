@@ -42,6 +42,7 @@ class CPlane : public GeomObjectBase
 		return 0;}
 	
 	vec n;//normal
+	vec vec_to_shadow;
  	private:
 	};
 
