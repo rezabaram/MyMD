@@ -35,7 +35,7 @@ class CSys{
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
 	inline bool interact(CParticle *p1, BoxContainer *p2);
-	void CSys::check_boundary(){
+	void check_boundary();
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
 	vec center_of_mass()const;
 
@@ -426,6 +426,7 @@ TRY
 		}
 
 
+	check_boundary();
 	calForces();
 //	if(!allforwarded)foward(dt/2.0, 2);
 
@@ -635,18 +636,27 @@ CATCH
 
 
 void CSys::check_boundary(){
-	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)walls);
-	if(overlaps.size()==0)return false;
+TRY
+	static ShapeContact overlaps;
+
+	ParticleContainer::iterator it1, itend=particles.end();
+	for(it1=particles.begin(); it1!=itend; ++it1){
+	if((*it1)->isshadow)continue;
+	overlaps.clear();
+	CInteraction::overlaps(&overlaps, (*it1)->shape, (GeomObjectBase*)(&walls));
+	if(overlaps.size()==0)return;
 	for(size_t i=0; i<overlaps.size(); i++){
 		CPlane *hittingplane=(CPlane*)(overlaps(i).p);
-			if(p1->isshadow)continue;
-			CParticle* newshadow= p1->Shadow(hittingplane);
+			CParticle* newshadow= (*it1)->Shadow(hittingplane);
 			if(newshadow){
 				add(newshadow);
 				verlet_need_update=true;
+				
 				update_verlet();
 				}
 		}
+		}
+CATCH
 	}
 
 inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
@@ -659,7 +669,8 @@ TRY
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
 		CPlane *hittingplane=(CPlane*)(overlaps(i).p);
-		if(p1->isshadow and p2->btype=="periodic" and hittingplane->has_shadow){
+		if(p2->btype=="periodic" and hittingplane->has_shadow){
+			//p1->isshadow
 			continue;
 			}
 
@@ -750,8 +761,8 @@ TRY
 		p->w(1)(1)=5.0*(1-2*rgen());
 
 		p->x(1)(0)=0.8*(1-2*rgen());
-		p->x(1)(1)=0.3*(1-2*rgen());
-		p->x(1)(2)=0.3*(1-2*rgen());
+		p->x(1)(1)=0.8*(1-2*rgen());
+		p->x(1)(2)=0.1*(1-2*rgen());
 		add(p);
 		
 		}
