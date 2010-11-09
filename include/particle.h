@@ -37,31 +37,35 @@ class CProperty
 
 class CParticle 
 	{
-	//CParticle(const CParticle&); //disable to make shallow copies for shadow particles
+	///CParticle(const CParticle&); //disable to make shallow copies for shadow particles
+	CParticle(); 
 	public:
 	GeomObjectBase *shape;
 	template<class T>
 	explicit CParticle(const T &_shape)
 	:shape(_shape.clone()),  id(-1),  state(ready_to_go),vlist(this),vlistold(this)
 	{
-
-		forces= (new vec(0.0));
-		torques=(new vec(0.0)); 
-
+	TRY
 		init();
+	CATCH
 	}
 
 	virtual ~CParticle()
 	{
-		//clear();
+	TRY
+		shape->destroy();
+		shape=NULL;
+		clear();
+	CATCH
 		}
 
 	virtual void clear(){
 	TRY
 		WARNING("IN CPARTICLE");
-		shape->destroy();;
-		delete forces;
-		delete torques;
+		if(!isshadow){
+			delete forces;
+			delete torques;
+			}
 	CATCH
 		}
 
@@ -79,7 +83,12 @@ class CParticle
 		*torques=v;
 		}
 
-	void init(){
+	virtual void init(){
+		if(!isshadow){
+			forces= (new vec(0.0));
+			torques=(new vec(0.0)); 
+			}
+
 		x(0)=shape->Xc;
 		w(0)=0.0;
 		for(int i=1; i<6; ++i){
@@ -146,6 +155,7 @@ class CParticle
 	//set is chosen to avoid repeatition
 	set<CParticle *> neighbours;
 	double mass, Ixx, Iyy, Izz;
+	bool isshadow;
 	protected:
  	private:
 	CDFreedom<5> RotationalDFreedom;
@@ -222,26 +232,33 @@ class ShadowParticle : public CParticle
 	{
 	public:
 	explicit ShadowParticle(CParticle *_p, CPlane *_plane) 
-	:CParticle(*_p)/*shallow copy*/, orig_p(_p), plane(_plane)
+	:CParticle(*_p), orig_p(_p), plane(_plane)
 	{
+		WARNING("IN shadow");
+		init();
+		}
+	virtual void init(){
 	TRY
 		assert(orig_p);
 		shape=orig_p->shape->clone();
-		shadow=true;
+		isshadow=true;
 		shift=plane->vec_to_shadow;
 		assert(shift.abs()>1e-10);
 		shape->moveto(orig_p->shape->Xc+shift);
 		forces=orig_p->forces;
 		torques=orig_p->torques;
+		vlist.clear();
+		vlistold.clear();
+		vlist.self_p=this;
+		vlistold.self_p=this;
 	CATCH
 	}
 
 	virtual ~ShadowParticle(){
+		WARNING("out shadow");
 		clear();
 		}
 	virtual void clear(){
-		WARNING("IN Shadow");
-		delete shape;
 		}
 	virtual bool expire()
 	{
@@ -281,7 +298,6 @@ class ShadowParticle : public CParticle
 	};
 
 	//mechanism for periodic boundary
-	bool shadow;
 	CParticle *orig_p;//original particle (if this is a shawdow)
 	CPlane  *plane;//the plane being crossed
 	vec shift;//the shift vector

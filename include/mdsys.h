@@ -35,6 +35,7 @@ class CSys{
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
 	inline bool interact(CParticle *p1, BoxContainer *p2);
+	void CSys::check_boundary(){
 	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
 	vec center_of_mass()const;
 
@@ -82,7 +83,7 @@ class CSys{
 
 CSys::~CSys(){
 TRY
-	cerr<< TotalParticlesN<<"  "<<particles.size() <<endl;
+	
 	#ifndef VERLET
 	for(size_t i=0; i<particles.size(); i++)
 	for(size_t j=0; j<particles.size(); j++){
@@ -90,10 +91,6 @@ TRY
 		}
 	delete [] pairs;
 	#endif
-	ParticleContainer::iterator it;
-	for(it=particles.begin(); it!=particles.end(); ++it){
-		delete (*it);
-		}
 CATCH
 	}
 
@@ -163,12 +160,14 @@ CATCH
 	}
 
 double CSys::total_volume(){
+TRY
 	ParticleContainer::iterator it;
 	double v=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		v+=(*it)->shape->vol();
 		}
 	return v;
+CATCH
 	}
 
 //void CSys::setup_grid(double _d){
@@ -183,6 +182,7 @@ CATCH
 	}
 
 void CSys::print_verlet(ostream &out){
+TRY
 	ParticleContainer::iterator it;
 	CVerlet<CParticle >::iterator neigh;
 	for(it=particles.begin(); it!=particles.end(); ++it){
@@ -192,9 +192,11 @@ void CSys::print_verlet(ostream &out){
 			}
 			out<< endl;
 		}
+CATCH
 	}
 //construct the verlet list of all particles
 void CSys::update_verlet(){
+TRY
 	verlet_distance*=0.99;
 	if(verlet_distance<min_verlet_distance)verlet_distance=min_verlet_distance;
 
@@ -216,6 +218,7 @@ void CSys::update_verlet(){
 
 	verlet_need_update=false;
 	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
+CATCH
 	}
 
 //construct the verlet list of one particle 
@@ -223,7 +226,8 @@ void CSys::setup_verlet(CParticle *p){
 TRY
 	ParticleContainer::iterator it;
 	CVerlet<CParticle>::iterator v_it_old;
-	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
+	for(it=particles.begin(); (it)!=particles.end(); it++){ //checking particles before in the list
+		if((*it)==p)continue;
 	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
 		if(min_distance(p, *it) < verlet_distance){
 			v_it_old=p->vlistold.find(*it);
@@ -233,7 +237,6 @@ TRY
 				p->vlist.add((*it));
 				}
 		}
-		assert((*it)->id == p->id);
 	p->vlist.x=p->x(0);//save the position at which the list has been updated
 	p->vlist.set=true;
 CATCH
@@ -289,6 +292,8 @@ TRY
 	#endif
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 
+		if(interact(*it1, &walls)){  }
+
 		#ifdef VERLET
 		ERROR(!(*it1)->vlist.set,"the verlet list was not constructed properly");
 
@@ -316,7 +321,6 @@ TRY
 		#endif
 
 		//the walls
-		if(interact(*it1, &walls)){  }
 		}
 //TOTIME
 CATCH
@@ -450,6 +454,7 @@ CATCH
 	}
 
 void CSys::solve(){
+TRY
 	try{
 	bool stop=false;
 	while(true){
@@ -467,15 +472,18 @@ void CSys::solve(){
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
 		}
+CATCH
 	}
 
 void CSys::write_packing(string outfilename){
+TRY
 	ParticleContainer::iterator it;
 	ofstream out(outfilename.c_str());
 	assert(!out);
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		out<<**it<<endl;
 		}
+CATCH
 	}
 /*
 int CSys::read_packing3(string infilename, const vec &shift, double scale){
@@ -602,14 +610,17 @@ int CSys::read_packing(string infilename, const vec &shift, double scale){
 
 */
 bool CSys::exist(int i){
+TRY
 	ParticleContainer::iterator it1;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		if((*it1)->id==i)return true;
 		}
 		return false;
+CATCH
 		}
 
 void CSys::interactions(){
+TRY
 	ParticleContainer::iterator it1, it2, ittemp;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 	ittemp=it1;++ittemp;
@@ -619,8 +630,24 @@ void CSys::interactions(){
 		}
 		}
 
+CATCH
 		}
 
+
+void CSys::check_boundary(){
+	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)walls);
+	if(overlaps.size()==0)return false;
+	for(size_t i=0; i<overlaps.size(); i++){
+		CPlane *hittingplane=(CPlane*)(overlaps(i).p);
+			if(p1->isshadow)continue;
+			CParticle* newshadow= p1->Shadow(hittingplane);
+			if(newshadow){
+				add(newshadow);
+				verlet_need_update=true;
+				update_verlet();
+				}
+		}
+	}
 
 inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
 TRY
@@ -632,13 +659,7 @@ TRY
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
 		CPlane *hittingplane=(CPlane*)(overlaps(i).p);
-		if(p2->btype=="periodic" and hittingplane->has_shadow){
-			CParticle* newshadow= p1->Shadow(hittingplane);
-			if(newshadow){
-				add(newshadow);
-				verlet_need_update=true;
-				update_verlet();
-					}
+		if(p1->isshadow and p2->btype=="periodic" and hittingplane->has_shadow){
 			continue;
 			}
 
@@ -732,7 +753,6 @@ TRY
 		p->x(1)(1)=0.3*(1-2*rgen());
 		p->x(1)(2)=0.3*(1-2*rgen());
 		add(p);
-		throw 1;
 		
 		}
 CATCH

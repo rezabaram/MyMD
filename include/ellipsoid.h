@@ -128,11 +128,14 @@ class CEllipsoid: public GeomObjectBase
 		}
 
 	virtual GeomObjectBase *clone()const{
-		WARNING("clone called");
+	TRY
 		return new CEllipsoid(*this);
+	CATCH
 		}
 	virtual void destroy(){
+	TRY
 		delete (this);
+	CATCH
 		}
 
 	void mat_init()

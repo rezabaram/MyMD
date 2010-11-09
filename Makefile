@@ -6,7 +6,7 @@ run: a.out
 	time bin/run.sh
 
 a.out:	*.cc include/*.h 
-	$(CC)  main.cc -Wall  $(LDFLAGS)
+	$(CC) -g  main.cc -Wall  $(LDFLAGS)
 
 subsystem:
 	$(MAKE) -C tools

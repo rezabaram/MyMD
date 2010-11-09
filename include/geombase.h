@@ -29,7 +29,10 @@ class GeomObjectBase
 	virtual void fixToBody(const HomVec &point){WARNING("This function should not be called");}
 	virtual double operator()(const vec &point)const{return 1e+100;}
 	virtual GeomObjectBase *clone()const{WARNING("This function should not be called");return NULL;}
-	virtual void destroy(){WARNING("This function should not be called");}
+	virtual void destroy(){WARNING("This function should not be called");
+			ERROR(1, "This function should not be called");
+			}
+	
 	virtual bool doesHit(const CPlane &plane)const {WARNING("This function should not be called");return false;}
 
 	virtual void moveto(const vec& v){//derived classes can override this. especially composite particles should!
