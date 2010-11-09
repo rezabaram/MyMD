@@ -79,6 +79,8 @@ class BoxContainer : public CBox
 			face[1]->has_shadow=true;
 			face[4]->vec_to_shadow=-L(1)*u1;
 			face[4]->has_shadow=true;
+
+			face[2]->has_shadow=false;
 			}
 		}	
 

@@ -124,18 +124,19 @@ print "        }\n";
    chomp;
 
     /^\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)\s*(\S*)/;
-    if($1==14){
+    if($2==14){
     $nparticle++;
-	$red=$rcolor[$nparticle]; $green=$gcolor[$nparticle]; $blue=$bcolor[$nparticle];
-	$x=$xoffset+$scale*$2;
-	$y=$yoffset+$scale*$3;
-	$z=$yoffset+$scale*$4;
-	$a=$scale*$5;
-	$b=$scale*$6;
-	$c=$scale*$7;
-	$phi=$8*180.0/pi;
-	$theta=$9*180.0/pi;
-	$psi=$10*180.0/pi;
+	
+	$red=$rcolor[$1+1]; $green=$gcolor[$1+1]; $blue=$bcolor[$1+1];
+	$x=$xoffset+$scale*$3;
+	$y=$yoffset+$scale*$4;
+	$z=$yoffset+$scale*$5;
+	$a=$scale*$6;
+	$b=$scale*$7;
+	$c=$scale*$8;
+	$phi=$9*180.0/pi;
+	$theta=$10*180.0/pi;
+	$psi=$11*180.0/pi;
 	if($cut==1)
 	{
 	printf("
@@ -157,13 +158,13 @@ print "        }\n";
 	}
 	}
    else{
-	$x=$xoffset+$scale*$1;
-	$y=$yoffset+$scale*$2;
-	$z=$yoffset+$scale*$3;
-	$r=$scale*$4;
-	$blue=$7;
-	$green=$6;
-	$red=$5;
+	$x=$xoffset+$scale*$2;
+	$y=$yoffset+$scale*$3;
+	$z=$yoffset+$scale*$4;
+	$r=$scale*$5;
+	$blue=$6;
+	$green=$7;
+	$red=$8;
 	printf("
 	sphere { <%f, %f, %f>, %f
 

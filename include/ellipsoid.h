@@ -129,7 +129,9 @@ class CEllipsoid: public GeomObjectBase
 
 	virtual GeomObjectBase *clone()const{
 	TRY
-		return new CEllipsoid(*this);
+		GeomObjectBase *p =new CEllipsoid(*((CEllipsoid*)this));
+		ERROR(p->type!=tellipsoid, "Incomplete cloning.");
+		return p;
 	CATCH
 		}
 	virtual void destroy(){

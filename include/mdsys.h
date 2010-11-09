@@ -244,6 +244,7 @@ CATCH
 
 void CSys::remove(ParticleContainer::iterator &it){
 TRY
+	ECHO("Shadow deleted");
 	delete (*it);
 	*it=particles.back();
 	particles.pop_back();
@@ -344,6 +345,7 @@ CATCH
 
 inline bool CSys::interact(CParticle *p1,CParticle *p2)const{
 TRY
+	if(p1->isshadow and p2->isshadow) return false;
 	//CParticle *p1=particles.at(i);
 	//CParticle *p2=particles.at(j);
 #ifdef VERLET
@@ -405,10 +407,10 @@ TRY
 			stringstream outname;
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			out.open(outname.str().c_str());
-			walls.print(out);
+			//walls.print(out);
 			gout=&out;
 			for(it=particles.begin(); it!=particles.end(); ++it){
-				out<<**it<<endl;
+				(*it)->print(out);
 				}
 			count=0;
 			outN++;
@@ -433,6 +435,11 @@ TRY
 	Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(walls.btype=="periodic" and (*it)->expire()){
+			//(*it)->orig_p->shadows.erase(find((*it)->orig_p->shadows.begin(), (*it)->orig_p->shadows.end(), (*it)));
+			//delete (*it);
+			//(*it)=NULL;
+			//particles.erase(it);
+			continue;
 			remove(it);
 			--it;//FIXME to newly replaced particle. this is because of how remove() works and that is because i am using stl vector
 			continue;
@@ -482,7 +489,7 @@ TRY
 	ofstream out(outfilename.c_str());
 	assert(!out);
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		out<<**it<<endl;
+		(*it)->print(out);
 		}
 CATCH
 	}
@@ -647,13 +654,12 @@ TRY
 	if(overlaps.size()==0)return;
 	for(size_t i=0; i<overlaps.size(); i++){
 		CPlane *hittingplane=(CPlane*)(overlaps(i).p);
-			CParticle* newshadow= (*it1)->Shadow(hittingplane);
-			if(newshadow){
-				add(newshadow);
-				verlet_need_update=true;
-				
-				update_verlet();
-				}
+		CParticle* newshadow= (*it1)->Shadow(hittingplane);
+		if(newshadow){
+			add(newshadow);
+			verlet_need_update=true;
+			update_verlet();
+			}
 		}
 		}
 CATCH

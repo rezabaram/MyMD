@@ -108,6 +108,7 @@ template < class T>
 void CPacking<T>::printEuler(std::ostream& out)const{
 		typename CPacking::const_iterator it;
 		for(it=this->begin(); it!=this->end(); it++){
+			out<<(*it)->orig_id()<<"  ";
 			(*it)->shape->print_in_euler(out);
 			out<<endl;
 			}
@@ -137,11 +138,13 @@ void CPacking<T>::parse(istream &inputFile) {
 	//Insert the line string into a stream
 	stringstream ss(line);
 
-	int id;
+	int id, identifier;
 	ss>>id;
-	if(id==14){
+	ss>>identifier;
+	if(identifier==14){
 		CEllipsoid shape;
 		T *p=new T(shape);
+		p->id=id;
 		p->shape->parse(ss);
 		this->push_back(p);
 		if(p->shape->radius>maxr)maxr=p->shape->radius;

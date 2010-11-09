@@ -3,6 +3,7 @@
 #include "shapes.h"
 #include"multicontact.h"
 #include"ellips_contact.h"
+#include<stdlib.h>
 
 class CInteraction{
 	public:
@@ -41,6 +42,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CSphere
 
 inline
 void CInteraction::overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBase *p2){
+		assert(p1 and p2);
 		if(p1->type==tsphere && p2->type==tsphere)
 			overlaps(ovs, static_cast<const CSphere *>(p1), static_cast<const CSphere *>(p2));
 		else if(p1->type==tsphere && p2->type==tbox)

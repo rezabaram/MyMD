@@ -25,6 +25,7 @@ class CException
 //some macros defined for convenience 
 #define ERROR(b, m)  if(b){throw CException(m, __FILE__, __PRETTY_FUNCTION__, __LINE__);}
 #define WARNING(x)  std::cerr<<"Warning: "<<__FILE__<<":"<<__LINE__<<": "<<x<<std::endl;
+#define ECHO(x)  std::cerr<<"ECHO: "<<__FILE__<<":"<<__LINE__<<": "<<x<<std::endl;
 #define RETHROW(e)  throw CException((std::string)" \n\tfrom "+e.where(), __FILE__, __PRETTY_FUNCTION__, __LINE__);
 #define TRY try{
 #define CATCH  }\
