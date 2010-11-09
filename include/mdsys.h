@@ -7,7 +7,6 @@
 #include"interaction.h"
 #include"particlecontact.h"
 
-#define VERLET
 
 typedef CPacking<CParticle> ParticleContainer;
 
@@ -18,10 +17,6 @@ class CSys{
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), maxr(0), maxh(0), G(vec(0.0)), 
 		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"), TotalParticlesN(0){
 	TRY
-	#ifndef VERLET
-		pairs=new ParticleContactHolder<CParticle> *[maxNParticle*maxNParticle];
-		for(unsigned int i=0; i<maxNParticle*maxNParticle; i++) pairs[i]=NULL;
-	#endif
 	CATCH
 		};
 	~CSys();
@@ -58,12 +53,6 @@ class CSys{
 	//contains the pointers to the particles
 	ParticleContainer particles;
 	
-	#ifndef VERLET
-	ParticleContactHolder<CParticle>  **pairs;
-	ParticleContactHolder<CParticle>  *  &pair(size_t i, size_t j)const{
-		return pairs[j+i*particles.size()];
-			}
-	#endif
 
 	BoxContainer walls;
 	CPlane *sp;
@@ -82,13 +71,6 @@ class CSys{
 
 CSys::~CSys(){
 TRY
-	#ifndef VERLET
-	for(size_t i=0; i<particles.size(); i++)
-	for(size_t j=0; j<particles.size(); j++){
-		delete pair(i,j);
-		}
-	delete [] pairs;
-	#endif
 	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		delete (*it);
@@ -137,24 +119,15 @@ TRY
 
 	G=config.get_param<vec>("Gravity");
 
-	particles_on_grid();
-	//particles.parse("input.dat");
-	cerr<< "Number of Particles: "<<particles.size() <<endl;
-
-	#ifdef VERLET
 	verlet_factor=config.get_param<double>("verletfactor");
 	verlet_distance=verlet_factor*maxr;
 	min_verlet_distance=verlet_distance/5;
 	max_verlet_distance=verlet_distance*5;
-	update_verlet();
-	#else
-	//create for each pair an object for the contact
-	for(unsigned int i=0; i<particles.size(); i++){
-		for(unsigned int j=0; j<particles.size(); j++){
-			pair(i,j)=new ParticleContactHolder<CParticle> (particles.at(i), particles.at(j));
-			}
-		}
-	#endif
+
+	particles_on_grid();
+	//particles.parse("input.dat");
+	cerr<< "Number of Particles: "<<particles.size() <<endl;
+
 
 	tMax=config.get_param<double>("maxTime");
 	dt=config.get_param<double>("timeStep");
@@ -170,9 +143,6 @@ double CSys::total_volume(){
 	return v;
 	}
 
-//void CSys::setup_grid(double _d){
-		//grid=new CRecGrid(box.corner, box.L, _d*maxr);
-		//}
 
 //minimum distances of the surfaces of the particles (putting them in spherical shells)
 double CSys::min_distance(CParticle *p1, CParticle *p2)const{
@@ -259,6 +229,7 @@ TRY
 
 	particles.push_back(p);
 	particles.back()->id=TotalParticlesN;
+	setup_verlet( particles.back() );
 	++TotalParticlesN;
 
 	//setup_verlet(particles.back());
@@ -283,12 +254,9 @@ TRY
 		}
 
 	//interactions
-	#ifdef VERLET
 	update_verlet();
-	#endif
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 
-		#ifdef VERLET
 		ERROR(!(*it1)->vlist.set,"the verlet list was not constructed properly");
 
 		assert(*it1==(*it1)->vlist.self_p);
@@ -307,12 +275,6 @@ TRY
 					}
 				}
 			}
-		#else
-		it2=it1; ++it2;
-		for(it2=particles.begin(); it2!=it1; ++it2){//without verlet
-			if(interact(*it1,*it2)){ }
-			}
-		#endif
 
 		//the walls
 		if(interact(*it1, &walls)){  }
@@ -341,13 +303,9 @@ inline bool CSys::interact(CParticle *p1,CParticle *p2)const{
 TRY
 	//CParticle *p1=particles.at(i);
 	//CParticle *p2=particles.at(j);
-#ifdef VERLET
 	ShapeContact &overlaps=p1->vlist[p2];
 	//ShapeContact overlaps;
-#else
-	ShapeContact &overlaps=*pair(p1->id,p2->id);
-	//ShapeContact overlaps;
-#endif
+
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
 	static vec r1, r2, v1, v2, dv, force, torque(0.0);
@@ -476,130 +434,6 @@ void CSys::write_packing(string outfilename){
 		out<<**it<<endl;
 		}
 	}
-/*
-int CSys::read_packing3(string infilename, const vec &shift, double scale){
-        cerr<< "Reading contacts ..." <<endl;
-        ifstream inputFile(infilename.c_str());
-        if(!inputFile.good())
-        {
-        std::cerr << "Unable to open input file: " << infilename << std::endl;
-        return 0;
-        }
-
-        string line;
-        string vname;
-
-	double a1[]={1020.0, 1020.0};
-	vec center(a1);
-	vec dist(0.0);
-        //Parse the line
-        while(getline(inputFile,line))
-                {
-                stringstream ss(line);
-                CParticle *p=new CParticle(vec(0.0), 0);
-		p->parse(ss);
-		p->frozen=false;//FIXME if it is not frozen it doesnt work, why?
-		
-		p->x(0)+=shift;
-		p->x(0)*=scale;
-		double ran=rgen();
-                add(p);
-                }
-
-        cerr<< "done" <<endl;
-        inputFile.close();
-	return particles.size();
-        }
-
-int CSys::read_packing2(string infilename, const vec &shift, double scale){
-        cerr<< "Reading contacts ..." <<endl;
-        ifstream inputFile(infilename.c_str());
-        if(!inputFile.good())
-        {
-        std::cerr << "Unable to open input file: " << infilename << std::endl;
-        return 0;
-        }
-
-        string line;
-        string vname;
-
-	double a1[]={1020.0, 1020.0};
-	vec center(a1);
-	vec dist(0.0);
-        //Parse the line
-        while(getline(inputFile,line))
-                {
-                stringstream ss(line);
-                CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
-		//if(exist(p->id))continue;
-		p->frozen=true;//FIXME if it is not frozen it doesnt work, why?
-		p->identifier=0;
-		if(particles.size()>1000)break;
-		
-		p->x(0)+=shift;
-		p->x(0)*=scale;
-		double ran=rgen();
-		if(ran<0.05)p->identifier=1;
-		else if(ran<0.2)p->identifier=2;
-		else p->identifier=3;
-		p->material.color=stringify(rgen())+stringify(rgen())+stringify(rgen());
-		p->Xc=p->x(0);
-		p->x(1)=0.0;
-		p->x(2)=0.0;
-		p->x0(1)=0.0;
-		p->x0(2)=0.0;
-                add(p);
-                }
-
-        cerr<< "done" <<endl;
-        inputFile.close();
-	return particles.size();
-        }
-
-//int CSys::read_packing(string infilename, const vec &shift, double scale){
-int CSys::read_packing(string infilename, const vec &shift, double scale){
-        cerr<< "Reading contacts ..." <<endl;
-        ifstream inputFile(infilename.c_str());
-        if(!inputFile.good())
-        {
-        std::cerr << "Unable to open input file: " << infilename << std::endl;
-        return 0;
-        }
-
-        string line;
-        string vname;
-
-// 413 1026 1638  
-//406 1021 1635 
-// 191 1845
-	double a1[]={1020.0, 1020.0};
-	vec center(a1);
-	vec dist(0.0);
-        //Parse the line
-        while(getline(inputFile,line))
-                {
-                stringstream ss(line);
-                CParticle *p=new CParticle(vec(0.0), 0);
-                ss>>p->id>>p->x(0)(0)>>p->x(0)(1)>>p->x(0)(2)>>p->shape->radius;
-		//if(exist(p->id))continue;
-		if(p->x(0)(2)<270 || p->x(0)(2)>1725)p->frozen=true;
-		dist(0)=p->x(0)(0); dist(1)=p->x(0)(1);
-		if((dist-center).abs()> 525)p->frozen=true;
-		
-		p->x(0)+=shift;
-		p->x(0)*=scale;
-		//p.shape->radius=44;
-		p->shape->radius*=scale*1.04;
-		p->x0(0)=p->x(0);
-                add(p);
-                }
-        cerr<< "done" <<endl;
-        inputFile.close();
-	return particles.size();
-        }
-
-*/
 bool CSys::exist(int i){
 	ParticleContainer::iterator it1;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
@@ -619,7 +453,6 @@ void CSys::interactions(){
 		}
 
 		}
-
 
 inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
 TRY
@@ -645,13 +478,6 @@ TRY
 		torque=cross(r1, force);
 		p1->addtorque(torque);
 
-		//tangent=(1.0-fabs(proj)/dv.abs()/overlaps.at(i)->dx.abs())*dv;
-
-		//cerr<< tangent <<endl;
-		//force=200*tangent;
-		//p1->addforce(force);
-		//torque=cross(r1, force);
-		//p1->addtorque(torque);
 		}
 
 	return true;
@@ -730,4 +556,8 @@ TRY
 		}
 CATCH
 }
+
+//void CSys::setup_grid(double _d){
+		//grid=new CRecGrid(box.corner, box.L, _d*maxr);
+		//}
 #endif /* MDSYS_H */

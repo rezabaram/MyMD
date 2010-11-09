@@ -4,7 +4,7 @@ Gravity  	0   0  -10
 outDt  		0.01
 timeStep 	0.0001
 maxTime		4
-particleSize 	0.2
+particleSize 	0.1
 nParticle 	10
 stiffness  	5e+03
 damping		3e+1
