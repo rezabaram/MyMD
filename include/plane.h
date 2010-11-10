@@ -5,7 +5,7 @@
 class CPlane : public GeomObjectBase
 	{
 	public:
-		CPlane(const vec &x0, const vec &n0):GeomObjectBase(x0, tplane), n(n0){identifier=6; n.normalize();};
+		CPlane(const vec &x0, const vec &n0):GeomObjectBase(x0, tplane), n(n0), has_shadow(false){identifier=6; n.normalize();};
 		virtual ~CPlane(){};
 		void shift(const vec & v){Xc+=v;};
 		void rotate(const vec &_n, double alpha){};//FIXME
@@ -43,6 +43,7 @@ class CPlane : public GeomObjectBase
 	
 	vec n;//normal
 	vec vec_to_shadow;
+	bool has_shadow;
  	private:
 	};
 

@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 template<class T>
 class TContact : public BasicContact{ 
 	public: 
@@ -40,7 +41,7 @@ template<class T>
 class ContactNetwork : public vector< TNode<T> >
 	{
 	public:
-	ContactNetwork(vector<T *> *_p): F(Matrix(3,3)), N(0), packing(_p){}
+	ContactNetwork(list<T *> *_p): F(Matrix(3,3)), N(0), packing(_p){}
 	~ContactNetwork(){
 		}
 
@@ -65,33 +66,31 @@ class ContactNetwork : public vector< TNode<T> >
 			this->push_back(TNode<T>());
 			}
 
-		for(size_t i=0;  i<N; i++){
-			for(size_t j=i+1;  j<N; j++){
-				ShapeContact ovs(packing->at(i)->shape,packing->at(i)->shape);
-				CInteraction::overlaps(&ovs, packing->at(i)->shape, packing->at(j)->shape ); 
+		typename list<T *>::const_iterator it1, it2;
+		size_t i=0, j=0;
+		for(it1=packing->begin(), i=0;  it1!=packing->end(); it1++, ++i){
+			for(it2=it1, ++it2, j=i+1;  it2!=packing->end(); it2++, ++j){
+				ShapeContact ovs((*it1)->shape,(*it2)->shape);
+				CInteraction::overlaps(&ovs, (*it1)->shape, (*it2)->shape ); 
 				if(!ovs.empty()) {
 					assert(ovs.size()==1);
-					this->at(i).push_back(TContact<T>(packing->at(i), packing->at(j), static_cast<BasicContact>(ovs.back()) ));
-					this->at(j).push_back(TContact<T>(packing->at(j), packing->at(i), static_cast<BasicContact>(ovs.back()) ));
+					this->at(i).push_back(TContact<T>((*it1), (*it2), static_cast<BasicContact>(ovs.back()) ));
+					this->at(j).push_back(TContact<T>((*it2), (*it1), static_cast<BasicContact>(ovs.back()) ));
 					}
 				}
 			}
 
-		/*
-		for(size_t i=0;  i<NContactNetwork; i++){
-		for(size_t j=0; j<this->[i].size(); j++){
-			this->[i].at(j).l
-			}
-		*/
 	}
 
 	void print(ostream &out)const{
 		//assert(elems);
 		assert(N);
 		cerr<< N <<endl;
-		for(size_t i=0; i<N; i++){
+		typename list<T *>::const_iterator it1;
+		size_t i=0;
+		for(it1=packing->begin(), i=0;  it1!=packing->end(); it1++, ++i){
 			out<<"2  ";
-			out<<packing->at(i)->shape->Xc<<"  0.008"<<endl;;
+			out<<(*it1)->shape->Xc<<"  0.008"<<endl;;
 		for(size_t j=0; j<this->at(i).size(); j++){
 			//if(this->[i].at(j).p1->shape->Xc(1)>0.12)continue;
 			//out<<"2  ";
@@ -109,6 +108,6 @@ class ContactNetwork : public vector< TNode<T> >
 	Matrix F;//fabric tensor
 	size_t N;
 	private:
-	vector<T *> *packing;
+	list<T *> *packing;
 	};
 #endif /* CONTACT_NETWORK_H */

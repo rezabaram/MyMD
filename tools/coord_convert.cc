@@ -1,6 +1,7 @@
 #include<iostream>
 using namespace std;
 #include"../include/exception.h"
+#include"../include/define_params.h"
 #include"../include/particle.h"
 #include"../include/packing.h"
 
@@ -13,6 +14,7 @@ int main(int n_params, char **params){
 	ifstream inputFile(params[2]);
 	ERROR(!inputFile.good(), "Unable to open input file");
 	
+	define_parameters();
 	CPacking<CParticle> packing;
 	packing.parse(inputFile);
 	if(params[1][1]=='r')

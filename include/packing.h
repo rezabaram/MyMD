@@ -15,7 +15,7 @@
 //member classes for contact network
 
 template < class T>
-class CPacking : public vector <T *>
+class CPacking : public list<T *>
 	{
 
 	public:
@@ -25,7 +25,7 @@ class CPacking : public vector <T *>
 		grid_built=false;
 		}
 	~CPacking(){
-		typename vector<T *>::iterator it;
+		typename list<T *>::iterator it;
 		if(grid_built)delete grid;
 		for(it=this->begin(); it!=this->end(); it++)
 			delete (*it);
@@ -174,21 +174,6 @@ TRY
 CATCH
 }
 
-/*
-void print_connectivity(vector<CCircle> &packing, const char * name){
-  // !!! C++ style Numbering starting with 0
-  ofstream outconnect(name);
-  outconnect<<packing.size()<<endl;
-  for(int i=0; i<packing.size(); i++){
-    outconnect<< i<<"  "<< (double)(packing.at(i).color)*packing.at(i).radius
-              <<"  "<<packing.at(i).neighbours.size()<<"  ";
-    for(int j=0; j<packing.at(i).neighbours.size(); j++){
-      outconnect<<packing.at(i).neighbours.at(j)<<"  ";
-    }
-    outconnect<<endl;
-  }
-}
 
-*/
 
 #endif /* PACKING_H */

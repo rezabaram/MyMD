@@ -102,7 +102,7 @@ class CRecGrid
 	{
 	public:
 	typedef T particle_type;
-	CRecGrid(vector<T *> *p, const vec &_corner, const vec & _L, double _d);
+	CRecGrid(list<T *> *p, const vec &_corner, const vec & _L, double _d);
 	~CRecGrid();
 	CNode3D<particle_type> &operator ()(int i, int j, int k); //returns the ith node
 	CNode3D<particle_type> *node(int i, int j, int k); //returns the ith node
@@ -131,13 +131,13 @@ class CRecGrid
 	void setup_neighs();
 	CNode3D<particle_type>  *nodes;
 	int *top_nodes;//keeps the k's of the topest node
-	const vector <particle_type *> *packing;
+	const list<particle_type *> *packing;
 };
 
 
 
 template<class T>
-CRecGrid<T>::CRecGrid(vector<T *> *p, const vec &_corner, const vec & _L, double _d):
+CRecGrid<T>::CRecGrid(list<T *> *p, const vec &_corner, const vec & _L, double _d):
 	corner(_corner), L(_L), packing(p)
 	{
 TRY
@@ -299,11 +299,12 @@ CATCH
 
 template<class T>
 void CRecGrid<T>::build(){
-		typename vector<T *>::const_iterator it;
 		size_t Np=packing->size();
 		//assert(elems);
+		typename list<T *>::const_iterator it=packing->begin();
 		for(size_t i=0;  i<Np; i++){
-			this->add(packing->at(i));
+			this->add(*it);
+			++it;
 			}
 	}
 

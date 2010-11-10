@@ -71,10 +71,6 @@ class CSys{
 
 CSys::~CSys(){
 TRY
-	ParticleContainer::iterator it;
-	for(it=particles.begin(); it!=particles.end(); ++it){
-		delete (*it);
-		}
 CATCH
 	}
 

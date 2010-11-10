@@ -1,9 +1,13 @@
 #ifndef DEFINE_PARAMS_H
 #define DEFINE_PARAMS_H 
 #include"params.h"
+#include"vec.h"
+#include<string>
+using namespace std;
+
 void define_parameters()
 {
-       config.add_param<vec>("Gravity", G);
+       config.add_param<vec>("Gravity", vec(0.0, 0.0, -10.0));
        config.add_param<double>("outDt", 0.02);
        config.add_param<double>("stiffness", 5.0e+05); 
        config.add_param<double>("damping", 1); 
