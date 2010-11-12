@@ -10,8 +10,6 @@
 #include"contact_network.h"
 
 
-
-
 //member classes for contact network
 
 template < class T>
@@ -41,7 +39,10 @@ class CPacking : public list<T *>
 	double totalVolume();
 	void BuildContactNetwork();
 	void BuildGrid(){
-		if(grid_built)return;
+		if(grid_built){
+			WARNING("The grid is already built.");
+			return;
+			}
 		grid=(new CRecGrid<T>(this, vec(0.0, 0.0, 0.0), vec(1.5, 1.5, 1.5), 1.1*maxr));
 		grid->build();
 		grid_built=true;

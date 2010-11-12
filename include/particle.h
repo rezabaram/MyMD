@@ -50,6 +50,11 @@ class CParticle
 		init();
 	}
 
+	double min_distance( CParticle *p2)const{
+	TRY
+		return (this->x(0)-p2->x(0)).abs() - this->shape->radius -p2->shape->radius;
+	CATCH
+		}
 	virtual ~CParticle()
 	{
 		delete shape;
@@ -129,8 +134,7 @@ class CParticle
 	vec *forces, avgforces;
 	vec *torques, avgtorque;
 	tState state;
-	CVerlet<CParticle> vlist;
-	CVerlet<CParticle> vlistold;
+	CVerletList<CParticle> vlist, vlistold;
 	vector< CNode3D<CParticle> *> grid_nodes;
 
 	//to hold neighbours on the grid

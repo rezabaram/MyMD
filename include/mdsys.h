@@ -15,7 +15,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), maxr(0), maxh(0), G(vec(0.0)), 
-		maxNParticle(maxnparticle), verlet_need_update(true),epsFreeze(1.0e-12), outEnergy("log_energy"), TotalParticlesN(0){
+		maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"), TotalParticlesN(0){
 	TRY
 	CATCH
 		};
@@ -42,10 +42,6 @@ class CSys{
 
 	bool add(CParticle *p);
 	void remove(ParticleContainer::iterator &it);
-	double min_distance(CParticle *p1, CParticle *p2)const;
-	void setup_verlet(CParticle *p);
-	void print_verlet(ostream &out);
-	void update_verlet();
 	inline bool exist(int i);
 
 	double t, tMax, dt, outDt;
@@ -58,11 +54,12 @@ class CSys{
 	CPlane *sp;
 	//CRecGrid *grid;
 	double maxr, maxh;
-	double verlet_distance, min_verlet_distance, max_verlet_distance, verlet_factor;
+	double verlet_factor;
+	//bool verlet_need_update;
 	vec G;
 	const unsigned maxNParticle;
-	bool verlet_need_update;
 	double fluiddampping;
+	CVerletManager<CParticle> verlet;
  	private:
 	double epsFreeze;
 	ofstream outEnergy;
@@ -115,10 +112,8 @@ TRY
 
 	G=config.get_param<vec>("Gravity");
 
-	verlet_factor=config.get_param<double>("verletfactor");
-	verlet_distance=verlet_factor*maxr;
-	min_verlet_distance=verlet_distance/5;
-	max_verlet_distance=verlet_distance*5;
+
+	verlet.set_distance(maxr*config.get_param<double>("verletfactor"));
 
 	particles_on_grid();
 	//particles.parse("input.dat");
@@ -140,69 +135,7 @@ double CSys::total_volume(){
 	}
 
 
-//minimum distances of the surfaces of the particles (putting them in spherical shells)
-double CSys::min_distance(CParticle *p1, CParticle *p2)const{
-TRY
-	return (p1->x(0)-p2->x(0)).abs() - p1->shape->radius -p2->shape->radius;
-CATCH
-	}
 
-void CSys::print_verlet(ostream &out){
-	ParticleContainer::iterator it;
-	CVerlet<CParticle >::iterator neigh;
-	for(it=particles.begin(); it!=particles.end(); ++it){
-		out<< (*it)->id <<": ";
-		for(neigh=(*it)->vlist.begin(); neigh!=(*it)->vlist.end(); ++neigh ){
-			out<< (*neigh).first->id <<" ";
-			}
-			out<< endl;
-		}
-	}
-//construct the verlet list of all particles
-void CSys::update_verlet(){
-	verlet_distance*=0.99;
-	if(verlet_distance<min_verlet_distance)verlet_distance=min_verlet_distance;
-
-	ParticleContainer::iterator it;
-	for(it=particles.begin(); it!=particles.end(); ++it){
-		if(verlet_need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs() > verlet_distance/2.0-epsilon) verlet_need_update=true;
-		}
-
-	if(!verlet_need_update) return;
-
-	for(it=particles.begin(); it!=particles.end(); it++){
-		(*it)->vlistold=(*it)->vlist;
-		(*it)->vlist.clear();
-		setup_verlet(*it);
-		}
-
-	verlet_distance*=1.5;
-	if(verlet_distance>max_verlet_distance)verlet_distance=max_verlet_distance;
-
-	verlet_need_update=false;
-	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
-	}
-
-//construct the verlet list of one particle 
-void CSys::setup_verlet(CParticle *p){
-TRY
-	ParticleContainer::iterator it;
-	CVerlet<CParticle>::iterator v_it_old;
-	for(it=particles.begin(); (*it)!=p; it++){ //checking particles before in the list
-	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
-		if(min_distance(p, *it) < verlet_distance){
-			v_it_old=p->vlistold.find(*it);
-			if(v_it_old!= p->vlistold.end())
-				p->vlist.insert(*v_it_old);
-				else
-				p->vlist.add((*it));
-				}
-		}
-		assert((*it)->id == p->id);
-	p->vlist.x=p->x(0);//save the position at which the list has been updated
-	p->vlist.set=true;
-CATCH
-	}
 
 void CSys::remove(ParticleContainer::iterator &it){
 TRY
@@ -223,10 +156,10 @@ TRY
 	if(maxr<p->shape->radius)maxr=p->shape->radius;
 	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
 
-	particles.push_back(p);
-	particles.back()->id=TotalParticlesN;
-	setup_verlet( particles.back() );
-	++TotalParticlesN;
+	if(verlet.add_particle(p)){
+		particles.back()->id=TotalParticlesN;
+		 ++TotalParticlesN;
+		}
 
 	//setup_verlet(particles.back());
 	//assert(grid);
@@ -241,7 +174,7 @@ TRY
 	//FIXME make it dimensionless
 
 	ParticleContainer::iterator it1, it2, ittemp;
-	CVerlet<CParticle>::iterator neigh;
+	CVerletList<CParticle>::iterator neigh;
 	//reset forces
 	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
@@ -250,7 +183,7 @@ TRY
 		}
 
 	//interactions
-	update_verlet();
+	verlet.update();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 
 		ERROR(!(*it1)->vlist.set,"the verlet list was not constructed properly");

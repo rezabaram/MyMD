@@ -6,9 +6,9 @@ run: a.out
 	time bin/run.sh
 
 a.out:	*.cc include/*.h 
-	$(CC) -O2  main.cc -Wall  $(LDFLAGS)
+	$(CC)  main.cc -Wall  $(LDFLAGS) $(DEBUGFLAGS)
 
-subsystem:
+tools:
 	$(MAKE) -C tools
 
 test:	
