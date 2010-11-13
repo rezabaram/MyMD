@@ -17,7 +17,7 @@ class CPacking : public list<T *>
 	{
 
 	public:
-	CPacking():contacts(ContactNetwork<T>(this))
+	CPacking():contacts(ContactNetwork<T>(this)), TotalParticlesN(0)
 		{
 		maxr=0.0;
 		grid_built=false;
@@ -51,8 +51,9 @@ class CPacking : public list<T *>
 	ContactNetwork<T> contacts;
 	
 	CRecGrid<T> * grid;
- 	private:
+	long TotalParticlesN;
 	double maxr;
+ 	private:
 	bool grid_built;
 	};
 
@@ -142,17 +143,13 @@ void CPacking<T>::parse(istream &inputFile) {
 	ss>>id;
 	if(id==14){
 		CEllipsoid shape;
+		shape.parse(ss);
 		T *p=new T(shape);
-		p->shape->parse(ss);
+		//p->shape->parse(ss);
 		this->push_back(p);
 		if(p->shape->radius>maxr)maxr=p->shape->radius;
 		}
 
-	//else if(id==14){
-		//GeomObjectBase *shape=new GeomObject<tsphere>();
-		//shape->parse(ss);
-		//push_back(shape);
-		//}
 	else{
 		//WARNING("Skip reading shape with id: "<< id);
 		continue;

@@ -5,27 +5,32 @@
 #include"multicontact.h"
 #include"ellipsoid.h"
 
-void fixcontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+void fixcontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2)
+	{
 TRY
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
 CATCH
 	}
-void updatecontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+
+void updatecontact(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2)
+	{
 TRY
 	ovs.x1=E1.toWorld(ovs.x01);
 	ovs.x2=E2.toWorld(ovs.x02);
 CATCH
 	}
 
-void updateplane(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+void updateplane(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2)
+	{
 TRY
 	ovs.plane.Xc=(ovs.x1.project()+ovs.x2.project())/2;
 	ovs.plane.n=(E1.gradient(ovs.x1.project())-E2.gradient(ovs.x2.project())).normalized();
 CATCH
 	}
 
-void correctpoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2){
+void correctpoints(ShapeContact &ovs, const CEllipsoid &E1, CEllipsoid &E2)
+	{
 TRY
 	ovs.x1=HomVec(E1.point_to_plane((ovs.plane)),1);
 	ovs.x2=HomVec(E2.point_to_plane((ovs.plane)),1);
@@ -40,10 +45,12 @@ CATCH
 //this function takes two intersection ellipsoids, and gives back the intersection of a 
 //ray through midpoint mp (which should be inside both of them) in direction of the average gradient 
 // at point mp. the intersecting points are X1 on E1 and X2 on E2
-void intersect(HomVec &X1, HomVec &X2,  const CEllipsoid &E1, const CEllipsoid &E2){
+void intersect(HomVec &X1, HomVec &X2,  const CEllipsoid &E1, const CEllipsoid &E2)
+	{
 TRY
 	HomVec mp=(X1+X2)/2;
-	if(E1(mp)>1e-12 or E2(mp) > 1e-12){
+	if(E1(mp)>1e-12 or E2(mp) > 1e-12)
+		{
 		WARNING("contact point is not inside both ellipsoids: "<<E1(mp)<<"   "<<E2(mp));
 		return;
 		}
@@ -66,7 +73,8 @@ TRY
 CATCH
 	}
 
-void setcontact(ShapeContact &ovs,CEllipsoid  &E1, CEllipsoid  &E2){
+void setcontact(ShapeContact &ovs,CEllipsoid  &E1, CEllipsoid  &E2)
+	{
 TRY
 	//ovs.add(Contact(ovs.plane.Xc, ovs.plane.n, fabs((ovs.x1.project()-ovs.x2.project())*ovs.plane.n)));
 
@@ -78,7 +86,8 @@ TRY
 	diff.normalize();
 
 	//if the contact points are not along the normal direction, correct them
-	if(fabs(g1*diff/g1.abs()) <0.999 or fabs(g2*diff/g1.abs())<0.999 ){
+	if(fabs(g1*diff/g1.abs()) <0.999 or fabs(g2*diff/g1.abs())<0.999 )
+		{
 		intersect(ovs.x1, ovs.x2, E1, E2);
 		diff=(ovs.x1.project()-ovs.x2.project());
 		mp=((ovs.x1.project()+ovs.x2.project())/2.0);

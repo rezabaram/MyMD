@@ -15,7 +15,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), maxr(0), maxh(0), G(vec(0.0)), 
-		maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"), TotalParticlesN(0){
+		maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"){
 	TRY
 	CATCH
 		};
@@ -63,7 +63,6 @@ class CSys{
  	private:
 	double epsFreeze;
 	ofstream outEnergy;
-	long TotalParticlesN;
 	};
 
 CSys::~CSys(){
@@ -113,10 +112,11 @@ TRY
 	G=config.get_param<vec>("Gravity");
 
 
-	verlet.set_distance(maxr*config.get_param<double>("verletfactor"));
 
-	particles_on_grid();
-	//particles.parse("input.dat");
+	//particles_on_grid();
+	particles.parse("input2.dat");
+	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
+	verlet.build();
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
 
 
@@ -157,8 +157,6 @@ TRY
 	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
 
 	if(verlet.add_particle(p)){
-		particles.back()->id=TotalParticlesN;
-		 ++TotalParticlesN;
 		}
 
 	//setup_verlet(particles.back());

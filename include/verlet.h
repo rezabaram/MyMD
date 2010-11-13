@@ -41,11 +41,14 @@ class CVerletManager{
 	bool add_particle(particleT *p){
 		packing->push_back(p);
 		setup(packing->back());
+		packing->back()->id=packing->TotalParticlesN;
+		 ++(packing->TotalParticlesN);
 		return true;
 		}
 	void setup(particleT *p);
 	void print(ostream &out);
 	void update();
+	void build();
 
 	void set_distance(double d){
 		distance=d;
@@ -97,6 +100,16 @@ void CVerletManager<particleT>::update(){
 	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
 	}
 
+template<class particleT>
+void CVerletManager<particleT>::build(){
+TRY
+	typename CPacking<particleT>::iterator it;
+	for(it=packing->begin(); it!=packing->end(); it++){ //checking particles before in the list
+		setup(*it);
+		}
+CATCH
+	}
+
 //construct the verlet list of one particle 
 template<class particleT>
 void CVerletManager<particleT>::setup(particleT *p){
@@ -107,8 +120,8 @@ TRY
 	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
 		if(p->min_distance(*it) < distance){
 			v_it_old=p->vlistold.find(*it);
-			if(v_it_old!= p->vlistold.end())
-				p->vlist.insert(*v_it_old);
+			if(v_it_old!= p->vlistold.end())//this is to keep the information of the contact from the previous steps
+				p->vlist.insert(p->vlist.begin(), *v_it_old);
 				else
 				p->vlist.add((*it));
 				}
