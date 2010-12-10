@@ -113,8 +113,8 @@ TRY
 
 
 
-	//particles_on_grid();
-	particles.parse("input2.dat");
+	particles_on_grid();
+	//particles.parse("input2.dat");
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
 	verlet.build();
 	cerr<< "Number of Particles: "<<particles.size() <<endl;

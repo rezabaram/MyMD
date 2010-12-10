@@ -187,7 +187,8 @@ TRY
 CATCH
 	}
 
-// find min of x on E1, in the potentional of E2
+// find min of x on E1, in the potentional of E2 (iteretively)
+// for fast convergence x should be initially on E1 and near to minimum 
 void findMin(HomVec &x,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
 TRY
 	double lambda, lambda0;
@@ -207,6 +208,8 @@ TRY
 		++iter;
 		xp0=xp;
 		lambda0=lambda;
+		//using the fact that the gradients of the potentials of the 
+		//the ellipsoids are in opposite directions at the minimum
 		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
 		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
 		converged= (xp-xp0).abs()<1e-13 and fabs(lambda0-lambda)<1e-10;

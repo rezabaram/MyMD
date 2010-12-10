@@ -2,10 +2,10 @@ particleShape   ellipsoid
 density         1
 Gravity         0   0   -10
 outDt           0.01
-timeStep        0.00005
+timeStep        0.0001
 maxTime         15.02
-particleSize    0.03
-nParticle       6500
+particleSize    0.08
+nParticle       100
 stiffness       5e+02
 damping         5e+0
 friction        2.0e-1
