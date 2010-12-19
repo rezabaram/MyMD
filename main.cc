@@ -1,7 +1,7 @@
 #include<iostream>
 #include<stdlib.h>
-#include"main.h"
-#include"mdsys.h"
+#include"include/main.h"
+#include"include/mdsys.h"
 using namespace std;
 
 

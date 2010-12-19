@@ -1,11 +1,15 @@
+include Makefile.inc
+DIRS= tools
 
-CC=g++
 
 run: a.out
-	time ./run.sh
+	time bin/run.sh
 
-a.out:	*.cc *h
-	$(CC) -O3  main.cc -Wall  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
+a.out:	*.cc include/*.h 
+	$(CC)  main.cc -Wall  $(LDFLAGS) $(DEBUGFLAGS)
+
+tools:
+	$(MAKE) -C tools
 
 test:	
 	plot.sh 1:2 log_energy trash/log_energy 
@@ -16,14 +20,18 @@ perf:
 	plot.sh 1:2 log trash/log
 
 animate: test.avi
-	mplayer test.avi
-	#feh *jpg
+	#mplayer -loop 0 test.avi
+	feh *jpg
 
 test.avi: 
-	sh genFrames.sh out* > /dev/null 2>&1
+	sh bin/genFrames.sh out* > /dev/null 2>&1
 
 clean:
 	rm -f log_energy log out* *jpg test.avi 
+	#$(ECHO) cleaning up in .
+	#-$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
+	#-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
+
 
 mv:
 	mv -f trash/* trash2/ &> /dev/null
@@ -33,11 +41,14 @@ aclean:
 	rm -rf test.avi 
 
 pov:
-	coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
-	#coord2pov2  -s1.0 test.dat > test.pov && povray +h700 +w930 test.pov && feh test.png
+	bin/coord_convert -p $(FILE) > out.dat && bin/coord2pov -c out.dat > out.pov && povray -A0.05 Antialias_Threshold=20  -w1200 -h1200 out.pov && feh out.png
 
 zip:
 	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
 
 sync:
 	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/ results
+
+force_look :
+	true
+

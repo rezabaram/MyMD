@@ -1,0 +1,24 @@
+still need to write it
+
+
+
+expressions for sphericities of prolate (s1) and oblate (s2) spheriods
+source: http://planetcalc.com/149/ 
+c(x)=(3/4./pi/x**2)**(1./3.); ae(x)=acos(x)
+s1(x)=((x*c(x))**2 + x*c(x)*c(x)*ae(x)/sin(ae(x)))/2/(c(1)**2); s2(x)=((x*c(x))**2 + c(x)*c(x)/sin(ae(1/x))*log( (1+sin(ae(1/x))) /cos(ae(1/x))) )  /2/(c(1)**2)
+plot [1:1500.1] log(s1(1/x)), log(s2(x)), log(x)/3+pi/13, 2*log(x)/3-6*pi/27 
+
+
+
+
+------------------------------------
+How periodic boundary was implemented
+
+
+-define shadow particle derived from particle class. 
+-declare functions in particle class to be virtual (not pure)
+-in shadow particle keep track of the boundary plane(s) to which it is associated
+
+Through this a shadow particle can be treated almost exactly like a real particle.
+
+For details look in files: box.h, particle.h and mdsys.h
