@@ -14,14 +14,20 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), maxr(0), maxh(0), G(vec(0.0)), 
-		maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"){
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
+	walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), 
+	maxr(0), maxh(0), G(vec(0.0)),
+	maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"),
+	maxRadii(0)
+	{
 	TRY
 	CATCH
 		};
 	~CSys();
 
 	void particles_on_grid();
+	void add_particle_layer(double z);
+
 	void initialize(const CConfig &c);
 	void solve();
 	void forward(double dt);
@@ -36,6 +42,7 @@ class CSys{
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing3(string infilename, const vec &shift=vec(), double scale=1);
+	void read_radii(vector<vec> &radii );
 	void write_packing(string infilename);
 	double total_volume();
 	//void setup_grid(double d);
@@ -44,7 +51,7 @@ class CSys{
 	void remove(ParticleContainer::iterator &it);
 	inline bool exist(int i);
 
-	double t, tMax, dt, outDt;
+	double t, tMax, dt, outDt, outStart, outEnd;
 
 	//contains the pointers to the particles
 	ParticleContainer particles;
@@ -63,6 +70,10 @@ class CSys{
  	private:
 	double epsFreeze;
 	ofstream outEnergy;
+	vector<vec> radii;
+	ifstream inputRadii;
+	double maxRadii;
+	
 	};
 
 CSys::~CSys(){
@@ -88,6 +99,8 @@ CATCH
 void CSys::initialize(const CConfig &config){
 TRY
 	outDt=config.get_param<double>("outDt");
+	outStart=config.get_param<double>("outStart");
+	outEnd=config.get_param<double>("outEnd");
 	fluiddampping=config.get_param<double>("fluiddampping");
 
 	//calculating the maximum radius
@@ -113,7 +126,13 @@ TRY
 
 
 
-	particles_on_grid();
+	//particles_on_grid();
+	string fileRadii=config.get_param<string>("radii");
+	inputRadii.open(fileRadii.c_str());
+	ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
+	read_radii(radii);
+
+	add_particle_layer(maxh+maxRadii);
 	//particles.parse("input2.dat");
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
 	verlet.build();
@@ -154,10 +173,9 @@ TRY
 		//return false;
 		//}
 	if(maxr<p->shape->radius)maxr=p->shape->radius;
-	if(maxh<p->x(0)(2))maxh=p->x(0)(2);
+	if(p->top()>maxh) maxh=p->top();
 
-	if(verlet.add_particle(p)){
-		}
+	if(verlet.add_particle(p)){}
 
 	//setup_verlet(particles.back());
 	//assert(grid);
@@ -268,6 +286,8 @@ CATCH
 
 void CSys::forward(double dt){
 TRY
+	if( maxh< 1.+maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
+
 	static int count=0, outN=0,outPutN=outDt/dt;
 	static ofstream out;
 	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
@@ -281,7 +301,7 @@ TRY
 	if((10*count)%outPutN==0)
 		cout<<(clock()-starttime)/CLOCKS_PER_SEC<< "   "<<t<<endl;
 
-	if(count%outPutN==0){
+	if(count%outPutN==0 and t>=outStart and t<=outEnd){
 			stringstream outname;
 			outname<<"out"<<setw(5)<<setfill('0')<<outN;
 			out.open(outname.str().c_str());
@@ -301,7 +321,7 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
-		if((*it)->x(0)(2)>maxh) maxh=(*it)->x(0)(2);
+		if((*it)->top()>maxh) maxh=(*it)->top();
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		}
 
@@ -413,15 +433,104 @@ CATCH
 
 double rand_aspect_ratio(double asphericity, double asphericityWidth){
 
+	/*
 	double temp=asphericity-2*asphericityWidth;
 	int randtry=0;
 	while(randtry<10 and (temp<asphericity-asphericityWidth or temp>asphericity+asphericityWidth) ){
 		temp=rgen.randNorm(asphericity, asphericityWidth);
 		++randtry;
 		}
+	*/
 
-	if(asphericityWidth<1e-3)return exp(asphericity);
+	//FIXME 
+	//if large width, some aspect ratios can be too big (then you need to make the times step smaller)
+	//or you may introduce a cut off
+	
+	if(asphericityWidth<1e-5)return exp(asphericity);
 	else return exp(rgen.randNorm(asphericity, asphericityWidth) );
+	}
+
+void spheroid(double &a, double &b, double &c, double asph, double w){
+		double ee;
+		ee=rand_aspect_ratio(asph, w);
+		a =1/pow(ee,1./3.);
+		b =a;//*rgen();
+		c =ee*a;//*rgen();
+}
+void CSys::read_radii(vector<vec> &radii){
+	
+	double size=config.get_param<double>("particleSize");
+
+	double r=size*pow(4./3.*M_PI,1./3.);
+
+
+	string line;
+	//Parse the line
+	double a, b, c;
+	while(getline(inputRadii,line)){
+		stringstream ss(line);
+		ss>>a>>b>>c;
+		radii.push_back(vec(r*a,r*b,r*c));
+		maxRadii=max(maxRadii,r*max(a, max(b,c)));
+		}
+}
+
+
+void CSys::add_particle_layer(double z){ 
+	double k=z;
+	double size=config.get_param<double>("particleSize");
+	vec x(0.0, 0.0, .0);
+
+	
+	double asphericity=config.get_param<double>("asphericity");
+	double asphericityWidth=config.get_param<double>("asphericityWidth");
+
+	double i=0, j=0;
+
+	static unsigned int nRadii=0;
+	while(particles.size()<maxNParticle){
+		if(particles.size()==maxNParticle)break;
+		double a, b, c;
+		//spheroid(a, b, c, asphericity, asphericityWidth);
+		ERROR(nRadii>=radii.size(), "List of radii doesn't have enough entries");
+		vec abc=radii.at(nRadii);
+		a=abc(0);b=abc(1);c=abc(2);
+		++nRadii;
+
+		i+=2.1*maxRadii;
+		if(j<maxRadii)j=1.5*maxRadii;
+		if(k<maxRadii)k=1.5*maxRadii;
+		if(i>1-1.2*maxRadii){
+			i=1.1*maxRadii;
+			j+=2.1*maxRadii;
+			}
+		if(j>1-1.2*maxRadii){
+			break;
+			}
+
+		x(0)=i+size*rgen()/10;
+		x(1)=j+size*rgen()/10; 
+		x(2)=k+size*rgen()/10; 
+		double alpha=rgen()*M_PI;
+		Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
+		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
+		//CEllipsoid E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
+		//CParticle *p = new CParticle(E);
+		CSphere E1(x,maxRadii);
+		//CEllipsoid E2(x, 1, 1, 1, size, q);
+
+		//to implement constant volume (4/3 Pi r^3) while changing the shape
+		CEllipsoid E2(x, a,b,c);
+		CParticle *p = new CParticle(E2);
+		p->w(1)(0)=5.0*(1-2*rgen());
+		p->w(1)(1)=5.0*(1-2*rgen());
+
+		p->x(1)(0)=0.3*(1-2*rgen());
+		p->x(1)(1)=0.3*(1-2*rgen());
+		p->x(1)(2)=0.3*(1-2*rgen());
+		add(p);
+		
+		}
 	}
 
 void CSys::particles_on_grid(){ 
@@ -431,31 +540,34 @@ TRY
 
 	double k=0;
 	
-	double ee;
 	double asphericity=config.get_param<double>("asphericity");
 	double asphericityWidth=config.get_param<double>("asphericityWidth");
 
 	double i=0, j=0;
+
+	unsigned int nRadii=0;
+	read_radii(radii);
 	while(particles.size()<maxNParticle){
 		if(particles.size()==maxNParticle)break;
-		ee=rand_aspect_ratio(asphericity, asphericityWidth);
-		double r=size;//*(1-0.1*rgen());
-		double a =r/pow(ee,1./3.);
-		double b =a;//*rgen();
-		double c =ee*a;//*rgen();
+		double a, b, c;
+		double r=size;
+		//spheroid(a, b, c, asphericity, asphericityWidth);
+		vec abc=radii.at(nRadii);
+		a=r*abc(0);b=r*abc(1);c=r*abc(2);
+		++nRadii;
 
 		r=max(r,max(a,max(b,c)));
-		i+=3.0*r;
+		i+=2.1*r;
 		if(j<r)j=1.5*r;
 		if(k<r)k=1.5*r;
 		if(i>1-1.2*r){
-			i=3.0*r;
-			j+=3.0*r;
+			i=1.1*r;
+			j+=2.1*r;
 			}
 		if(j>1-1.2*r){
-			i=3.0*r;
-			j=3.0*r;
-			k+=3.0*r;
+			i=2.1*r;
+			j=2.1*r;
+			k+=2.1*r;
 			}
 
 		x(0)=i+size*rgen()/10;

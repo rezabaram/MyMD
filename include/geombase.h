@@ -35,6 +35,9 @@ class GeomObjectBase
 		Xc=v;
 		};
 
+	double top()const{
+		return Xc(2)+radius;
+		}
 	const vec& getpos()const{
 		return Xc;
 		};

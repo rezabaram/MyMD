@@ -102,6 +102,7 @@ class CParticle
 		}
 
 	double get_mass()const{return mass;}
+	double top()const{return shape->top();}
 
 	void addforce(const vec force){
 		static vec prev(0.0);
