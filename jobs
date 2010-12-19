@@ -5,8 +5,8 @@ rootDir=$current/$1
 queue=LONG
 flags="-S /bin/bash -V -cwd -b y -q "$queue
 
-asph="-0.6 -0.4 -0.2 0.0 0.2 0.4 0.6"
-asphW="0.1"
+asph="-0.9 0.9"
+asphW="0.0"
 
 
 for a in $asph

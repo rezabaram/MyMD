@@ -5,7 +5,7 @@ run: a.out
 	time ./run.sh
 
 a.out:	*.cc *h
-	$(CC) -O2  main.cc -Wall  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
+	$(CC) -O3  main.cc -Wall  -I/sw/include/ -L/sw/lib/ -lgsl -lgslcblas
 
 test:	
 	plot.sh 1:2 log_energy trash/log_energy 
