@@ -18,7 +18,8 @@ class CSys{
 	walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"),
-	maxRadii(0)
+	maxRadii(0),
+	top_v(vec(0.0,0.0,0.0))
 	{
 	TRY
 	CATCH
@@ -73,6 +74,7 @@ class CSys{
 	vector<vec> radii;
 	ifstream inputRadii;
 	double maxRadii;
+	vec top_v;
 	
 	};
 
@@ -321,7 +323,10 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
-		if((*it)->top()>maxh) maxh=(*it)->top();
+		if((*it)->top()>maxh) {
+				maxh=(*it)->top();
+				top_v=(*it)->x(1);
+				}
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		}
 
@@ -527,7 +532,7 @@ void CSys::add_particle_layer(double z){
 
 		p->x(1)(0)=0.3*(1-2*rgen());
 		p->x(1)(1)=0.3*(1-2*rgen());
-		p->x(1)(2)=0.3*(1-2*rgen());
+		p->x(1)(2)=top_v(2)+0.3*(1-2*rgen());
 		add(p);
 		
 		}
