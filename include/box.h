@@ -3,7 +3,7 @@
 #include<limits>
 #include"geombase.h"
 
-typedef enum{wall, periodic} BoundaryType;
+typedef enum{wall, soft, periodic} BoundaryType;
 
 class CBox: public GeomObjectBase
 	{

@@ -53,6 +53,8 @@ function printhelp
 
        -r             : remove jpg files after conversion, default: off
 
+       -t=<image_type>   : image type
+
        -? or --help   : print this help message and exit
 
 -EOHLP-
@@ -119,6 +121,11 @@ PARAMETERS=`echo $* | awk '{NTOT=NF; for (i = 1; i <= NTOT; i++) if (index($i,"-
       REMOVEPPMS=1
      fi
 
+    if echo $p | grep -e "-t" >/dev/null 2>&1
+     then
+       IMTYPE=`echo $p | awk '{i=index($1, "="); print substr($1, i+1);}'`
+     fi
+
   done
 
 
@@ -135,7 +142,7 @@ if [ "x$AVIFILE" = "x" ]
 
 echo "calling now mencoder"
 
-nice -19 mencoder mf://\*.jpg -mf w=${WIDTH}:h=${HEIGHT}:fps=${FRAMERATE}:type=jpg -ovc \
+nice -19 mencoder mf://\*.$IMTYPE -mf w=${WIDTH}:h=${HEIGHT}:fps=${FRAMERATE}:type=$IMTYPE -ovc \
  lavc  -lavcopts vcodec=mpeg4:mbd=2:vbitrate=${BITRATE}:keyint=250 \
  -vf scale=${WIDTH}:${HEIGHT} -o $AVIFILE
 # -vop scale=${WIDTH}:${HEIGHT} -o $AVIFILE

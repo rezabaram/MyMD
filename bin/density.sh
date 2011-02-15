@@ -22,14 +22,16 @@ function cal_density(){
 	std=`calc "sqrt($f2-$f*$f)" `
 }
 
-asp="-0.9 -0.8 -0.6 -0.4 -0.2 0.0 0.2 0.4 0.6 0.8 0.9"
+#asp="-0.9 -0.8 -0.6 -0.4 -0.2 0.0 0.2 0.4 0.6 0.8 0.9"
+asp="1.01 1.02 1.03 1.04 1.05 1.06 1.07 1.08 1.09"
 aspw="0.0"
 rootdir=$1
 
 #rm -f density$aspw.dat
 for a in $asp
 do
-	files="`ls $rootdir/e_$a"_"$aspw/*/out00050` "
+	#files="`ls $rootdir/e_$a"_"$aspw/*/out00040` "
+	files="`ls $rootdir/asph_$a"_"$aspw/*/out00035` "
 	cal_density $files 
-	echo $a $f $std >> density_$aspw.dat
+	echo $a $f $std >> density_gen.dat
 done

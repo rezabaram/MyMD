@@ -18,8 +18,7 @@ class CSys{
 	walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"),
-	maxRadii(0),
-	top_v(vec(0.0,0.0,0.0))
+	maxRadii(0), top_v(vec(0.0,0.0,0.0))
 	{
 	TRY
 	CATCH
@@ -69,6 +68,8 @@ class CSys{
 	double fluiddampping;
 	CVerletManager<CParticle> verlet;
  	private:
+	bool do_read_radii;
+	string out_name;
 	double epsFreeze;
 	ofstream outEnergy;
 	vector<vec> radii;
@@ -100,10 +101,12 @@ CATCH
 
 void CSys::initialize(const CConfig &config){
 TRY
+	out_name=config.get_param<string>("output");
 	outDt=config.get_param<double>("outDt");
 	outStart=config.get_param<double>("outStart");
 	outEnd=config.get_param<double>("outEnd");
 	fluiddampping=config.get_param<double>("fluiddampping");
+	do_read_radii=config.get_param<bool>("read_radii");
 
 	//calculating the maximum radius
 		double asphericity=config.get_param<double>("asphericity");
@@ -129,13 +132,17 @@ TRY
 
 
 	//particles_on_grid();
-	string fileRadii=config.get_param<string>("radii");
-	inputRadii.open(fileRadii.c_str());
-	ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
-	read_radii(radii);
+	if(do_read_radii){
+		string fileRadii=config.get_param<string>("radii");
+		inputRadii.open(fileRadii.c_str());
+		ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
+		read_radii(radii);
 
-	add_particle_layer(maxh+maxRadii);
-	//particles.parse("input2.dat");
+		add_particle_layer(maxh+maxRadii);
+		}
+
+	particles.parse("input.dat");
+
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
 	verlet.build();
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
@@ -288,7 +295,7 @@ CATCH
 
 void CSys::forward(double dt){
 TRY
-	if( maxh< 1.+maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
+	//if( maxh< 1.+2*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
 
 	static int count=0, outN=0,outPutN=outDt/dt;
 	static ofstream out;
@@ -304,9 +311,9 @@ TRY
 		cout<<(clock()-starttime)/CLOCKS_PER_SEC<< "   "<<t<<endl;
 
 	if(count%outPutN==0 and t>=outStart and t<=outEnd){
-			stringstream outname;
-			outname<<"out"<<setw(5)<<setfill('0')<<outN;
-			out.open(outname.str().c_str());
+			stringstream outstream;
+			outstream<<out_name<<setw(5)<<setfill('0')<<outN;
+			out.open(outstream.str().c_str());
 			walls.print(out);
 			gout=&out;
 			for(it=particles.begin(); it!=particles.end(); ++it){
@@ -338,7 +345,7 @@ TRY
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(walls.btype=="periodic" and (*it)->expire()){
 			remove(it);
-			--it;//FIXME to newly replaced particle. this is because of how remove() works and that is because i am using stl vector
+			--it;//FIXME Better mechanism needed. Maybe this is wrong already
 			continue;
 			}
 	//	if(!(*it)->frozen) 

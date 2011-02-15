@@ -263,7 +263,7 @@ class CEllipsoid: public GeomObjectBase
 		double alpha;
 		alpha=(plane.n*(this->inv())*plane.n);
 	
-		ERROR(alpha<0, "Impossible happened");
+		ERROR(alpha<=0, "Impossible happened");
 
 		alpha=1/sqrt(alpha);
 		static vec m(0.0);
