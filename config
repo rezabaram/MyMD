@@ -14,4 +14,6 @@ verletfactor 	0.1
 radii /home/reza/workstation/MD/data/asphericity/aspect1.01
 asphericity 1.01
 asphericityWidth 0.0
+
+input		input.dat 
 output		out

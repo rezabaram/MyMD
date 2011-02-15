@@ -44,8 +44,8 @@ class CParticle
 	:shape(new T(_shape)),  id(-1),  state(ready_to_go),vlist(this),vlistold(this)
 	{
 
-		forces= (new vec(0.0));
-		torques=(new vec(0.0)); 
+		forces= (new vec(0.0,0.0,0.0));
+		torques=(new vec(0.0,0.0,0.0)); 
 
 		init();
 	}
@@ -77,8 +77,8 @@ class CParticle
 
 	void init(){
 		x(0)=shape->Xc;
-		w(0)=0.0;
-		for(int i=1; i<6; ++i){
+		w(0)*=0.0;
+		for(int i=1; i<3; ++i){
 			x(i)=0.0;
 			w(i)=0.0;
 			}

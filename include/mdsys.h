@@ -51,6 +51,9 @@ class CSys{
 	void remove(ParticleContainer::iterator &it);
 	inline bool exist(int i);
 
+	void output(string outname);
+	void output(ostream &out=std::cout);
+
 	double t, tMax, dt, outDt, outStart, outEnd;
 
 	//contains the pointers to the particles
@@ -140,13 +143,13 @@ TRY
 
 		add_particle_layer(maxh+maxRadii);
 		}
-
-	particles.parse("input.dat");
+	else{
+		particles.parse(config.get_param<string>("input"));
+		}
 
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
 	verlet.build();
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
-
 
 	tMax=config.get_param<double>("maxTime");
 	dt=config.get_param<double>("timeStep");
@@ -292,6 +295,23 @@ TRY
 CATCH
 	}
 
+void CSys::output(ostream &out){
+TRY
+	walls.print(out);
+	ParticleContainer::iterator it;
+	for(it=particles.begin(); it!=particles.end(); ++it){
+		out<<**it<<endl;
+		}
+
+CATCH
+	}
+
+void CSys::output(string outname){
+TRY
+	ofstream out(outname.c_str());
+	output(out);
+CATCH
+	}
 
 void CSys::forward(double dt){
 TRY
@@ -303,7 +323,6 @@ TRY
 
 
 
-	ParticleContainer::iterator it;
 
 	//this is for a messure of performance
 	static double starttime=clock();
@@ -313,12 +332,7 @@ TRY
 	if(count%outPutN==0 and t>=outStart and t<=outEnd){
 			stringstream outstream;
 			outstream<<out_name<<setw(5)<<setfill('0')<<outN;
-			out.open(outstream.str().c_str());
-			walls.print(out);
-			gout=&out;
-			for(it=particles.begin(); it!=particles.end(); ++it){
-				out<<**it<<endl;
-				}
+			output(outstream.str());
 			count=0;
 			outN++;
 			Energy=rEnergy+kEnergy+pEnergy;
@@ -327,6 +341,7 @@ TRY
 			}
 	//bool allforwarded=false;
 	maxh=0;
+	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
@@ -378,7 +393,10 @@ void CSys::solve(){
 		//calForces();
 		forward(dt);
 		t+=dt;
-		if(stop)break;
+		if(stop){
+			output(out_name+"end");
+			break;
+			}
 		}
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());

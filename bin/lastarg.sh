@@ -1,0 +1,4 @@
+eval last=\${$#}
+echo $last
+
+

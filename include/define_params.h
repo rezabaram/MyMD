@@ -34,6 +34,7 @@ void define_parameters()
        config.add_param<string>("boundary", "wall"); 
 
        config.add_param<bool>("read_radii", false); 
+       config.add_param<string>("input", "input.dat"); 
        config.add_param<string>("radii", "radii.dat"); 
 }
 
