@@ -1,7 +1,7 @@
 particleShape 	ellipsoid
 density  	1
-Gravity  	0   0   -10
-outDt  		0.1
+Gravity  	0   0   -1
+outDt  		0.2
 timeStep 	0.0002
 maxTime		15.02
 particleSize 	0.04
@@ -15,5 +15,5 @@ read_radii	1
 radii /home/reza/workstation/MD/data/asphericity/shuffle56789
 asphericity 1.01
 asphericityWidth 0.0
-output		out
 input		input.dat 
+output		relax	

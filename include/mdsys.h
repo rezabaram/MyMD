@@ -71,6 +71,7 @@ class CSys{
 	const unsigned maxNParticle;
 	double fluiddampping;
 	CVerletManager<CParticle> verlet;
+	double Energy, rEnergy, pEnergy, kEnergy;
  	private:
 	bool do_read_radii;
 	string out_name;
@@ -323,7 +324,6 @@ TRY
 
 	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
-	//static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
 
 
@@ -407,7 +407,7 @@ void CSys::solve(){
 	bool stop=false;
 	while(true){
 		//dt=(double)((int)t+1)*dt0;
-		if(t+dt>tMax){//to stop exactly at tMax
+		if(t+dt>tMax ){//to stop exactly at tMax
 			dt=tMax-t;
 			stop=true;
 			}
@@ -415,8 +415,9 @@ void CSys::solve(){
 		//calForces();
 		forward(dt);
 		t+=dt;
-		if(stop){
+		if(stop or (t>1 and kEnergy<2e-7) ){
 			output(out_name+"end");
+			cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 2e-7"<<endl;
 			break;
 			}
 		adapt(dt);
