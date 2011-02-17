@@ -420,7 +420,7 @@ void CSys::solve(){
 			cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 2e-7"<<endl;
 			break;
 			}
-		adapt(dt);
+		//adapt(dt);
 		}
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
