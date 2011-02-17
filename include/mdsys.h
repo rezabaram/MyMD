@@ -16,7 +16,7 @@ class CSys{
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
 	walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), 
-	maxr(0), maxh(0), G(vec(0.0)),
+	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"),
 	maxRadii(0), top_v(vec(0.0,0.0,0.0))
 	{
@@ -31,6 +31,7 @@ class CSys{
 	void initialize(const CConfig &c);
 	void solve();
 	void forward(double dt);
+	void adapt(double &dt);
 	void calForces();
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
@@ -54,7 +55,7 @@ class CSys{
 	void output(string outname);
 	void output(ostream &out=std::cout);
 
-	double t, tMax, dt, outDt, outStart, outEnd;
+	double t, tMax, dt,DT, outDt, outStart, outEnd;
 
 	//contains the pointers to the particles
 	ParticleContainer particles;
@@ -63,7 +64,7 @@ class CSys{
 	BoxContainer walls;
 	CPlane *sp;
 	//CRecGrid *grid;
-	double maxr, maxh;
+	double minr, maxr, maxh, maxv;
 	double verlet_factor;
 	//bool verlet_need_update;
 	vec G;
@@ -152,7 +153,10 @@ TRY
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
 
 	tMax=config.get_param<double>("maxTime");
-	dt=config.get_param<double>("timeStep");
+	DT=config.get_param<double>("timeStep");
+	dt=DT;
+
+        minr=config.get_param<double>("particleSize");
 CATCH
 	}
 
@@ -315,11 +319,11 @@ CATCH
 
 void CSys::forward(double dt){
 TRY
-	//if( maxh< 1.+2*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
+	if(do_read_radii and maxh< 1.+2*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
 
-	static int count=0, outN=0,outPutN=outDt/dt;
+	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
-	static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
+	//static double Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
 
 
 
@@ -342,6 +346,7 @@ TRY
 	//bool allforwarded=false;
 	maxh=0;
 	ParticleContainer::iterator it;
+	
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
 		(*it)->calPos(dt);
@@ -357,6 +362,8 @@ TRY
 //	if(!allforwarded)foward(dt/2.0, 2);
 
 	Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
+	double vtemp;
+	maxv=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(walls.btype=="periodic" and (*it)->expire()){
 			remove(it);
@@ -365,6 +372,10 @@ TRY
 			}
 	//	if(!(*it)->frozen) 
 		(*it)->calVel(dt);
+		vtemp=(*it)->x(1).abs()+(*it)->w(1).abs()*(*it)->shape->radius;
+		if(vtemp>maxv) 
+			maxv=vtemp;
+
 		if(0)if((*it)->x(1).abs()< epsFreeze  && (*it)->avgforces.abs()< epsFreeze ) {
 			//(*it)->frozen=true;
 			(*it)->material.color="0.5 0.5 0.5";
@@ -375,9 +386,20 @@ TRY
 		kEnergy+=(*it)->kEnergy();
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
+	
 	count++;
 	if(out.is_open())out.close();
 CATCH
+	}
+
+void CSys::adapt(double &dt){
+	//FIXME Just for trying. 
+	//	I dont think adaptive time step can be done without considering
+	//	corresponding changes in the intergrator.
+	cerr<< dt/DT <<endl;
+	if(dt*maxv < minr*1e-3 and dt<DT*100)dt*=1.02;
+	if(dt*maxv > minr*1e-3 and dt>DT/10)dt*=0.98;
+
 	}
 
 void CSys::solve(){
@@ -397,6 +419,7 @@ void CSys::solve(){
 			output(out_name+"end");
 			break;
 			}
+		adapt(dt);
 		}
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());

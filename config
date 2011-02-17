@@ -1,19 +1,19 @@
 particleShape 	ellipsoid
 density  	1
-Gravity  	0   0   -1
-outDt  		0.01
+Gravity  	0   0   -10
+outDt  		0.1
 timeStep 	0.0002
 maxTime		15.02
-particleSize 	0.03
-nParticle 	10000
+particleSize 	0.04
+nParticle 	400
 stiffness  	5e+02
 damping		5e+0
 friction	2.0e-1
 cohesion	0.0
 verletfactor 	0.1
-radii /home/reza/workstation/MD/data/asphericity/aspect1.01
+read_radii	1
+radii /home/reza/workstation/MD/data/asphericity/shuffle56789
 asphericity 1.01
 asphericityWidth 0.0
-
-input		input.dat 
 output		out
+input		input.dat 
