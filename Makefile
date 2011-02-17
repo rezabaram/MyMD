@@ -47,7 +47,7 @@ zip:
 	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
 
 sync:
-	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/mono_volume results/mono_volume
+	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/mono_volume/ results/mono_volume
 
 force_look :
 	true

@@ -485,6 +485,11 @@ TRY
 CATCH
 	}
 
+double rand_radius(double r, double dr=0.0){
+	if(dr<1e-5) return r;
+	else return rgen.randNorm(r, dr) ;
+	}
+
 double rand_aspect_ratio(double asphericity, double asphericityWidth){
 
 	/*
@@ -514,14 +519,15 @@ void spheroid(double &a, double &b, double &c, double asph, double w){
 void CSys::read_radii(vector<vec> &radii){
 	
 	double size=config.get_param<double>("particleSize");
+	double dr=config.get_param<double>("particleSizeWidth");
 
-	double r=size*pow(4./3.*M_PI,1./3.);
 
 
 	string line;
 	//Parse the line
 	double a, b, c;
 	while(getline(inputRadii,line)){
+	double r=rand_radius(size,dr)*pow(5./3.*M_PI,1./3.);//note 4/3 pi a b c=1 
 		stringstream ss(line);
 		ss>>a>>b>>c;
 		radii.push_back(vec(r*a,r*b,r*c));
