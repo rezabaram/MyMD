@@ -1,7 +1,7 @@
 particleShape 	ellipsoid
 density  	1
 Gravity  	0   0   -1
-outDt  		0.01
+outDt  		0.2
 timeStep 	0.0002
 maxTime		15.02
 particleSize 	0.03
@@ -14,6 +14,4 @@ verletfactor 	0.1
 radii /home/reza/workstation/MD/data/asphericity/aspect1.01
 asphericity 1.01
 asphericityWidth 0.0
-
-input		input.dat 
-output		out
+output		relax	
