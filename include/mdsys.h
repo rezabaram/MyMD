@@ -487,7 +487,9 @@ CATCH
 
 double rand_radius(double r, double dr=0.0){
 	if(dr<1e-5) return r;
-	else return rgen.randNorm(r, dr) ;
+	double x=rgen.randNorm(r, dr) ;
+	if(x<r-dr and x> r+dr)return rand_radius(r, dr);//trying until finding in range (r-dr, r+dr)
+	return rand_radius(r, dr);
 	}
 
 double rand_aspect_ratio(double asphericity, double asphericityWidth){
