@@ -521,7 +521,7 @@ void spheroid(double &a, double &b, double &c, double asph, double w){
 void CSys::read_radii(vector<vec> &radii){
 	
 	double size=config.get_param<double>("particleSize");
-	double dr=config.get_param<double>("particleSizeWidth");
+	double dr=size*config.get_param<double>("particleSizeWidth");
 
 
 
