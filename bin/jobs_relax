@@ -7,7 +7,7 @@ flags="-S /bin/bash -V -cwd -b y -q "$queue
 
 	
 
-	for ((  i = 1;  i <= 10;  i++  ))
+	for ((  i = 5;  i <= 5;  i++  ))
 	do
 		dir=$rootDir/$i
 		cd $dir
@@ -18,7 +18,7 @@ flags="-S /bin/bash -V -cwd -b y -q "$queue
 		lastarg=`bash /home/reza/workstation/MD/bin/lastarg.sh out*`
 		echo input $rootDir/$i/$lastarg >> config
 		#/home/lynxgav/MD/a.out $i
-		qsub $flags /home/reza/workstation/MD/a.out $i
+		/home/reza/workstation/MD/a.out $i &
 		#cd $rootDir
 		#echo "done."
 	done
