@@ -148,6 +148,7 @@ void CPacking<T>::parse(istream &inputFile) {
 		//p->shape->parse(ss);
 		this->push_back(p);
 		if(p->shape->radius>maxr)maxr=p->shape->radius;
+		p->x(1)(0)=2*drand48();
 		}
 
 	else{
@@ -174,4 +175,4 @@ CATCH
 
 
 
-#endif /* PACKING_H */
+#endif /* PACKING_h */

@@ -41,13 +41,13 @@ aclean:
 	rm -rf test.avi 
 
 pov:
-	bin/coord_convert -p $(FILE) > out.dat && bin/coord2pov -c out.dat > out.pov && povray -A0.05 Antialias_Threshold=20  -w500 -h500 out.pov && feh out.png
+	bin/coord_convert -p $(FILE) > out.dat && bin/coord2pov out.dat > out.pov && povray -A0.05 Antialias_Threshold=20  -w700 -h700 out.pov && feh out.png
 
 zip:
 	zip md.zip *.cc *h Makefile genFrames.sh run.sh config
 
 sync:
-	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/mono_volume/ results/mono_volume
+	rsync -ravz grace.cii.fc.ul.pt:workstation/MD/results/ results/
 
 force_look :
 	true

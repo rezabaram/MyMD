@@ -5,4 +5,4 @@ SHELL=bash
 ECHO=echo
 RM=rm
 MAKE=make
-DEBUGFLAGS= -O2
+DEBUGFLAGS= 
