@@ -41,6 +41,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CSphere
 
 inline
 void CInteraction::overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBase *p2){
+
 		if(p1->type==tsphere && p2->type==tsphere)
 			overlaps(ovs, static_cast<const CSphere *>(p1), static_cast<const CSphere *>(p2));
 		else if(p1->type==tsphere && p2->type==tbox)
@@ -124,6 +125,9 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CBox *b){
 TRY
 	for(size_t i=0; i<b->nFaces; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+		if(!(b->face[i]->solid)){
+			continue;
+			}
 		overlaps(ovs, p1, b->face[i]);
 		}
 CATCH

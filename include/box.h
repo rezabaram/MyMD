@@ -8,8 +8,9 @@ typedef enum{wall, soft, periodic} BoundaryType;
 class CBox: public GeomObjectBase
 	{
 	public:
-	CBox(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0)):
+	CBox(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string _btype="wall"):
 		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L), nFaces(5),
+		btype(_btype),
 		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
 		identifier=6;
@@ -21,6 +22,21 @@ class CBox: public GeomObjectBase
 		face[3]=new CPlane (corner+L,-u0);
 		face[4]=new CPlane (corner+L,-u1);
 //		face[5]=new CPlane (corner+L,-u2);
+
+		if(btype=="periodic_x")
+			{
+			face[0]->solid=false;
+			face[3]->solid=false;
+			}
+		else if(btype=="periodic_xy")
+			{
+			face[0]->solid=false;
+			face[3]->solid=false;
+			face[1]->solid=false;
+			face[4]->solid=false;
+			}
+		else if(btype=="wall"){}
+		else{ERROR(1, "Boundary condition not defined");}
 		};
 	virtual ~CBox(){
 		for(int i=0; i<5; i++){
@@ -56,6 +72,7 @@ class CBox: public GeomObjectBase
 	vec corner, L;
 	const size_t nFaces;
 	CPlane ** face;
+	string btype;
 	protected:
 	vec u0, u1, u2;
  	private:
@@ -65,26 +82,12 @@ class CBox: public GeomObjectBase
 class BoxContainer : public CBox
 	{
 	public:
-	BoxContainer(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string btype="wall"):
-	CBox(corner, _L), btype(btype)
-		{
+	BoxContainer(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string _btype="wall"):
+	CBox(corner, _L, _btype)
+		{ 
 		//assert(corner<L); FIXME make this work
-		if(btype=="periodic")
-			{
-			face[0]->vec_to_shadow=L(0)*u0;
-			face[0]->has_shadow=true;
-			face[3]->vec_to_shadow=-L(0)*u0;
-			face[3]->has_shadow=true;
-			face[1]->vec_to_shadow=L(1)*u1;
-			face[1]->has_shadow=true;
-			face[4]->vec_to_shadow=-L(1)*u1;
-			face[4]->has_shadow=true;
-
-			face[2]->has_shadow=false;
-			}
 		}	
 
-	string btype;
  	private:
 	};
 

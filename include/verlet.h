@@ -39,10 +39,7 @@ class CVerletManager{
 	CVerletManager(CPacking<particleT> *p):need_update (true), packing(p){}
 
 	bool add_particle(particleT *p){
-		packing->push_back(p);
-		setup(packing->back());
-		packing->back()->id=packing->TotalParticlesN;
-		 ++(packing->TotalParticlesN);
+		setup(p);
 		return true;
 		}
 	void setup(particleT *p);

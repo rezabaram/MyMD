@@ -1,14 +1,12 @@
 #ifndef MDSYS_H
 #define MDSYS_H 
 #include "common.h"
-#include"celllist.h"
+#include"grid.h"
 #include"particle.h"
 #include"packing.h"
 #include"interaction.h"
-#include"interaction_force.h"
 #include"particlecontact.h"
 
-//#define WITH_VERLET
 
 typedef CPacking<CParticle> ParticleContainer;
 
@@ -17,17 +15,10 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(vec(0.0), vec(1,1,1.5), config.get_param<string>("boundary")), 
+	walls(vec(0.0), vec(1.0), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
-	maxNParticle(maxnparticle), 
-	#ifdef WITH_VERLET
-	verlet((&particles)), 
-	#else 
-	#endif
-
-	epsFreeze(1.0e-12), outEnergy("log_energy"),
-	maxRadii(0), top_v(vec(0.0,0.0,0.0)),
-	grid(CCellList<ParticleContainer, CParticle>(&walls))
+	maxNParticle(maxnparticle), verlet((&particles)), epsFreeze(1.0e-12), outEnergy("log_energy"),
+	maxRadii(0), top_v(vec(0.0,0.0,0.0))
 	{
 	TRY
 	CATCH
@@ -46,6 +37,7 @@ class CSys{
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
 	inline bool interact(CParticle *p1, BoxContainer *p2);
+	vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1)const;
 	vec center_of_mass()const;
 
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
@@ -71,17 +63,14 @@ class CSys{
 
 	BoxContainer walls;
 	CPlane *sp;
+	//CRecGrid *grid;
 	double minr, maxr, maxh, maxv;
-	#ifdef WITH_VERLET
 	double verlet_factor;
-	#endif
 	//bool verlet_need_update;
 	vec G;
 	const unsigned maxNParticle;
 	double fluiddampping;
-	#ifdef WITH_VERLET
 	CVerletManager<CParticle> verlet;
-	#endif
 	double Energy, rEnergy, pEnergy, kEnergy;
  	private:
 	bool do_read_radii;
@@ -92,8 +81,6 @@ class CSys{
 	ifstream inputRadii;
 	double maxRadii;
 	vec top_v;
-
-	CCellList<ParticleContainer, CParticle> grid;
 	
 	};
 
@@ -156,21 +143,14 @@ TRY
 		ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
 		read_radii(radii);
 
+		add_particle_layer(maxh+maxRadii);
 		}
 	else{
 		particles.parse(config.get_param<string>("input"));
-		maxRadii=particles.maxr;
 		}
 
-	#ifdef WITH_VERLET
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
 	verlet.build();
-	#else
-	grid.setup(2.0*maxRadii);
-	#endif
-
-	 //add_particle_layer(1.02*maxRadii);
-
 	cerr<< "Number of Particles: "<<particles.size() <<endl;
 
 	tMax=config.get_param<double>("maxTime");
@@ -212,15 +192,7 @@ TRY
 	if(maxr<p->shape->radius)maxr=p->shape->radius;
 	if(p->top()>maxh) maxh=p->top();
 
-	particles.push_back(p);
-	particles.back()->id=particles.TotalParticlesN;
-	 ++(particles.TotalParticlesN);
-
-	#ifdef WITH_VERLET
 	if(verlet.add_particle(p)){}
-	#else
-	grid.add(p);
-	#endif
 
 	//setup_verlet(particles.back());
 	//assert(grid);
@@ -235,9 +207,7 @@ TRY
 	//FIXME make it dimensionless
 
 	ParticleContainer::iterator it1, it2, ittemp;
-	#ifdef WITH_VERLET
 	CVerletList<CParticle>::iterator neigh;
-	#endif
 	//reset forces
 	vec cm=center_of_mass();
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
@@ -246,17 +216,14 @@ TRY
 		}
 
 	//interactions
-	#ifdef WITH_VERLET
 	verlet.update();
-	#endif
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 
-		#ifdef WITH_VERLET
 		ERROR(!(*it1)->vlist.set,"the verlet list was not constructed properly");
 
 		assert(*it1==(*it1)->vlist.self_p);
 		for(neigh=(*it1)->vlist.begin(); neigh!=(*it1)->vlist.end(); ++neigh){
-			if(Test::interact(*it1,(*neigh).first)){
+			if(interact(*it1,(*neigh).first)){
 				//this to calculate contact duration
 				if(!neigh->second.in_contact){
 					neigh->second.in_contact=true;
@@ -270,20 +237,68 @@ TRY
 					}
 				}
 			}
-		#endif
 
 		//the walls
 		if(interact(*it1, &walls)){  }
 		}
-	#ifndef WITH_VERLET
-	grid.update(particles);
-	grid.interact();
-	#endif
 //TOTIME
 CATCH
 };
 
+inline
+vec CSys::contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp)const{
+TRY
+	double proj=(dv*c.n);
+	double ksi=c.dx_n;
 
+	ksi=(m.stiffness*ksi+tmp*m.damping*proj)*sqrt(ksi); 
+	
+	if(ksi<0)ksi=0; //to eliminate artifical attractions
+	vec fn=-ksi*c.n; //normal force
+	vec ft=-tmp*m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
+
+	return fn+ft; //visco-elastic Hertz law
+CATCH
+	}
+
+inline bool CSys::interact(CParticle *p1,CParticle *p2)const{
+TRY
+	//CParticle *p1=particles.at(i);
+	//CParticle *p2=particles.at(j);
+	ShapeContact &overlaps=p1->vlist[p2];
+	//ShapeContact overlaps;
+
+	overlaps.clear();
+	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);
+	static vec r1, r2, v1, v2, dv, force, torque(0.0);
+	//static double proj, ksi;
+	if(overlaps.size()==0)return false;
+	for(size_t ii=0; ii<overlaps.size(); ii++){
+		r1=overlaps(ii).x-p1->x(0);
+		r2=overlaps(ii).x-p2->x(0);
+		v1=p1->x(1)+cross(p1->w(1), r1);
+		v2=p2->x(1)+cross(p2->w(1), r2);
+		dv=v1-v2;
+
+		force=contactForce(overlaps(ii), dv, p1->material);
+		p1->shape->fixToBody(HomVec(overlaps(ii).x,1));
+		//cerr<< (p2->x(0)-p1->x(0)).normalized() <<endl;
+
+
+		p1->addforce(force);
+		torque=cross(r1, force);
+		p1->addtorque(torque);
+			
+		force*=-1.0;
+		p2->addforce(force);
+		torque=cross(r2, force);
+		p2->addtorque(torque);
+
+		}
+
+	return true;
+CATCH
+	}
 
 void CSys::output(ostream &out){
 TRY
@@ -405,7 +420,7 @@ void CSys::solve(){
 			cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 2e-7"<<endl;
 			break;
 			}
-		//adapt(dt);
+		adapt(dt);
 		}
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
@@ -449,11 +464,16 @@ TRY
 	static vec dv, r1, force, torque, vt, vn;
 	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
+		if(p2->btype=="periodic"){
+			CParticle* newshadow= p1->Shadow( (CPlane*)(overlaps(i).p));
+			if(newshadow)add(newshadow);
+			continue;
+			}
 
 		r1=overlaps(i).x-p1->x(0);
 		dv=p1->x(1)+cross(p1->w(1), r1);
 
-		force=Test::contactForce(overlaps(i), dv, p1->material, 1);
+		force=contactForce(overlaps(i), dv, p1->material, 1);
 		p1->addforce(force);
 
 		torque=cross(r1, force);
@@ -463,13 +483,6 @@ TRY
 
 	return true;
 CATCH
-	}
-
-double rand_radius(double r, double dr=0.0){
-	if(dr<1e-5) return r;
-	double x=rgen.randNorm(r, dr) ;
-	if(x<r-dr or x> r+dr)return rand_radius(r, dr);//trying until finding in range (r-dr, r+dr)
-	return x;
 	}
 
 double rand_aspect_ratio(double asphericity, double asphericityWidth){
@@ -501,15 +514,14 @@ void spheroid(double &a, double &b, double &c, double asph, double w){
 void CSys::read_radii(vector<vec> &radii){
 	
 	double size=config.get_param<double>("particleSize");
-	double dr=size*config.get_param<double>("particleSizeWidth");
 
+	double r=size*pow(4./3.*M_PI,1./3.);
 
 
 	string line;
 	//Parse the line
 	double a, b, c;
 	while(getline(inputRadii,line)){
-	double r=rand_radius(size,dr)*pow(5./3.*M_PI,1./3.);//note 4/3 pi a b c=1 
 		stringstream ss(line);
 		ss>>a>>b>>c;
 		radii.push_back(vec(r*a,r*b,r*c));
@@ -524,8 +536,8 @@ void CSys::add_particle_layer(double z){
 	vec x(0.0, 0.0, .0);
 
 	
-	//double asphericity=config.get_param<double>("asphericity");
-	//double asphericityWidth=config.get_param<double>("asphericityWidth");
+	double asphericity=config.get_param<double>("asphericity");
+	double asphericityWidth=config.get_param<double>("asphericityWidth");
 
 	double i=0, j=0;
 
@@ -582,8 +594,8 @@ TRY
 
 	double k=0;
 	
-	//double asphericity=config.get_param<double>("asphericity");
-	//double asphericityWidth=config.get_param<double>("asphericityWidth");
+	double asphericity=config.get_param<double>("asphericity");
+	double asphericityWidth=config.get_param<double>("asphericityWidth");
 
 	double i=0, j=0;
 
