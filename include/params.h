@@ -160,6 +160,8 @@ void CConfig::print(ostream &out){
 }
 
 void CConfig::parse(string infilename) {
+
+	const string comm="#";
 	ifstream inputFile(infilename.c_str());
 
 	if(!inputFile.good())
@@ -174,6 +176,8 @@ void CConfig::parse(string infilename) {
 	//Parse the line
 	while(getline(inputFile,line))
 	{
+
+	line = line.substr( 0, line.find(comm) );
 
 	//Insert the line string into a stream
 	stringstream ss(line);

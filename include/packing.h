@@ -148,7 +148,7 @@ void CPacking<T>::parse(istream &inputFile) {
 		//p->shape->parse(ss);
 		this->push_back(p);
 		if(p->shape->radius>maxr)maxr=p->shape->radius;
-		p->x(1)(0)=2*drand48();
+		p->x(1)(0)=drand48();//FIXME dont forget to remove this
 		}
 
 	else{

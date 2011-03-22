@@ -159,6 +159,7 @@ TRY
 		}
 	else{
 		particles.parse(config.get_param<string>("input"));
+		maxRadii=particles.maxr;
 		}
 
 	#ifdef WITH_VERLET
@@ -523,8 +524,8 @@ void CSys::add_particle_layer(double z){
 	vec x(0.0, 0.0, .0);
 
 	
-	double asphericity=config.get_param<double>("asphericity");
-	double asphericityWidth=config.get_param<double>("asphericityWidth");
+	//double asphericity=config.get_param<double>("asphericity");
+	//double asphericityWidth=config.get_param<double>("asphericityWidth");
 
 	double i=0, j=0;
 
@@ -581,8 +582,8 @@ TRY
 
 	double k=0;
 	
-	double asphericity=config.get_param<double>("asphericity");
-	double asphericityWidth=config.get_param<double>("asphericityWidth");
+	//double asphericity=config.get_param<double>("asphericity");
+	//double asphericityWidth=config.get_param<double>("asphericityWidth");
 
 	double i=0, j=0;
 

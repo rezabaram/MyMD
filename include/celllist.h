@@ -16,6 +16,7 @@ class CCell : public list<TParticle *>{
 		//adding itself to the list 
 		//of neighbors
 		neighs[0]=this;
+		shifts[0]=0.0;
 		}
 	void interact(){
 	
@@ -23,17 +24,17 @@ class CCell : public list<TParticle *>{
 		for(it1=this->begin(); it1!=this->end(); it1++){
 			for(it2=this->begin(); it2!=it1; it2++){
 				//for the same cell
-				Test::interact(*it1, *it2);//FIXME there should be a better solution
+				Test::interact(*it1, *it2);
 				}
 
-			for(int k=1; k<13; k++){
+			for(int k=1; k<14; k++){
 				//for neighbouring cells
 				if(neighs[k]==NULL)continue;
-				(*it1)->x(0)+=shifts[k];
+				if(shifted[k])(**it1).shift(shifts[k]);
 				for(it2=neighs[k]->begin(); it2!=neighs[k]->end(); it2++){
 					Test::interact(*it1, *it2);
 					}
-				(*it1)->x(0)-=shifts[k];
+				if(shifted[k])(**it1).shift(-shifts[k]);
 				}
 			}
 		}
@@ -46,8 +47,9 @@ class CCell : public list<TParticle *>{
 	class CCellList;
 
 	private:
-	CCell<TParticle> *neighs[13];
-	vec shifts[13];
+	CCell<TParticle> *neighs[14];
+	vec shifts[14];
+	bool shifted[14];
 	};
 
 
@@ -59,6 +61,10 @@ class CCellList
 		c=box->corner;
 		diag=box->L;
 		if(box->btype=="periodic_x")periodic_x=true;
+		if(box->btype=="periodic_xy"){
+			periodic_x=true;
+			periodic_y=true;
+			}
 		}
 
 	~CCellList(){
@@ -91,7 +97,8 @@ class CCellList
 			add((*it));
 			}
 		}
-	CCell<TParticle> *which(vec &x){
+	CCell<TParticle> *which(TParticle &p){
+		vec &x=p.shape->Xc;
 		vec xp=x-c;
 		int i=(int)(floor(xp(0)/dx));
 		int j=(int)(floor(xp(1)/dy));
@@ -100,14 +107,15 @@ class CCellList
 		if(!periodic_y) ERROR(j<0 or j>=ny, "Point out of grid: "+stringify(x)+stringify(i)+" " +stringify(j)+" "+stringify(k));
 		if(!periodic_z) ERROR(k<0 or k>=nz, "Point out of grid: "+stringify(x)+stringify(i)+" " +stringify(j)+" "+stringify(k));
 		vec shift(0,0,0);
-		CCell<TParticle> *p=boundary_mask(i,j, k, shift);
-		x+=shift;
-		return p;
+		bool is_shifted=false;
+		CCell<TParticle> *cell=boundary_mask(i,j, k, shift, is_shifted);
+		if(is_shifted)p.shift(shift);
+		return cell;
 		}
 
 	void add(TParticle *p){
-		CCell<TParticle> *c=which(p->x(0));
-		c->add(p);
+		CCell<TParticle> *cell=which(*p);
+		cell->add(p);
 		}
 	void interact(){
 		for(int i=0; i<nx*ny*nz; i++){
@@ -129,9 +137,9 @@ class CCellList
 			}
 		}
 
-	CCell<TParticle> *boundary_mask(int i,int j, int k,  vec &shift);
+	CCell<TParticle> *boundary_mask(int i,int j, int k,  vec &shift, bool &is_shifted);
 	CCell<TParticle> *node(int i, int j, int k)const{
-		return &nodes[nz*ny*i+nz*j+k];
+		return &nodes[nz*(ny*i+j)+k];
 		}
  	//private:
 	void build_neighbors();
@@ -146,20 +154,23 @@ class CCellList
 
 
 template<typename TParticleContainer, typename TParticle>
-CCell<TParticle> *CCellList<TParticleContainer, TParticle>::boundary_mask(int i,int j, int k, vec &shift){
+CCell<TParticle> *CCellList<TParticleContainer, TParticle>::boundary_mask(int i,int j, int k, vec &shift, bool &is_shifted){
 	
 		shift*=0;
+		is_shifted=false;
 		if(i >= nx){
 			if(periodic_x){
 				i-=nx;
 				shift(0)-=diag(0);
+				is_shifted=true;
 				}
 			else return NULL;
 			}
-		if(i < 0){
+		else if(i < 0){
 			if(periodic_x){
 				i+=nx;
 				shift(0)+=diag(0);
+				is_shifted=true;
 				}
 			else return NULL;
 			}
@@ -167,13 +178,15 @@ CCell<TParticle> *CCellList<TParticleContainer, TParticle>::boundary_mask(int i,
 			if(periodic_y){
 				j-=ny;
 				shift(1)-=diag(1);
+				is_shifted=true;
 				}
 			else return NULL;
 				}
-		if(j < 0){
+		else if(j < 0){
 			if(periodic_y){
 				j+=ny;
 				shift(1)+=diag(1);
+				is_shifted=true;
 				}
 			else return NULL;
 				}
@@ -182,14 +195,16 @@ CCell<TParticle> *CCellList<TParticleContainer, TParticle>::boundary_mask(int i,
 			if(periodic_z){
 				k-=nz;
 				shift(2)-=diag(2);
+				is_shifted=true;
 				}
 			else return NULL;
 				}
 
-		if(k < 0){
+		else if(k < 0){
 			if(periodic_z){
 				k+=nz;
 				shift(2)+=diag(2);
+				is_shifted=true;
 				}
 			else return NULL;
 				}
@@ -205,62 +220,76 @@ void CCellList<TParticleContainer, TParticle>::build_neighbors(){
 	for(int j=0; j<ny; j++){
 	for(int k=0; k<nz; k++){
 		vec shift(0,0,0);	
+		bool is_shifted=false;
 		CCell<TParticle> *p, *pij;
 		pij=node(i,j,k);
 		
-		p=boundary_mask(i+1,j-1,k, shift);
-		pij->neighs[0]=p;
-		pij->shifts[0]=shift;
-
-		p=boundary_mask(i+1,j,k, shift);
+		p=boundary_mask(i+1,j-1,k, shift, is_shifted);
 		pij->neighs[1]=p;
 		pij->shifts[1]=shift;
-		
-		p=boundary_mask(i,j+1,k, shift);
+		pij->shifted[1]=is_shifted;
+
+		p=boundary_mask(i+1,j,k, shift, is_shifted);
 		pij->neighs[2]=p;
 		pij->shifts[2]=shift;
-
-		p=boundary_mask(i+1,j+1,k, shift);
+		pij->shifted[2]=is_shifted;
+		
+		p=boundary_mask(i,j+1,k, shift, is_shifted);
 		pij->neighs[3]=p;
 		pij->shifts[3]=shift;
+		pij->shifted[3]=is_shifted;
+
+		p=boundary_mask(i+1,j+1,k, shift, is_shifted);
+		pij->neighs[4]=p;
+		pij->shifts[4]=shift;
+		pij->shifted[4]=is_shifted;
 
 		// ----------------
 
-		p=boundary_mask(i-1,j-1,k+1, shift);
-		pij->neighs[4]=p;
-		pij->shifts[4]=shift;
-
-		p=boundary_mask(i-1,j,  k+1, shift);
+		p=boundary_mask(i-1,j-1,k+1, shift, is_shifted);
 		pij->neighs[5]=p;
 		pij->shifts[5]=shift;
-		
-		p=boundary_mask(i-1,j+1,k+1, shift);
+		pij->shifted[5]=is_shifted;
+
+		p=boundary_mask(i-1,j,  k+1, shift, is_shifted);
 		pij->neighs[6]=p;
 		pij->shifts[6]=shift;
-
-		p=boundary_mask(i,j-1,k+1, shift);
+		pij->shifted[6]=is_shifted;
+		
+		p=boundary_mask(i-1,j+1,k+1, shift, is_shifted);
 		pij->neighs[7]=p;
 		pij->shifts[7]=shift;
+		pij->shifted[7]=is_shifted;
 
-		p=boundary_mask(i,j,  k+1, shift);
+		p=boundary_mask(i,j-1,	k+1, shift, is_shifted);
 		pij->neighs[8]=p;
 		pij->shifts[8]=shift;
-		
-		p=boundary_mask(i,j+1,k+1, shift);
+		pij->shifted[8]=is_shifted;
+
+		p=boundary_mask(i,j,  	k+1, shift, is_shifted);
 		pij->neighs[9]=p;
 		pij->shifts[9]=shift;
-
-		p=boundary_mask(i+1,j-1,k+1, shift);
+		pij->shifted[9]=is_shifted;
+		
+		p=boundary_mask(i,j+1,	k+1, shift, is_shifted);
 		pij->neighs[10]=p;
 		pij->shifts[10]=shift;
+		pij->shifted[10]=is_shifted;
 
-		p=boundary_mask(i+1,j,  k+1, shift);
+		p=boundary_mask(i+1,j-1,k+1, shift, is_shifted);
 		pij->neighs[11]=p;
 		pij->shifts[11]=shift;
-		
-		p=boundary_mask(i+1,j+1,k+1, shift);
+		pij->shifted[11]=is_shifted;
+
+		p=boundary_mask(i+1,j,  k+1, shift, is_shifted);
 		pij->neighs[12]=p;
 		pij->shifts[12]=shift;
+		pij->shifted[12]=is_shifted;
+		
+		p=boundary_mask(i+1,j+1,k+1, shift, is_shifted);
+		pij->neighs[13]=p;
+		pij->shifts[13]=shift;
+		pij->shifted[13]=is_shifted;
 
 		}
 		}

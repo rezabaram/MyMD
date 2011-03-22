@@ -1,7 +1,7 @@
 
 files=$*
-w=500
-h=500
+w=720
+h=720
 
 bin=`dirname $0`
 echo "Generating jpg frames "

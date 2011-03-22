@@ -10,8 +10,8 @@ class CBox: public GeomObjectBase
 	public:
 	CBox(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string _btype="wall"):
 		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L), nFaces(5),
-		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0)),
-		btype(_btype)
+		btype(_btype),
+		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
 		identifier=6;
 		face =  new CPlane * [nFaces];
@@ -27,6 +27,13 @@ class CBox: public GeomObjectBase
 			{
 			face[0]->solid=false;
 			face[3]->solid=false;
+			}
+		else if(btype=="periodic_xy")
+			{
+			face[0]->solid=false;
+			face[3]->solid=false;
+			face[1]->solid=false;
+			face[4]->solid=false;
 			}
 		else if(btype=="wall"){}
 		else{ERROR(1, "Boundary condition not defined");}
