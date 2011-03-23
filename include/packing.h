@@ -35,6 +35,7 @@ class CPacking : public list<T *>
 	void parse(string infilename);
 	void parse(istream &inputFile);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
+	bool is_in_void(const vec &x);
 	void output_contact_network(ostream &out);
 	double totalVolume();
 	void BuildContactNetwork();
@@ -93,6 +94,24 @@ TRY
 			}
 		}
 	return n/nt;
+CATCH
+	}
+
+template < class T>
+bool CPacking<T>::is_in_void(const vec &x){
+TRY
+	double d=1;
+	typename CNode3D<T>::const_iterator it;
+
+		CNode3D<T> *node=grid->which(x);
+		assert(node);
+		for(it=node->begin(); it!=node->end(); it++){
+			d=(*(**it).shape)(x);
+			if(d<=0) {
+				return false;
+				}
+			}
+	return true;
 CATCH
 	}
 
@@ -156,8 +175,6 @@ void CPacking<T>::parse(istream &inputFile) {
 		continue;
 		}
 		
-
-	//Read up to second whitespace
 	}
 }
 template < class T>

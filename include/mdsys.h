@@ -17,7 +17,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(vec(0.0), vec(1,1,1.5), config.get_param<string>("boundary")), 
+	walls(vec(0.0), vec(1,1,2.5), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), 
 	#ifdef WITH_VERLET
@@ -305,7 +305,7 @@ CATCH
 
 void CSys::forward(double dt){
 TRY
-	if(do_read_radii and maxh< 1.+2*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
+	if(do_read_radii and maxh< 1.+4*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
 
 	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
