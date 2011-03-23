@@ -1,0 +1,17 @@
+#!/usr/bin/perl
+
+$res=2**$ARGV[0];
+$ntotal=$res**3;
+
+print "# vtk DataFile Version 2.0", "\n";
+print "test" , "\n";
+print "BINARY" , "\n";
+print "DATASET STRUCTURED_POINTS" , "\n";
+print "DIMENSIONS ", $res," ", $res," ", $res," ", "\n" ;
+print "ORIGIN 0 0 0" , "\n";
+print "SPACING 1 1 1" , "\n";
+print "POINT_DATA ",$ntotal , "\n";
+print "SCALARS OutArray float 1" , "\n";
+print "LOOKUP_TABLE default" , "\n";
+
+

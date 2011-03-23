@@ -305,7 +305,7 @@ CATCH
 
 void CSys::forward(double dt){
 TRY
-	if(do_read_radii and maxh< 1.+4*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
+	if(do_read_radii and maxh< 1.+2*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
 
 	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
