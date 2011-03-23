@@ -17,7 +17,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(vec(0.0), vec(1,1,1.5), config.get_param<string>("boundary")), 
+	walls(vec(0.0), vec(1,1,2.5), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), 
 	#ifdef WITH_VERLET
