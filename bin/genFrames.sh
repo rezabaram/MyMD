@@ -17,7 +17,7 @@ do
 #	$bin/coord_convert -r $file 
 	$bin/coord_convert -r $file > $filename".r"
 	$bin/coord2pr3d -x0 -y0 -z0  -s1 $filename".r" | render -size $w"x"$h -jpeg > _$filename.jpg 
-	#rm -f $filename".r"
+	rm -f $filename".r"
 	#coord2pr3d -x0 -y0 -s1 $file | render -size $w"x"$h -jpeg > _$file.jpg 
 	
 
