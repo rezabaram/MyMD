@@ -45,8 +45,8 @@ class CXdr{
 
 class CLattice{
 	public:
-	CLattice(int _nx, int _ny, int _nz, string input):m_xdr(new CXdr(input+".xdr")), nx(_nx), ny(_ny), nz(_nz){
-		allocate();
+	CLattice(long int _nx, long int _ny, long int _nz, string input):m_xdr(new CXdr(input+".xdr")), nx(_nx), ny(_ny), nz(_nz){
+		//allocate();
 		ifstream inputFile(input.c_str());
 		ERROR(!inputFile.good(), "Unable to open input file: "+input);
 		define_parameters();
@@ -54,7 +54,7 @@ class CLattice{
 		packing.BuildGrid();
 		}
 	~CLattice(){
-		deallocate();
+		//deallocate();
 		}
 	
 	void deallocate(){
@@ -92,9 +92,9 @@ class CLattice{
 	void out_xdr(){
 	 double dx=1.0/nx, dy=1.0/ny, dz=1.0/nz;
 	  /* Create xdrfile, stop if it already exists/overwrite? */
-	    for(int i=0;i<nx;++i) {
-	    for(int j=0;j<ny;++j) {
-	    for(int k=0;k<nz;++k) {
+	    for(long int i=0;i<nx;++i) {
+	    for(long int j=0;j<ny;++j) {
+	    for(long int k=0;k<nz;++k) {
 		/* Check output of xdr file*/
 		float x=1;
 		if(packing.is_in_void(vec(i*dx, j*dy, k*dz)))x=0;
@@ -136,7 +136,7 @@ class CLattice{
 CXdr *m_xdr;
 CPacking<CParticle> packing;
 private:
-int nx, ny, nz;
+long int nx, ny, nz;
 dtype ***data;
 };
 
@@ -154,6 +154,7 @@ void Initialize(int n_params, char **params){
 	int n=atoi(params[2]);
 	int e=1;
 	e=e<<n;
+	cerr<< "Resolution: "<< e <<endl;
 	CLattice lattice(e, e, e,input);
 	lattice.out_xdr();
 	}

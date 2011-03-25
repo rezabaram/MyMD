@@ -14,6 +14,7 @@ void define_parameters()
        config.add_param<double>("outEnd", 1000.00);
        config.add_param<double>("outDt", 0.02);
        config.add_param<string>("output", "out");
+       config.add_param<string>("outDensity", "density");
 
        config.add_param<double>("stiffness", 5.0e+05); 
        config.add_param<double>("damping", 1); 
