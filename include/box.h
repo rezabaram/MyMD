@@ -56,7 +56,7 @@ class CBox: public GeomObjectBase
 		out<< identifier<< "   "<<corner+L<<"  "<<corner+L+vec(1,0,0)<<"  "<<corner+L+vec(1,1,0)<<endl;
 		}
 
-	double vol(){return L(0)*L(1)*L(2);}
+	double vol()const{return L(0)*L(1)*L(2);}
 	double I(vec n){
 		ERROR(true, "Not implemented."); //FIXME
 		return 0;}

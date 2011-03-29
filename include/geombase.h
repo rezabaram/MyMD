@@ -18,7 +18,7 @@ class GeomObjectBase
 		//Xc0=q.rotate(Xc0);
 		};
 	virtual void rotateTo(const Quaternion &q){}
-	virtual double vol()=0;//{WARNING("This function should not be called");}
+	virtual double vol()const=0;//{WARNING("This function should not be called");}
 	virtual double I(vec n)=0;//{WARNING("This function should not be called");}
 
 	virtual void scale(double)=0;//{WARNING("This function should not be called");}

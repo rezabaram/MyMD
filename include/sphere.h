@@ -27,7 +27,7 @@ class CSphere: public GeomObjectBase
 			in>> Xc >>radius;
 			}
 
-	double vol(){ 
+	double vol()const{ 
 			return 4.0/3.0*M_PI*radius*radius*radius;}
 	double I(vec n){return 2.0/5.0*radius*radius;}
 	private:

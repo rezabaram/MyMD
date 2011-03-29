@@ -8,7 +8,7 @@ targetdir=../bin/
 all: coord_convert packing_density fabric coord2xdr
 	cp coord_convert packing_density fabric coord2xdr $(targetdir)
 
-packing_density:	packing_density.cc  ../include/ellipsoid.h
+packing_density:	packing_density.cc  ../include/packing.h ../include/ellipsoid.h
 	$(ECHO) here
 	$(CC) -O2 -o packing_density $(INCLUDES) $(LIBS) $(FLAGS) packing_density.cc 
 

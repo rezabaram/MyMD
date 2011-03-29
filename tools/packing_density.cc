@@ -8,6 +8,7 @@ long RNGSeed;
 extern MTRand rgen;
 CPacking<CParticle> packing;
 
+
 void Initialize(int n_params, char **params){
 	rgen.seed(RNGSeed);
 //	cerr<< "RNG Seed: "<< RNGSeed <<endl;
@@ -22,8 +23,10 @@ void Initialize(int n_params, char **params){
 	}
 
 void Run(){
-	cout<< packing.packFraction(vec(0.1,0.1,0.1),vec(.9,.9,.9), 100000 ) <<endl;
-	//cerr<< packing.totalVolume()<<endl;
+	
+	vec x1 (0, 0, 0.00000);
+	vec x2 (1, 1, 0.9);
+	cout<< packing.packFraction(x1,x2, 100000 ) <<endl;
 }
 
 int main(int n_params, char **params){

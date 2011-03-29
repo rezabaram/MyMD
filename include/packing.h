@@ -167,7 +167,49 @@ void CPacking<T>::parse(istream &inputFile) {
 		//p->shape->parse(ss);
 		this->push_back(p);
 		if(p->shape->radius>maxr)maxr=p->shape->radius;
-		p->x(1)(0)=drand48();//FIXME dont forget to remove this
+
+		//when periodic
+		if(shape.Xc(0)-shape.radius<0){
+			p=new T(shape);
+			p->shift(vec(1,0,0));
+			this->push_back(p);
+			}
+		else if(shape.Xc(0)+shape.radius>1){
+			p=new T(shape);
+			p->shift(vec(-1,0,0));
+			this->push_back(p);
+			}
+		if(shape.Xc(1)-shape.radius<0){
+			p=new T(shape);
+			p->shift(vec(0,1,0));
+			this->push_back(p);
+			}
+		else if(shape.Xc(1)+shape.radius>1){
+			p=new T(shape);
+			p->shift(vec(0,-1,0));
+			this->push_back(p);
+			}
+		//corner
+		if(shape.Xc(0)-shape.radius<0 and shape.Xc(1)-shape.radius<0){
+			p=new T(shape);
+			p->shift(vec(1,1,0));
+			this->push_back(p);
+			}
+		else if(shape.Xc(0)-shape.radius<0 and shape.Xc(1)+shape.radius>1){
+			p=new T(shape);
+			p->shift(vec(1,-1,0));
+			this->push_back(p);
+			}
+		else if(shape.Xc(0)+shape.radius>1 and shape.Xc(1)-shape.radius<0){
+			p=new T(shape);
+			p->shift(vec(-1,1,0));
+			this->push_back(p);
+			}
+		else if(shape.Xc(0)+shape.radius<1 and shape.Xc(1)+shape.radius>1){
+			p=new T(shape);
+			p->shift(vec(-1,-1,0));
+			this->push_back(p);
+			}
 		}
 
 	else{

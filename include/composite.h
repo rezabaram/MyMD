@@ -76,7 +76,7 @@ class CComposite : public GeomObjectBase{
 		Xc+=dx;
 		}
 
-	double vol(){
+	double vol()const{
 		double v=0;
 		for(indexType i=0; i<elems.size(); i++){
 			v+=elems.at(i)->vol();

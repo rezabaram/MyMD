@@ -235,7 +235,7 @@ class CEllipsoid: public GeomObjectBase
 	CATCH
 		}
 
-	double vol(){
+	double vol()const{
 		return 4.0/3.0*M_PI*a*b*c;
 		}
 
@@ -260,6 +260,7 @@ class CEllipsoid: public GeomObjectBase
 
 	bool doesHit(const CPlane &plane)const {//FIXME needs to be obtimized
 	TRY
+		if(fabs(plane(this->Xc)) > this->radius) return false;
 		double alpha;
 		alpha=(plane.n*(this->inv())*plane.n);
 	

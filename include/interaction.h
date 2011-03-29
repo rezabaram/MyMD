@@ -110,7 +110,7 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CPlane *plane){
 	static vec v, vp;
 	static double dx;
-	if(plane->normal_from_point(p1->Xc).abs()-p1->radius > 0) return;
+	if(fabs((*plane)(p1->Xc))>p1->radius) return;
 	vp=p1->point_to_plane(*(plane));
 	v=plane->normal_to_point(vp, 0);
 	dx=v.abs();

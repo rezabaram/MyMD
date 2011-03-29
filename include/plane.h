@@ -28,6 +28,9 @@ class CPlane : public GeomObjectBase
 			in>>identifier;
 			in>>Xc>>n;
 			}
+		double operator()(const vec &point)const{
+			return (point-Xc)*n;
+			}
 
 		vec normal_to_point(const vec & p, double shift=0)const{
 			return -normal_from_point(p,shift);
@@ -36,7 +39,7 @@ class CPlane : public GeomObjectBase
 		vec normal_from_point(const vec & p, double shift=0)const{
 			return ((Xc-p)*n-shift)*n;
 			}
-	double vol(){return 0;}
+	double vol()const{return 0;}
 	double I(vec n){
 		ERROR(true, "Not implemented."); //FIXME
 		return 0;}
