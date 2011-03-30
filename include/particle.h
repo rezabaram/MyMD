@@ -40,10 +40,11 @@ class CParticle
 	public:
 	GeomObjectBase *shape;
 	template<class T>
-	explicit CParticle(const T &_shape)
+	explicit CParticle(const T &_shape, bool _shadow=false)
 	:shape(new T(_shape)), id(-1),  
 	vlist(this),vlistold(this),
-	pos(shape->Xc)
+	pos(shape->Xc),
+	is_shadow(_shadow)
 	{
 
 		forces= (new vec(0.0,0.0,0.0));
@@ -67,8 +68,6 @@ class CParticle
 		return false;
 		}
 
-	list<void *> shadows;
-	CParticle *Shadow(void *plane);
 
 	virtual void reset_forces(const vec &v=vec(0.0)){
 		*forces=v;
@@ -90,6 +89,9 @@ class CParticle
 		Iyy=mass*shape->I(vec(0,1,0));
 		Izz=mass*shape->I(vec(0,0,1));
 		};
+	double vol(){
+		return shape->vol();
+		}
 
 	double kEnergy(){
 		return 0.5*mass*x(1).abs2();
@@ -148,6 +150,7 @@ class CParticle
 	set<CParticle *> neighbours;
 	double mass, Ixx, Iyy, Izz;
 	vec &pos;//, vel,accel;
+	bool is_shadow;
 	protected:
  	private:
 	CDFreedom<5> RotationalDFreedom;

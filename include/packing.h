@@ -32,8 +32,8 @@ class CPacking : public list<T *>
 	void print(std::ostream& out, bool raster=false)const;
 	void printRaster3D(std::ostream& out)const{print(out, true);}
 	void printEuler(std::ostream& out)const;
-	void parse(string infilename);
-	void parse(istream &inputFile);
+	void parse(string infilename, bool periodic=false);
+	void parse(istream &inputFile, bool periodic=false);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
 	bool is_in_void(const vec &x);
 	void output_contact_network(ostream &out);
@@ -63,7 +63,7 @@ double CPacking<T>::totalVolume(){
 	double v=0;
 	typename CPacking<T>::const_iterator it;
 	for(it=this->begin(); it!=this->end(); it++){
-		v+=(**it).vol();
+		if(! (*it)->is_shadow) v+=(**it).vol();
 		}
 	return v;
 	}
@@ -135,19 +135,19 @@ void CPacking<T>::printEuler(std::ostream& out)const{
 		}
 
 template < class T>
-void CPacking<T>::parse(string infilename) {
+void CPacking<T>::parse(string infilename, bool periodic) {
 	ifstream inputFile(infilename.c_str());
 	if(!inputFile.good())
 	{
 	cerr << "Unable to open input file: " << infilename << endl;
 	return;
 	}
-	parse(inputFile);
+	parse(inputFile, periodic);
 	inputFile.close();
 	}
 
 template < class T>
-void CPacking<T>::parse(istream &inputFile) {
+void CPacking<T>::parse(istream &inputFile, bool periodic) {
 
 	string line;
 
@@ -169,47 +169,49 @@ void CPacking<T>::parse(istream &inputFile) {
 		if(p->shape->radius>maxr)maxr=p->shape->radius;
 
 		//when periodic
+		if(periodic){
 		if(shape.Xc(0)-shape.radius<0){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(1,0,0));
 			this->push_back(p);
 			}
 		else if(shape.Xc(0)+shape.radius>1){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(-1,0,0));
 			this->push_back(p);
 			}
 		if(shape.Xc(1)-shape.radius<0){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(0,1,0));
 			this->push_back(p);
 			}
 		else if(shape.Xc(1)+shape.radius>1){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(0,-1,0));
 			this->push_back(p);
 			}
 		//corner
 		if(shape.Xc(0)-shape.radius<0 and shape.Xc(1)-shape.radius<0){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(1,1,0));
 			this->push_back(p);
 			}
 		else if(shape.Xc(0)-shape.radius<0 and shape.Xc(1)+shape.radius>1){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(1,-1,0));
 			this->push_back(p);
 			}
 		else if(shape.Xc(0)+shape.radius>1 and shape.Xc(1)-shape.radius<0){
-			p=new T(shape);
+			p=new T(shape, true);
 			p->shift(vec(-1,1,0));
 			this->push_back(p);
 			}
-		else if(shape.Xc(0)+shape.radius<1 and shape.Xc(1)+shape.radius>1){
-			p=new T(shape);
+		else if(shape.Xc(0)+shape.radius>1 and shape.Xc(1)+shape.radius>1){
+			p=new T(shape, true);
 			p->shift(vec(-1,-1,0));
 			this->push_back(p);
 			}
+		}
 		}
 
 	else{

@@ -5,7 +5,7 @@ outDt  		0.1
 timeStep 	0.0001
 maxTime		15.02
 particleSize 	0.04
-particleSizeWidth 	0.5
+particleSizeWidth 	0.25
 nParticle 	10000
 stiffness  	5e+02
 damping		5e+0

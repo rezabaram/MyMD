@@ -19,14 +19,15 @@ void Initialize(int n_params, char **params){
 	ERROR(!inputFile.good(), "Unable to open input file"+(string)(params[1]));
 	
 	define_parameters();
-	packing.parse(inputFile);
+	packing.parse(inputFile, true);
 	}
 
 void Run(){
 	
 	vec x1 (0, 0, 0.00000);
-	vec x2 (1, 1, 0.9);
+	vec x2 (1, 1, 1.3);
 	cout<< packing.packFraction(x1,x2, 100000 ) <<endl;
+	cerr<< packing.totalVolume()/1.3 <<endl;
 }
 
 int main(int n_params, char **params){
