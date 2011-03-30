@@ -44,7 +44,8 @@ class CParticle
 	:shape(new T(_shape)), id(-1),  
 	vlist(this),vlistold(this),
 	pos(shape->Xc),
-	is_shadow(_shadow)
+	is_shadow(_shadow),
+	cell(NULL)
 	{
 
 		forces= (new vec(0.0,0.0,0.0));
@@ -151,6 +152,7 @@ class CParticle
 	double mass, Ixx, Iyy, Izz;
 	vec &pos;//, vel,accel;
 	bool is_shadow;
+	void * cell;
 	protected:
  	private:
 	CDFreedom<5> RotationalDFreedom;
@@ -205,6 +207,7 @@ CATCH
 
 void CParticle::calVel(double dt){
 	static const double c=1./6.0;
+	x0(0)=x(0);
 	x0(2)=x(2);
 	x(2)=*forces/mass;
 	x(1)+= x(2)*(dt*2*c);

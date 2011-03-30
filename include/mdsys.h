@@ -27,7 +27,7 @@ class CSys{
 
 	epsFreeze(1.0e-12), outEnergy("log_energy"),
 	maxRadii(0), top_v(vec(0.0,0.0,0.0)),
-	grid(CCellList<ParticleContainer, CParticle>(&walls))
+	celllist(CCellList<ParticleContainer, CParticle>(&walls))
 	{
 	TRY
 	CATCH
@@ -93,7 +93,7 @@ class CSys{
 	double maxRadii;
 	vec top_v;
 
-	CCellList<ParticleContainer, CParticle> grid;
+	CCellList<ParticleContainer, CParticle> celllist;
 	
 	};
 
@@ -164,9 +164,10 @@ TRY
 
 	#ifdef WITH_VERLET
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
-	verlet.build();
+	verlet.update();
 	#else
-	grid.setup(2.0*maxRadii);
+	celllist.setup(2.0*maxRadii);
+	celllist.build(particles);
 	#endif
 
 	 //add_particle_layer(1.02*maxRadii);
@@ -219,7 +220,7 @@ TRY
 	#ifdef WITH_VERLET
 	if(verlet.add_particle(p)){}
 	#else
-	grid.add(p);
+	celllist.add(p);
 	#endif
 
 	//setup_verlet(particles.back());
@@ -276,8 +277,8 @@ TRY
 		if(interact(*it1, &walls)){  }
 		}
 	#ifndef WITH_VERLET
-	grid.update(particles);
-	grid.interact();
+	celllist.build(particles);
+	celllist.interact();
 	#endif
 //TOTIME
 CATCH

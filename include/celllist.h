@@ -90,11 +90,18 @@ class CCellList
 		}
 		
 		}
-	void update(TParticleContainer &p){
+
+	void build(TParticleContainer &p){
 		clear();
 		typename TParticleContainer::iterator it;
 		for(it=p.begin(); it!=p.end(); it++){
 			add((*it));
+			}
+		}
+	void update(TParticleContainer &p){
+		typename TParticleContainer::iterator it;
+		for(it=p.begin(); it!=p.end(); it++){
+			update((*it));
 			}
 		}
 	CCell<TParticle> *which(TParticle &p){
@@ -116,7 +123,18 @@ class CCellList
 	void add(TParticle *p){
 		CCell<TParticle> *cell=which(*p);
 		cell->add(p);
+		p->cell=cell;
 		}
+
+	void update(TParticle *p){
+		CCell<TParticle> *cell=which(*p);
+		if(cell==p->cell)return;
+		ERROR(!p->cell, "Particle's cell pointer not specified");
+		(static_cast<CCell<CParticle>*>(p->cell))->remove(p);
+		cell->add(p);
+		p->cell=cell;
+		}
+
 	void interact(){
 		for(int i=0; i<nx*ny*nz; i++){
 			nodes[i].interact();
