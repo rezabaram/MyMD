@@ -1,21 +1,19 @@
-particleShape 	ellipsoid
 density  	1
 Gravity  	0   0   -10
 outDt  		0.05
 timeStep 	0.0001
 maxTime		15.02
-particleSize 	0.06
+particleSize 	0.05
 particleSizeWidth 	0.25
-nParticle 	100
+nParticle 	400
 stiffness  	5e+02
 damping		5e+0
 friction	2.0e-1
 cohesion	0.0
-verletfactor 	0.1
-read_radii	1
+initialization	generate	
+particleType	oblate	
+asphericity 	1.05
 radii 		data/asphericity/aspect1.01
-asphericity 1.01
-asphericityWidth 0.0
 output          out
 boundary        periodic_xy
 input		input.dat

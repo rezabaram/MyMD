@@ -26,9 +26,10 @@ void define_parameters()
        config.add_param<double>("particleSizeWidth", 0); 
        config.add_param<double>("timeStep", 0.00001); 
        config.add_param<double>("maxTime", 4.0); 
-       config.add_param<double>("verletfactor", 0.5); 
-       config.add_param<size_t>("nParticle", 5); 
-       config.add_param<string>("particleShape", "sphere"); 
+       config.add_param<double>("verletfactor", 0.1); 
+       config.add_param<unsigned int>("nParticle", 5); 
+       config.add_param<string>("particleType", "general"); 
+       config.add_param<string>("initialization", "generate"); 
        config.add_param<double>("e", 0.5); 
        config.add_param<double>("asphericity", -0.5); 
        config.add_param<double>("asphericityWidth", 0.1); 

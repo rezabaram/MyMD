@@ -17,7 +17,7 @@ void Initialize(){
 
 void Run(){
 
-	CSys sys(config.get_param<size_t>("nParticle"));
+	CSys sys(config.get_param<unsigned int>("nParticle"));
 	sys.initialize(config);
 	sys.solve();
 	}

@@ -7,8 +7,11 @@
 #include"interaction.h"
 #include"interaction_force.h"
 #include"particlecontact.h"
+#include"map_asph_aspect.h"
 
 //#define WITH_VERLET
+
+extern MTRand rgen;
 
 typedef CPacking<CParticle> ParticleContainer;
 
@@ -119,47 +122,54 @@ CATCH
 
 void CSys::initialize(const CConfig &config){
 TRY
+	G=config.get_param<vec>("Gravity");
 	out_name=config.get_param<string>("output");
 	outDt=config.get_param<double>("outDt");
 	outStart=config.get_param<double>("outStart");
 	outEnd=config.get_param<double>("outEnd");
 	fluiddampping=config.get_param<double>("fluiddampping");
-	do_read_radii=config.get_param<bool>("read_radii");
-
-	//calculating the maximum radius
-		double asphericity=config.get_param<double>("asphericity");
-		double asphericityWidth=config.get_param<double>("asphericityWidth");
-
-                double ee=exp(asphericity+asphericityWidth);
-                double r=config.get_param<double>("particleSize");
-                double a =r/pow(ee,1./3.);
-                double b =a;//*rgen();
-                double c =ee*a;//*rgen();
-                maxr=max(r,max(a,max(b,c)));
-
-                ee=exp(asphericity-asphericityWidth);
-                r=config.get_param<double>("particleSize");
-                a =r/pow(ee,1./3.);
-                b =a;
-                c =ee*a;
-                maxr=max(r,maxr);
-
-
-	G=config.get_param<vec>("Gravity");
+	string particleType=config.get_param<string>("particleType");
+	string init_method=config.get_param<string>("initialization");
 
 
 
-	//particles_on_grid();
-	if(do_read_radii){
-		string fileRadii=config.get_param<string>("radii");
-		inputRadii.open(fileRadii.c_str());
-		ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
-		read_radii(radii);
-
-		}
-	else{
+	if(init_method=="restart"){
 		particles.parse(config.get_param<string>("input"));
 		maxRadii=particles.maxr;
+		}
+	else if(init_method=="generate"){
+		if(particleType=="general"){
+			string fileRadii=config.get_param<string>("radii");
+			inputRadii.open(fileRadii.c_str());
+			ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
+			read_radii(radii);
+			}
+		else if(particleType=="prolate"){
+		//calculating the maximum radius
+			double ee=get_aspect_prolate(config.get_param<double>("asphericity"));
+			cerr<<config.get_param<double>("asphericity") <<endl;
+			double r=config.get_param<double>("particleSize");
+			double a =r/pow(ee,1./3.);
+			double b =a;
+			double c =ee*a;
+			maxRadii=max(r,max(a,max(b,c)));
+			radii.push_back(vec(a, b, c));
+
+			}
+		else if(particleType=="oblate"){
+			double ee=get_aspect_oblate(config.get_param<double>("asphericity"));
+			double r=config.get_param<double>("particleSize");
+			double a =r/pow(ee,1./3.);
+			double b =a;
+			double c =ee*a;
+			maxRadii=max(r,max(a,max(b,c)));
+			radii.push_back(vec(a, b, c));
+			}
+		else
+			ERROR(1, "Unknown particle type: "+particleType);
+		}
+	else{
+		ERROR(1, "Unknown initialization method: "+init_method);
 		}
 
 	#ifdef WITH_VERLET
@@ -306,7 +316,8 @@ CATCH
 
 void CSys::forward(double dt){
 TRY
-	if(do_read_radii and maxh< 1.+2*maxRadii ) add_particle_layer(maxh+1.02*maxRadii);
+	if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
+		add_particle_layer(maxh+1.02*maxRadii);
 
 	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
@@ -520,7 +531,6 @@ void CSys::read_radii(vector<vec> &radii){
 
 
 void CSys::add_particle_layer(double z){ 
-	double k=z;
 	double size=config.get_param<double>("particleSize");
 	vec x(0.0, 0.0, .0);
 
@@ -528,18 +538,23 @@ void CSys::add_particle_layer(double z){
 	//double asphericity=config.get_param<double>("asphericity");
 	//double asphericityWidth=config.get_param<double>("asphericityWidth");
 
-	double i=0, j=0;
+	double xtemp=0, ytemp=0;
 
 	static unsigned int nRadii=0;
-	while(particles.size()<maxNParticle){
-		if(particles.size()==maxNParticle)break;
+	for(int i=0;i<celllist.nx;i++){
+		for(int j=0;j<celllist.ny;j++){
+		if(particles.size()>=maxNParticle)break;
 		double a, b, c;
 		//spheroid(a, b, c, asphericity, asphericityWidth);
 		ERROR(nRadii>=radii.size(), "List of radii doesn't have enough entries");
-		vec abc=radii.at(nRadii);
+		vec abc=radii.at(rgen.rand(radii.size()));
 		a=abc(0);b=abc(1);c=abc(2);
-		++nRadii;
 
+
+		xtemp=(i+0.5)*celllist.dx;
+		ytemp= (j+0.5)*celllist.dy;
+
+/*
 		i+=2.1*maxRadii;
 		if(j<maxRadii)j=1.5*maxRadii;
 		if(k<maxRadii)k=1.5*maxRadii;
@@ -550,10 +565,11 @@ void CSys::add_particle_layer(double z){
 		if(j>1-1.2*maxRadii){
 			break;
 			}
+*/
 
-		x(0)=i+size*rgen()/10;
-		x(1)=j+size*rgen()/10; 
-		x(2)=k+size*rgen()/10; 
+		x(0)=xtemp+size*rgen()/5;
+		x(1)=ytemp+size*rgen()/5; 
+		x(2)=z+size*rgen()/5; 
 		double alpha=rgen()*M_PI;
 		Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
 		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
@@ -573,6 +589,7 @@ void CSys::add_particle_layer(double z){
 		p->x(1)(2)=top_v(2)+0.3*(1-2*rgen());
 		add(p);
 		
+		}
 		}
 	}
 
