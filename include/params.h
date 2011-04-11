@@ -83,6 +83,7 @@ class CConfig {
 	static CConfig& Instance();
 	bool isValid(string fname)const;
 	void parse(string fname);
+	void parse(istream &input);
 	void print(string fname="config");
 	void print(ostream &out=cout);
 
@@ -161,7 +162,6 @@ void CConfig::print(ostream &out){
 
 void CConfig::parse(string infilename) {
 
-	const string comm="#";
 	ifstream inputFile(infilename.c_str());
 
 	if(!inputFile.good())
@@ -169,7 +169,12 @@ void CConfig::parse(string infilename) {
 	cerr << "Unable to open input file: " << infilename << endl;
 	return;
 	}
+	parse(inputFile);
+	inputFile.close();
+}
 
+void CConfig::parse(istream &inputFile) {
+	const string comm="#";
 	string line;
 	string vname;
 
@@ -196,7 +201,6 @@ void CConfig::parse(string infilename) {
 	//Read up to second whitespace
 	params[vname]->parse(ss);
 	}
-	inputFile.close();
 }
 
 bool CConfig::isValid(string vname) const{

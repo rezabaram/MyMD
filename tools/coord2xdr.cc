@@ -151,10 +151,8 @@ void Initialize(int n_params, char **params){
 	
 	string input=(string)(params[1]);
 
-	int n=atoi(params[2]);
-	int e=1;
-	e=e<<n;
-	cerr<< "Resolution: "<< e <<endl;
+	int e=atoi(params[2]);
+	cerr<< "Resolution: "<< e <<"X"<<e<<"X"<<e<<endl;
 	CLattice lattice(e, e, e,input);
 	lattice.out_xdr();
 	}

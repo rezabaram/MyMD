@@ -11,7 +11,8 @@ extern MTRand rgen;
 void Initialize(){
 	rgen.seed(RNGSeed);
 	define_parameters();
-	config.parse("config");
+	//config.parse("config");
+	config.parse(cin);
 	}
 
 void Run(){
@@ -19,7 +20,7 @@ void Run(){
 	CSys sys(config.get_param<size_t>("nParticle"));
 	sys.initialize(config);
 	sys.solve();
-}
+	}
 
 int main(int pi, char **params){
 	if(pi==1)
