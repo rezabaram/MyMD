@@ -182,7 +182,8 @@ TRY
 	static const double c=1./6.0;
 	//translational degree
 	x(0) += x(1)*dt + x(2)*(dt*dt*4.0*c) - x0(2)*(dt*dt*c);
-	x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
+	//x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
+	x(1) += x(2)*(dt*1.5) - x0(2)*(dt*0.5);
 
 	//rotational degree
 	static vec wp;
@@ -210,7 +211,8 @@ void CParticle::calVel(double dt){
 	x0(0)=x(0);
 	x0(2)=x(2);
 	x(2)=*forces/mass;
-	x(1)+= x(2)*(dt*2*c);
+	//x(1)+= x(2)*(dt*2*c);
+	x(1)+= x(2)*(dt*2*c)-x(2)*(dt*4*c) + x0(2)*(dt*2*c);
 	
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
