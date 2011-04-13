@@ -11,8 +11,8 @@ extern MTRand rgen;
 void Initialize(){
 	rgen.seed(RNGSeed);
 	define_parameters();
-	//config.parse("config");
-	config.parse(cin);
+	config.parse("config");
+	//config.parse(cin);
 	}
 
 void Run(){
