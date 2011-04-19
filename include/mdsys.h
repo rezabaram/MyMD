@@ -138,7 +138,8 @@ TRY
 		maxRadii=particles.maxr;
 		}
 	else if(init_method=="generate"){
-		if(particleType=="general"){
+		if(particleType=="general" or particleType=="gen1" or particleType=="gen2"
+					   or particleType=="gen3" or particleType=="gen4"){
 			string fileRadii=config.get_param<string>("radii");
 			inputRadii.open(fileRadii.c_str());
 			ERROR(!inputRadii.good(), "Unable to open input file: "+fileRadii );
@@ -547,7 +548,14 @@ void CSys::add_particle_layer(double z){
 		double a, b, c;
 		//spheroid(a, b, c, asphericity, asphericityWidth);
 		ERROR(nRadii>=radii.size(), "List of radii doesn't have enough entries");
-		vec abc=radii.at(rgen.rand(radii.size()));
+
+		int randn=rgen.rand(radii.size());
+		if(config.get_param<string> ("particleType") == "gen1") randn=1;
+		if(config.get_param<string> ("particleType") == "gen2") randn=2;
+		if(config.get_param<string> ("particleType") == "gen3") randn=3;
+		if(config.get_param<string> ("particleType") == "gen4") randn=4;
+		vec abc=radii.at(randn);
+
 		a=abc(0);b=abc(1);c=abc(2);
 
 
@@ -571,7 +579,9 @@ void CSys::add_particle_layer(double z){
 		x(1)=ytemp+size*rgen()/5; 
 		x(2)=z+size*rgen()/5; 
 		double alpha=rgen()*M_PI;
-		Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
+                double beta=rgen()*M_PI;
+               	double phi=rgen()*M_PI;
+               	Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(beta),0,0,sin(beta))*Quaternion(cos(phi),0,sin(phi),0 );
 		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
 		//CEllipsoid E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
 		//CParticle *p = new CParticle(E);
@@ -579,7 +589,7 @@ void CSys::add_particle_layer(double z){
 		//CEllipsoid E2(x, 1, 1, 1, size, q);
 
 		//to implement constant volume (4/3 Pi r^3) while changing the shape
-		CEllipsoid E2(x, a,b,c);
+		CEllipsoid E2(x, a,b,c, q);
 		CParticle *p = new CParticle(E2);
 		p->w(1)(0)=5.0*(1-2*rgen());
 		p->w(1)(1)=5.0*(1-2*rgen());
