@@ -42,7 +42,7 @@ class CSys{
 
 	void initialize(const CConfig &c);
 	void solve();
-	void forward(double dt);
+	void forward(double &dt);
 	void adapt(double &dt);
 	void calForces();
 	void interactions();
@@ -315,7 +315,7 @@ TRY
 CATCH
 	}
 
-void CSys::forward(double dt){
+void CSys::forward(double &dt){
 TRY
 	if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
 		add_particle_layer(maxh+1.02*maxRadii);
@@ -340,6 +340,11 @@ TRY
 			Energy=rEnergy+kEnergy+pEnergy;
 			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
+			//for relaxation
+			if(t>1 and G.abs()>1){
+					G*=0.9;
+					dt*=1.08;	
+					}
 			}
 	//bool allforwarded=false;
 	maxh=0;
