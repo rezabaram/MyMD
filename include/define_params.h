@@ -31,6 +31,8 @@ void define_parameters()
        config.add_param<string>("particleType", "general"); 
        config.add_param<string>("initialization", "generate"); 
        config.add_param<double>("e", 0.5); 
+       config.add_param<double>("eta", 1.0); 
+       config.add_param<double>("xi", 1.0); 
        config.add_param<double>("asphericity", -0.5); 
        config.add_param<double>("asphericityWidth", 0.1); 
 

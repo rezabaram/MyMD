@@ -166,6 +166,17 @@ TRY
 			maxRadii=max(r,max(a,max(b,c)));
 			radii.push_back(vec(a, b, c));
 			}
+		else if(particleType=="abc"){
+			double eta=config.get_param<double>("eta");
+			double xi=config.get_param<double>("xi");
+			double r=config.get_param<double>("particleSize");
+			double a =r*pow(eta,1./3.)/pow(xi,1./3);
+			double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
+			double c =r*xi*pow(eta/xi,1./3.);
+			cerr<< a<<"  "<<b<<" "<<c<<"  "<< a*b*c/(r*r*r) <<endl;
+			maxRadii=max(r,max(a,max(b,c)));
+			radii.push_back(vec(a, b, c));
+			}
 		else
 			ERROR(1, "Unknown particle type: "+particleType);
 		}
