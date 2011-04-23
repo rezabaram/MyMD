@@ -6,4 +6,4 @@ then
 	echo "Remove old output files if you want to run a new simulation."
 	exit 1;
 fi
-cat config | ./a.out 51 > log
+./a.out 51 > log
