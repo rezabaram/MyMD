@@ -49,6 +49,9 @@ class CPacking : public list<T *>
 		grid_built=true;
 		};
 
+	double avg_contact_number(){
+		return contacts.avg_contact_number();
+		}
 	ContactNetwork<T> contacts;
 	
 	CRecGrid<T> * grid;

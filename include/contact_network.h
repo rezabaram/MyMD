@@ -82,6 +82,15 @@ class ContactNetwork : public vector< TNode<T> >
 
 	}
 
+	double avg_contact_number()const{
+		double total=0;
+		for(unsigned int i=0; i<this->size(); i++){
+			total+=this->at(i).size();
+			}
+		return total/(double)this->size();
+		
+		}
+
 	void print(ostream &out)const{
 		//assert(elems);
 		assert(N);

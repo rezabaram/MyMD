@@ -3,8 +3,8 @@ Gravity  	0   0   -10
 outDt  		0.05
 timeStep 	0.0001
 maxTime		10.02
-particleSize 	0.08
-particleSizeWidth 	0.2
+particleSize 	0.04
+particleSizeWidth 	0.4
 nParticle 	200
 stiffness  	5e+02
 damping		5e+0
@@ -12,9 +12,9 @@ friction	2.0e-1
 initialization	generate	
 particleType	abc
 eta		1.4
-etaWidth	0.1
+etaWidth	0.0
 xi		1.8
-xiWidth		0.1
+xiWidth		0.0
 output          out
 boundary        periodic_xy
 input		input.dat

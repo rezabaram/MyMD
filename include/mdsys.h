@@ -8,6 +8,7 @@
 #include"interaction_force.h"
 #include"particlecontact.h"
 #include"map_asph_aspect.h"
+#include"ibeta_dist.h"
 
 //#define WITH_VERLET
 
@@ -138,6 +139,9 @@ TRY
 	string particleType=config.get_param<string>("particleType");
 	string init_method=config.get_param<string>("initialization");
 
+	double dr=config.get_param<double>("particleSizeWidth");
+	DisBetaDistribution ibeta_dist(3,3,dr);
+
 
 
 	if(init_method=="restart"){
@@ -180,11 +184,10 @@ TRY
 			double xi0=config.get_param<double>("xi");
 			double xiW=config.get_param<double>("xiWidth");
 			double r0=config.get_param<double>("particleSize");
-			double dr=config.get_param<double>("particleSizeWidth");
 			for(int i=0; i<10000;i++){
 				double eta=eta0*TruncGaussRand(1, etaW);
 				double xi =xi0*TruncGaussRand(1, xiW);
-				double r=r0*TruncGaussRand(1 ,dr);
+				double r=r0*ibeta_dist.rnd();
 				double a =r*pow(eta,1./3.)/pow(xi,1./3);
 				double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
 				double c =r*xi*pow(eta/xi,1./3.);
@@ -541,6 +544,7 @@ void CSys::read_radii(vector<vec> &radii){
 	
 	double size=config.get_param<double>("particleSize");
 	double dr=size*config.get_param<double>("particleSizeWidth");
+	DisBetaDistribution ibeta_dist(3,3,dr);
 
 
 
@@ -548,7 +552,7 @@ void CSys::read_radii(vector<vec> &radii){
 	//Parse the line
 	double a, b, c;
 	while(getline(inputRadii,line)){
-	double r=TruncGaussRand(size,dr)*pow(5./3.*M_PI,1./3.);//note 4/3 pi a b c=1 
+	double r=size*ibeta_dist.rnd()*pow(5./3.*M_PI,1./3.);//note 4/3 pi a b c=1 
 		stringstream ss(line);
 		ss>>a>>b>>c;
 		radii.push_back(vec(r*a,r*b,r*c));

@@ -26,9 +26,10 @@ void Initialize(int n_params, char **params)
 void Run()
 {
 	packing.BuildContactNetwork();
-	ofstream out("network");
-	packing.output_contact_network(out);
-	cerr<< packing.contacts.cal_fabric_tensor() <<endl;
+	//ofstream out("network");
+	//packing.output_contact_network(out);
+	cout<<packing.avg_contact_number()<<endl;
+	//cerr<< packing.contacts.cal_fabric_tensor() <<endl;
 	
 }
 

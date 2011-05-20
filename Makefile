@@ -24,10 +24,10 @@ animate: test.avi
 	feh *jpg
 
 test.avi: 
-	sh bin/genFrames.sh out* > /dev/null 2>&1
+	sh bin/genFrames.sh out0* > /dev/null 2>&1
 
 clean:
-	rm -f log_energy log out* *jpg test.avi 
+	rm -f log_energy log out0* *jpg test.avi 
 	#$(ECHO) cleaning up in .
 	#-$(RM) -f $(EXE) $(OBJS) $(OBJLIBS)
 	#-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
