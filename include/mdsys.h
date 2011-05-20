@@ -120,6 +120,13 @@ TRY
 CATCH
 	}
 
+double TruncGaussRand(double r, double dr=0.0){
+	if(dr<1e-6) return r;
+	double x=rgen.randNorm(r, dr) ;
+	if(x<r-2*dr or x> r+2*dr)return TruncGaussRand(r, dr);//trying until finding in range (r-dr, r+dr)
+	return x;
+	}
+
 void CSys::initialize(const CConfig &config){
 TRY
 	G=config.get_param<vec>("Gravity");
@@ -160,7 +167,6 @@ TRY
 		else if(particleType=="oblate"){
 			
 			double ee=get_aspect_oblate(config.get_param<double>("asphericity"));
-			cerr<< ee <<endl;
 			double r=config.get_param<double>("particleSize");
 			double a =r/pow(ee,1./3.);
 			double b =a;
@@ -169,15 +175,22 @@ TRY
 			radii.push_back(vec(a, b, c));
 			}
 		else if(particleType=="abc"){
-			double eta=config.get_param<double>("eta");
-			double xi=config.get_param<double>("xi");
-			double r=config.get_param<double>("particleSize");
-			double a =r*pow(eta,1./3.)/pow(xi,1./3);
-			double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
-			double c =r*xi*pow(eta/xi,1./3.);
-			cerr<< a<<"  "<<b<<" "<<c<<"  "<< a*b*c/(r*r*r) <<endl;
-			maxRadii=max(r,max(a,max(b,c)));
-			radii.push_back(vec(a, b, c));
+			double eta0=config.get_param<double>("eta");
+			double etaW=config.get_param<double>("etaWidth");
+			double xi0=config.get_param<double>("xi");
+			double xiW=config.get_param<double>("xiWidth");
+			double r0=config.get_param<double>("particleSize");
+			double dr=config.get_param<double>("particleSizeWidth");
+			for(int i=0; i<10000;i++){
+				double eta=eta0*TruncGaussRand(1, etaW);
+				double xi =xi0*TruncGaussRand(1, xiW);
+				double r=r0*TruncGaussRand(1 ,dr);
+				double a =r*pow(eta,1./3.)/pow(xi,1./3);
+				double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
+				double c =r*xi*pow(eta/xi,1./3.);
+				maxRadii=max(r,max(a,max(b,c)));
+				radii.push_back(vec(a, b, c));
+				}
 			}
 		else
 			ERROR(1, "Unknown particle type: "+particleType);
@@ -357,6 +370,7 @@ TRY
 			if(t>1 and G.abs()>1){
 					G*=0.9;
 					dt*=1.08;	
+					cerr<<"t: "<<t<<" G: "<<G<<" dt: "<<dt<<endl;
 					}
 			}
 	//bool allforwarded=false;
@@ -431,9 +445,9 @@ void CSys::solve(){
 		//calForces();
 		forward(dt);
 		t+=dt;
-		if(stop or (t>1 and kEnergy<2e-7) ){
+		if(stop or (t>1 and kEnergy<1e-8) ){
 			output(out_name+"end");
-			cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 2e-7"<<endl;
+			cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 1e-8"<<endl;
 			break;
 			}
 		//adapt(dt);
@@ -496,12 +510,6 @@ TRY
 CATCH
 	}
 
-double rand_radius(double r, double dr=0.0){
-	if(dr<1e-5) return r;
-	double x=rgen.randNorm(r, dr) ;
-	if(x<r-dr or x> r+dr)return rand_radius(r, dr);//trying until finding in range (r-dr, r+dr)
-	return x;
-	}
 
 double rand_aspect_ratio(double asphericity, double asphericityWidth){
 
@@ -540,7 +548,7 @@ void CSys::read_radii(vector<vec> &radii){
 	//Parse the line
 	double a, b, c;
 	while(getline(inputRadii,line)){
-	double r=rand_radius(size,dr)*pow(5./3.*M_PI,1./3.);//note 4/3 pi a b c=1 
+	double r=TruncGaussRand(size,dr)*pow(5./3.*M_PI,1./3.);//note 4/3 pi a b c=1 
 		stringstream ss(line);
 		ss>>a>>b>>c;
 		radii.push_back(vec(r*a,r*b,r*c));
