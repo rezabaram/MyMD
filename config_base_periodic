@@ -1,0 +1,13 @@
+density  	1
+Gravity  	0   0   -10
+outDt  		0.2
+timeStep 	0.00005
+maxTime		15.02
+particleSize 	0.04
+nParticle 	10000
+stiffness  	5e+02
+damping		5e+0
+friction	2.0e-1
+output		out	
+boundary        periodic_xy
+initialization	generate	

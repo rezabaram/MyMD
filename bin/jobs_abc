@@ -1,0 +1,93 @@
+#!/bin/bash
+
+shapemin=10
+shapemax=20
+
+polyshapes="0.00"
+polysizes="0.5"
+
+current="/home/reza/workstation/MD/"
+
+queue=LONG
+flags="-S /bin/bash -V -cwd -b y -q "$queue
+
+#asph="1.01 1.02 1.03 1.04 1.05 1.06 1.07 1.08 1.09 1.10"
+
+for polysize in $polysizes
+do
+
+for polyshape in $polyshapes
+do
+
+rootDir=$current"results/periodic/ibeta33/size"$polysize"_shape$polyshape"
+for ((  i = 1;  i <= 1;  i++  ))
+do
+
+	for (( eta = $shapemin ; eta <= $shapemax ; eta+=2  ))
+	do 
+		for (( xi = $shapemin ; xi<= $shapemax ; xi+=2  ))
+		do 
+		
+			ex=`echo "$xi * $eta "  | bc`
+			max=300
+			if [ $ex -gt $max ]
+			then
+				continue;
+			fi
+			e=`echo "scale= 1; $eta / 10 "  | bc`
+			x=`echo "scale= 1; $xi / 10 "  | bc`
+			
+			baseDir=$rootDir/"eta"$e"_xi"$x
+			#if [  -d $baseDir ];
+			#then
+			#	continue;
+			#fi
+
+
+			mkdir -p $baseDir ;
+			cd $baseDir
+
+			cat $current/config_base_periodic > config
+			echo particleType abc	>> config
+			echo eta $e>> config
+			echo xi $x>> config
+			echo	particleSizeWidth 	$polysize >> config
+			echo	etaWidth	$polyshape >> config
+			echo	xiWidth		$polyshape >> config
+
+			dir=$baseDir/$i
+			if [ ! -d $dir ];
+			then
+			    mkdir -p $dir ;
+			fi
+			cd $dir
+
+		
+			if [ -f $dir/outend ];
+				then
+				continue;
+			fi
+
+			#lastout=`bash $current/bin/lastarg.sh out0*`
+			#if [ -f $lastout   ];
+			#then
+			#	let outn=`basename $lastout | sed -n -e s/out000//p`
+			#	if [ $outn -ge 30 ];
+			#	then
+			#	continue
+			#	fi
+			#fi
+
+			rm -rf $dir/*
+			cp $baseDir/config $dir
+			qsub $flags $current/a.out $i
+			#cd $rootDir
+			#echo "done."
+
+		done
+
+	done 
+done
+
+done
+done
