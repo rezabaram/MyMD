@@ -21,6 +21,7 @@ void Initialize(int n_params, char **params)
 	ERROR(!inputFile.good(), "Unable to open input file");
 	
 	packing.parse(inputFile);
+
 }
 
 void Run()
@@ -28,8 +29,11 @@ void Run()
 	packing.BuildContactNetwork();
 	//ofstream out("network");
 	//packing.output_contact_network(out);
-	cout<<packing.avg_contact_number()<<endl;
-	//cerr<< packing.contacts.cal_fabric_tensor() <<endl;
+	CCubic cubic=characteristicCubicPolynomial(packing.contacts.cal_fabric_tensor());
+	cubic.solve();
+	cout<<packing.avg_contact_number()<<"\t";
+	cout<< real(cubic.root(0)) <<"\t"<< real(cubic.root(1)) <<"\t"<< real(cubic.root(2)) <<endl;
+	//cerr<< <<endl;
 	
 }
 
