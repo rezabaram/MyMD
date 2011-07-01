@@ -370,7 +370,7 @@ TRY
 			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			//for relaxation
-			if(t>1 and G.abs()>1){
+			if(t>2 and G.abs()>1){
 					G*=0.9;
 					dt*=1.08;	
 					cerr<<"t: "<<t<<" G: "<<G<<" dt: "<<dt<<endl;

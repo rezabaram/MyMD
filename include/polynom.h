@@ -60,6 +60,9 @@ class CPolynom{
 		}
 
 	
+	template<int order2,typename U>
+	friend ostream &operator << (ostream &out, const CPolynom<order2,U> &p);
+
 	void print(ostream &out){
 		
 		out<<"[";
@@ -71,7 +74,7 @@ class CPolynom{
 
 	void print_roots(ostream &out=std::cerr){
 		if(!solved and !solve()){
-			WARNING("No root to print out; Polynomial has not been solved.")
+			WARNING("No root; Polynomial has not been solved. ")
 			return;
 			}
 		
@@ -386,6 +389,15 @@ bool CQuartic::solve(){//returning the number of real roots;
 		roots.push_back(0);
 		}
 */
-	}
-
+	};
+template<int order, typename T>
+ostream &operator << ( ostream &out, const CPolynom<order,T>& p){
+		
+		out<<"[";
+		for(size_t i=0; i<p.coefs.size()-1; ++i){
+			out<<p.coefs.at(i)<<" , ";
+			}
+		out<<p.coefs.back()<<"]\n";
+		return out;
+		}
 #endif

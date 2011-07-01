@@ -172,5 +172,13 @@ size_t max_row = A.RowNo()-1, max_column = A.ColNo()-1;
     }
   }
 }
+
+CCubic characteristicCubicPolynomial(const Matrix &m){
+return CCubic( -1,
+		m(0,0) + m(1,1) + m(2,2), 
+		m(0,1)*m(1,0) - m(0,0)*m(1,1) + m(0,2)*m(2,0) + m(1,2)*m(2,1) - m(0,0)*m(2,2) - m(1,1)*m(2,2), 
+		-m(0,2)*m(1,1)*m(2,0) + m(0,1)*m(1,2)*m(2,0) + m(0,2)*m(1,0)*m(2,1) - m(0,0)*m(1,2)*m(2,1) - m(0,1)*m(1,0)*m(2,2) + m(0,0)*m(1,1)*m(2,2)
+		);
+}
  
 #endif /* COMMON_H */
