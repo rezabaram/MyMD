@@ -3,9 +3,9 @@
 #include<vector>
 #include<list>
 #include"matrix.h"
+#include"eigsys.h"
 
 using namespace std;
-
 
 template<class T>
 class TContact : public BasicContact{ 
@@ -89,6 +89,17 @@ class ContactNetwork : public vector< TNode<T> >
 			}
 		return total/(double)this->size();
 		
+		}
+
+	void print_eigen(ostream &out){
+		CEigSys eigsys(cal_fabric_tensor());
+		eigsys.print_eigen_vals(cout);
+		typename ContactNetwork<T>::iterator it1;
+		size_t i=0;
+		for(it1=this->begin(), i=0;  it1!=this->end(); it1++, ++i){
+			CEigSys eigsys((*it1).F);
+			eigsys.print_eigen_vals(cout);
+				}
 		}
 
 	void print(ostream &out)const{

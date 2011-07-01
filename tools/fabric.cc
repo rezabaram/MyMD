@@ -27,12 +27,11 @@ void Initialize(int n_params, char **params)
 void Run()
 {
 	packing.BuildContactNetwork();
+	packing.contacts.print_eigen(cout);
+	//cout<<packing.avg_contact_number()<<"\t";
+	
 	//ofstream out("network");
 	//packing.output_contact_network(out);
-	CCubic cubic=characteristicCubicPolynomial(packing.contacts.cal_fabric_tensor());
-	cubic.solve();
-	cout<<packing.avg_contact_number()<<"\t";
-	cout<< real(cubic.root(0)) <<"\t"<< real(cubic.root(1)) <<"\t"<< real(cubic.root(2)) <<endl;
 	//cerr<< <<endl;
 	
 }
