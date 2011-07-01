@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #USAGE EXAMPE: bash coord2xdr.sh `tree -if mono/ | grep /out$`
-# this looks for all the "out" files and make their corresponding .xdf file for given resolutions
+# this looks for all the "out" files and make their corresponding .xdr file for given resolutions
 #to clean the created file:  rm -f `tree -if mono/ | grep .xdr`
 
 bin=`dirname $0`
-res="1024"
+res="256"
 input=$*
 
 for i in $input

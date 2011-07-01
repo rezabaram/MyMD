@@ -22,6 +22,12 @@ class DisBetaDistribution
 	template<typename T>
 	DisBetaDistribution(T a, T b, double width=0.5, int _nbins=100, int npool=10000){
 		ERROR(width>1, "The width of the distribution is larger than its median.");
+		if(width<=1e-10){
+			dx=0;
+			min=1;
+			max=1;
+			return;
+			}
 		min=1-width;
 		max=1+width;
 		nbins=_nbins;
@@ -46,6 +52,7 @@ class DisBetaDistribution
 		}
 
 		double rnd(){
+			if(dx<1e-10)return min;
 			return min+dx*pool.at((int)(rgen.rand()*pool.size()));
 			}
 			
