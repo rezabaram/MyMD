@@ -33,6 +33,20 @@ class TNode : public vector<TContact<T> >{
 					F(i,j)+=(*it).l(i)*(*it).l(j);
 		return F;
 	}
+	void print_branch_vectors(ostream &out,const vec3d &c1=vec3d(0,0,0),const vec3d &c2=vec3d(1,1,1)){
+		typename TNode<T>::iterator it;
+		for(it=this->begin(); it!=this->end(); it++){
+			vec3d x=it->x;
+			if( x(0)<c1(0) or 
+			x(0)>c2(0) or 
+			x(1)<c1(1) or 
+			x(1)>c2(1) or 
+			x(2)<c1(2) or 
+			x(2)>c2(2) ) continue;
+			out<<spherical((*it).n)<<endl;
+			}
+			//if((*it).n*vec3d(0,0,1)>0)out<<spherical((*it).n)<<endl;
+		}
 
 	Matrix F;
 	};
@@ -74,8 +88,10 @@ class ContactNetwork : public vector< TNode<T> >
 				CInteraction::overlaps(&ovs, (*it1)->shape, (*it2)->shape ); 
 				if(!ovs.empty()) {
 					assert(ovs.size()==1);
-					this->at(i).push_back(TContact<T>((*it1), (*it2), static_cast<BasicContact>(ovs.back()) ));
-					this->at(j).push_back(TContact<T>((*it2), (*it1), static_cast<BasicContact>(ovs.back()) ));
+					BasicContact temp=static_cast<BasicContact>(ovs.back());
+					this->at(i).push_back(TContact<T>((*it1), (*it2), temp ));
+					temp.n*=-1.0;
+					this->at(j).push_back(TContact<T>((*it2), (*it1), temp ));
 					}
 				}
 			}
@@ -91,6 +107,12 @@ class ContactNetwork : public vector< TNode<T> >
 		
 		}
 
+	void print_branch_vectors(ostream &out,const vec3d &box_c1=vec3d(0,0,0),const vec3d &box_c2=vec3d(1,1,1)){
+		typename ContactNetwork<T>::iterator it1;
+		for(it1=this->begin();  it1!=this->end(); it1++){
+			it1->print_branch_vectors(out,box_c1,box_c2);
+			}
+		}
 	void print_eigen(ostream &out){
 		CEigSys eigsys(cal_fabric_tensor());
 		eigsys.print_eigen_vals(cout);
@@ -99,8 +121,9 @@ class ContactNetwork : public vector< TNode<T> >
 		for(it1=this->begin(), i=0;  it1!=this->end(); it1++, ++i){
 			CEigSys eigsys((*it1).F);
 			eigsys.print_eigen_vals(cout);
-				}
+			}
 		}
+
 
 	void print(ostream &out)const{
 		//assert(elems);

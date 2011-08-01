@@ -88,7 +88,7 @@ class CSys{
 	#endif
 	double Energy, rEnergy, pEnergy, kEnergy;
  	private:
-	bool do_read_radii;
+	bool do_read_radii, softwalls;
 	string out_name;
 	double epsFreeze;
 	ofstream outEnergy;
@@ -138,6 +138,7 @@ TRY
 	fluiddampping=config.get_param<double>("fluiddampping");
 	string particleType=config.get_param<string>("particleType");
 	string init_method=config.get_param<string>("initialization");
+	softwalls=config.get_param<bool>("softwalls");
 
 	double dr=config.get_param<double>("particleSizeWidth");
 	DisBetaDistribution ibeta_dist(3,3,dr);
@@ -503,7 +504,8 @@ TRY
 
 		force=Test::contactForce(overlaps(i), dv, p1->material, 1);
 		p1->addforce(force);
-
+		
+		if(softwalls)continue;
 		torque=cross(r1, force);
 		p1->addtorque(torque);
 

@@ -340,5 +340,10 @@ class HomVec: public vec4d{
 		}
 	};
 
+vec3d spherical(const vec3d &v){
+		double r=v.abs();
+		return vec3d(r, acos(v(2)/r),atan2(v(1),v(0)));
+		}
+
 #endif
 

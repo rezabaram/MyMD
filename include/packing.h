@@ -30,6 +30,7 @@ class CPacking : public list<T *>
 		}
 
 	void print(std::ostream& out, bool raster=false)const;
+	void print_particle_axes(ostream &out,const vec3d &c1=vec3d(0,0,0),const vec3d &c2=vec3d(1,1,1) );
 	void printRaster3D(std::ostream& out)const{print(out, true);}
 	void printEuler(std::ostream& out)const;
 	void parse(string infilename, bool periodic=false);
@@ -238,5 +239,20 @@ CATCH
 }
 
 
+template<class T>
+void CPacking<T>::print_particle_axes(ostream &out,const vec3d &c1,const vec3d &c2){
+	typename CPacking<T>::const_iterator it1;
+	for(it1=this->begin();  it1!=this->end(); it1++){
+			vec3d x=(*it1)->shape->Xc;
+			if( x(0)<c1(0) or 
+			x(0)>c2(0) or 
+			x(1)<c1(1) or 
+			x(1)>c2(1) or 
+			x(2)<c1(2) or 
+			x(2)>c2(2) ) continue;
+		     (*it1)->shape->print_coord_sys(out);
+		}
+	return;
+	}
 
 #endif /* PACKING_h */

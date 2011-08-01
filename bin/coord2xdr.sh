@@ -5,7 +5,7 @@
 #to clean the created file:  rm -f `tree -if mono/ | grep .xdr`
 
 bin=`dirname $0`
-res="256"
+res="516"
 input=$*
 
 for i in $input

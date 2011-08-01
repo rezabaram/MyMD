@@ -27,8 +27,12 @@ void Initialize(int n_params, char **params)
 void Run()
 {
 	packing.BuildContactNetwork();
-	packing.contacts.print_eigen(cout);
-	//cout<<packing.avg_contact_number()<<"\t";
+	//packing.contacts.print_eigen(cout);
+	//packing.contacts.print_branch_vectors(cout);
+	//packing.contacts.print_branch_vectors(cout, vec(0.0,0.0,0.2), vec(1,1,1));
+	//packing.print_particle_axes(cout, vec(0.0,0.0,0.2), vec(1,1,1));;
+	cout<<packing.packFraction(vec(0.0,0.0,0.2), vec(1,1,0.9))<<"\t";
+	cout<<packing.avg_contact_number()<<endl;
 	
 	//ofstream out("network");
 	//packing.output_contact_network(out);

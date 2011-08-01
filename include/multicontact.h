@@ -5,7 +5,8 @@
 #include"contact.h"
 
 
-
+//This class is used to be able to work with shapes for which more than one 
+//contact per pair is possible. For spheres and ellipsoids this is not the case.
 
 template <class T>
 class MultiContact : public std::vector<Contact>

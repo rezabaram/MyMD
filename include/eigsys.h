@@ -3,23 +3,34 @@
 #include"exception.h"
 #include"matrix.h"
 #include"polynom.h"
+#include"eigen.h"
 
 class CEigSys{
 	public:
-	CEigSys(const Matrix &_M):M(_M), charPolynom(1,0,0,0){
-		charPolynom=getCharPolynomial();
+	CEigSys(const Matrix &_M):M(_M), charPolynom(1,0,0,0),solved(false){
+		//charPolynom=getCharPolynomial();
 		}
 
 	CCubic getCharPolynomial()const;
 	void solve(){
-		charPolynom.solve();
+		//charPolynom.solve();
+		eigens(M,eigvals, eigvecs);
+		solved=true;
 		}
 	void print_eigen_vals(ostream &out){
-		out<< real(charPolynom.root(0)) <<"\t"<< real(charPolynom.root(1)) <<"\t"<< real(charPolynom.root(2)) <<endl;
+		if(!solved)solve();
+		//out<< real(charPolynom.root(0)) <<"\t"<< real(charPolynom.root(1)) <<"\t"<< real(charPolynom.root(2)) <<endl;
+		for(unsigned int i=0; i<eigvals.size(); i++){
+			out<<eigvals.at(i)<<"   "<<spherical(eigvecs.at(i))<<"   ";
+			}
+		out<<endl;
 		}
 
 	const Matrix &M;
+	vector<double> eigvals;
+	vector<vec3d> eigvecs;
 	CCubic charPolynom;
+	bool solved;
 	};
 
 CCubic CEigSys::getCharPolynomial()const{

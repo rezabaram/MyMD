@@ -47,6 +47,9 @@ class GeomObjectBase
 	const vec displacement(const GeomObjectBase *p)const{
 		return (Xc-p->Xc);
 		};
+	virtual const void print_coord_sys(ostream &out){
+			ERROR(1,"Function not implemented");
+			};
 	vec euler()const{
 		vec angles;
 		//from wiki 

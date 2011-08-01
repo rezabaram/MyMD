@@ -294,6 +294,63 @@ class CEllipsoid: public GeomObjectBase
 		}
 
 
+	virtual const void print_coord_sys(ostream &out){
+		vec3d n1, n2, n3;
+		if(a>=b and b>=c){
+			n1=q.toWorld(vec3d(1,0,0));
+			n2=q.toWorld(vec3d(0,1,0));
+			n3=q.toWorld(vec3d(0,0,1));
+			}
+		else if(a>=c and c>=b){
+			n1=q.toWorld(vec3d(1,0,0));
+			n2=q.toWorld(vec3d(0,0,1));
+			n3=q.toWorld(vec3d(0,1,0));
+			}
+		else if(b>=c and c>=a){
+			n1=q.toWorld(vec3d(0,1,0));
+			n2=q.toWorld(vec3d(0,0,1));
+			n3=q.toWorld(vec3d(1,0,0));
+			}
+		else if(b>=a and a>=c){
+			n1=q.toWorld(vec3d(0,1,0));
+			n2=q.toWorld(vec3d(1,0,0));
+			n3=q.toWorld(vec3d(0,0,1));
+			}
+		else if(c>=a and a>=b){
+			n1=q.toWorld(vec3d(0,0,1));
+			n2=q.toWorld(vec3d(1,0,0));
+			n3=q.toWorld(vec3d(0,1,0));
+			}
+		else if(c>=b and b>=a){
+			n1=q.toWorld(vec3d(0,0,1));
+			n2=q.toWorld(vec3d(0,1,0));
+			n3=q.toWorld(vec3d(1,0,0));
+			}
+		else{
+			ERROR(1, "Non-handled case.");
+			}
+
+		//n1(0)=1-2.0*drand48(); n1(1)=1-2.0*drand48(); n1(2)=1-2.0*drand48();
+		//n2(0)=1-2.0*drand48(); n2(1)=1-2.0*drand48(); n2(2)=1-2.0*drand48();
+		//n3(0)=1-2.0*drand48(); n3(1)=1-2.0*drand48(); n3(2)=1-2.0*drand48();
+/*
+		double theta=M_PI*drand48();	
+		double phi=2*M_PI*drand48();	
+		n1=vec3d(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)); 
+		theta=M_PI*drand48();	
+		phi=2*M_PI*drand48();	
+		n2=vec3d(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)); 
+		theta=M_PI*drand48();	
+		phi=M_PI*(1-2*drand48());	
+		n3=vec3d(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)); 
+		//n1.normalize();
+		//n2.normalize();
+		//n3.normalize();
+		//out<< n1 <<"\t"<< n2 <<"\t"<<n3 <<endl;
+*/
+		out<< spherical(n1) <<"\t"<< spherical(n2) <<"\t"<<spherical(n3) <<endl;
+		return;
+		}
 	void print(std::ostream &out)const{
 		out<<setprecision(12)<< identifier<< "   ";
 		out<< Xc<< "  "<< a<<"  "<<b<<"  "<< c <<"  ";

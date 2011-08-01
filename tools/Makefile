@@ -21,7 +21,7 @@ coord2xdr: coord2xdr.cc
 #asphericity:asphericity.cc
 #	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) asphericity.cc -o asphericity
 
-fabric: fabric.cc ../include/packing.h ../include/ellips_contact.h ../include/interaction.h ../include/contact_network.h ../include/eigsys.h
+fabric: fabric.cc ../include/packing.h ../include/ellips_contact.h ../include/interaction.h ../include/contact_network.h ../include/eigsys.h ../include/ellipsoid.h
 	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) fabric.cc -o fabric
 
 clean:
