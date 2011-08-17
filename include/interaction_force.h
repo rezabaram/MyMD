@@ -23,6 +23,7 @@ TRY
 	//CParticle *p1=particles.at(i);
 	//CParticle *p2=particles.at(j);
 	ShapeContact &overlaps=p1->vlist[p2];
+	//ERROR(p1->vlist.size()>25, "You need to clean this list");
 	//ShapeContact overlaps;
 
 	overlaps.clear();

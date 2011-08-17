@@ -21,7 +21,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(vec(0.0), vec(1,1,2.5), config.get_param<string>("boundary")), 
+	walls(vec(0.0, 0.495, 0.0), vec(1,.015,2.5), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), 
 	#ifdef WITH_VERLET
@@ -61,7 +61,7 @@ class CSys{
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
-	void remove(ParticleContainer::iterator &it);
+	void remove(ParticleContainer &packing, ParticleContainer::iterator &it);
 	inline bool exist(int i);
 
 	void output(string outname);
@@ -235,11 +235,10 @@ double CSys::total_volume(){
 
 
 
-void CSys::remove(ParticleContainer::iterator &it){
+void CSys::remove(ParticleContainer &packing, ParticleContainer::iterator &it){
 TRY
 	delete (*it);
-	*it=particles.back();
-	particles.pop_back();
+	packing.erase(it);
 CATCH
 	}
 
@@ -347,8 +346,21 @@ CATCH
 
 void CSys::forward(double &dt){
 TRY
+	ParticleContainer::iterator it;
+	CParticle *p1;
+	for(it=particles.begin(); it!=particles.end(); ++it){
+		p1=*it;
+		//if((vec2d(p1->x(0)(0),p1->x(0)(1))-vec2d(0.5, 0.5)).abs()>0.4*(1.2-p1->x(0)(2)))p1->expired=true;
+		if((*it)->expired){
+			remove(particles, it);//As the side effect, "it" is set to next value
+			if(it==particles.end())break;
+			}
+		}
 	if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
+		{
 		add_particle_layer(maxh+1.02*maxRadii);
+		maxh=0;
+		}
 
 	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
@@ -371,7 +383,7 @@ TRY
 			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			//for relaxation
-			if(t>2 and G.abs()>1){
+			if(0)if(t>2 and G.abs()>1){
 					G*=0.9;
 					dt*=1.08;	
 					cerr<<"t: "<<t<<" G: "<<G<<" dt: "<<dt<<endl;
@@ -379,7 +391,6 @@ TRY
 			}
 	//bool allforwarded=false;
 	maxh=0;
-	ParticleContainer::iterator it;
 	
 	for(it=particles.begin(); it!=particles.end(); ++it){
 	//	if(!(*it)->frozen) 
@@ -399,11 +410,6 @@ TRY
 	double vtemp;
 	maxv=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		if(walls.btype=="periodic" and (*it)->expire()){
-			remove(it);
-			--it;//FIXME Better mechanism needed. Maybe this is wrong already
-			continue;
-			}
 	//	if(!(*it)->frozen) 
 		(*it)->calVel(dt);
 		vtemp=(*it)->x(1).abs()+(*it)->w(1).abs()*(*it)->shape->radius;
@@ -504,8 +510,9 @@ TRY
 
 		force=Test::contactForce(overlaps(i), dv, p1->material, 1);
 		p1->addforce(force);
-		
+
 		if(softwalls)continue;
+
 		torque=cross(r1, force);
 		p1->addtorque(torque);
 
@@ -576,6 +583,7 @@ void CSys::add_particle_layer(double z){
 	static unsigned int nRadii=0;
 	for(int i=0;i<celllist.nx;i++){
 		for(int j=0;j<celllist.ny;j++){
+		if(! (j==celllist.ny/2 and i==celllist.nx/2))continue;
 		if(particles.size()>=maxNParticle)break;
 		double a, b, c;
 		//spheroid(a, b, c, asphericity, asphericityWidth);
@@ -593,6 +601,8 @@ void CSys::add_particle_layer(double z){
 
 		xtemp=(i+0.5)*celllist.dx;
 		ytemp= (j+0.5)*celllist.dy;
+		xtemp=.5;
+		ytemp=.5;
 
 /*
 		i+=2.1*maxRadii;
@@ -607,12 +617,13 @@ void CSys::add_particle_layer(double z){
 			}
 */
 
-		x(0)=xtemp+size*rgen()/5;
-		x(1)=ytemp+size*rgen()/5; 
-		x(2)=z+size*rgen()/5; 
+		x(0)=xtemp;//+size*rgen()/5;
+		x(1)=ytemp;//+size*rgen()/5; 
+		x(2)=z+size*rgen();
 		double alpha=rgen()*M_PI;
                 double beta=rgen()*M_PI;
                	double phi=rgen()*M_PI;
+		alpha=beta=0;
                	Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(beta),0,0,sin(beta))*Quaternion(cos(phi),0,sin(phi),0 );
 		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
 		//CEllipsoid E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
@@ -628,7 +639,9 @@ void CSys::add_particle_layer(double z){
 
 		p->x(1)(0)=0.3*(1-2*rgen());
 		p->x(1)(1)=0.3*(1-2*rgen());
-		p->x(1)(2)=top_v(2)+0.3*(1-2*rgen());
+		//p->x(1)(2)=mymax(top_v(2),-1.)+0.3*(1-2*rgen());
+		p->x(1)(2)=top_v(2);
+		//p->x(1)(2)=-2;
 		add(p);
 		
 		}
@@ -672,10 +685,11 @@ TRY
 			k+=2.1*r;
 			}
 
-		x(0)=i+size*rgen()/10;
-		x(1)=j+size*rgen()/10; 
-		x(2)=k+size*rgen()/10; 
+		x(0)=i+size*rgen();
+		x(1)=j+size*rgen();
+		x(2)=k+size*rgen();
 		double alpha=rgen()*M_PI;
+		alpha=0;
 		Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(alpha),0,0,sin(alpha) );
 		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
 		//CEllipsoid E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
@@ -689,9 +703,10 @@ TRY
 		p->w(1)(0)=5.0*(1-2*rgen());
 		p->w(1)(1)=5.0*(1-2*rgen());
 
-		p->x(1)(0)=0.3*(1-2*rgen());
-		p->x(1)(1)=0.3*(1-2*rgen());
-		p->x(1)(2)=0.3*(1-2*rgen());
+		p->x(1)(0)=0.1*(1-2*rgen());
+		p->x(1)(1)=0.1*(1-2*rgen());
+		p->x(1)(2)=0.1*(1-2*rgen());
+		p->x(1)(2)=0;
 		add(p);
 		
 		}

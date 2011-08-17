@@ -73,9 +73,9 @@ class CCellList
 	void setup(double d){
 		ERROR(d<1e-10, "Invalid grid size: "+stringify(d));
 		cerr<< "Constructing the grid ... ";
-		nx=floor(diag(0)/d);
-		ny=floor(diag(1)/d);
-		nz=floor(diag(2)/d);
+		nx=max(1,(int)floor(diag(0)/d));
+		ny=max(1,(int)floor(diag(1)/d));
+		nz=max(1,(int)floor(diag(2)/d));
 		dx=diag(0)/(double)nx;
 		dy=diag(1)/(double)ny;
 		dz=diag(2)/(double)nz;

@@ -45,8 +45,7 @@ class CParticle
 	vlist(this),vlistold(this),
 	pos(shape->Xc),
 	is_shadow(_shadow),
-	cell(NULL)
-	{
+	cell(NULL),expired(false){
 
 		forces= (new vec(0.0,0.0,0.0));
 		torques=(new vec(0.0,0.0,0.0)); 
@@ -65,9 +64,6 @@ class CParticle
 		delete forces;
 		delete torques;
 	}
-	virtual bool expire(){
-		return false;
-		}
 
 
 	virtual void reset_forces(const vec &v=vec(0.0)){
@@ -153,6 +149,7 @@ class CParticle
 	vec &pos;//, vel,accel;
 	bool is_shadow;
 	void * cell;
+	bool expired;
 	protected:
  	private:
 	CDFreedom<5> RotationalDFreedom;

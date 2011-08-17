@@ -54,6 +54,11 @@ string stringify(T x, int width=15, const char ch=' ')
    return o.str();
  }
 
+template<class T>
+const T& mymax(const T &a, const T &b){
+return a>b?a:b;
+}
+
 using namespace math;
 
 
