@@ -95,7 +95,7 @@ TRY
 		diff.normalize();
 		}
 
-	ovs.add(Contact(mp, diff, dx));
+	ovs.add(Contact(mp, diff, dx, &E1, &E2));
 
 	ovs.x01=E1.toBody(ovs.x1);
 	ovs.x02=E2.toBody(ovs.x2);
@@ -118,7 +118,7 @@ void charpolynom(const CEllipsoid &A, const CEllipsoid &B){
 bool doOverlap(ShapeContact &ovs,  CEllipsoid  &E1, CEllipsoid  &E2){
 TRY
 
-	if(0)if(ovs.has_sep_plane){
+	if(1)if(ovs.has_sep_plane){
 		if(!(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane))) {
 			return false;
 			}

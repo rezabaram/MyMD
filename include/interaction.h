@@ -35,7 +35,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CSphere
 
 	if(dd>0) {
 		v*=((p1->radius-dd/2)/d); //from center of p1 to contact point
-		ovs->add(Contact(p1->getpos()+v, v.normalized(), dd));
+		ovs->add(Contact(p1->getpos()+v, v.normalized(), dd, p1, p2));
 		}
 	}
 
@@ -66,7 +66,7 @@ void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CBox *b
 		dd=p1->radius-d;
 		//if(dd>0) ovs->push_back( CInteraction(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );
 		if(dd>0) {
-			ovs->add( Contact(p1->getpos()+v+1.0*dd*v.normalized(), v.normalized(), dd) );
+			ovs->add( Contact(p1->getpos()+v+1.0*dd*v.normalized(), v.normalized(), dd, p1, b) );
 			}
 		}
 	}
@@ -116,7 +116,7 @@ void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CPlane *pl
 	dx=v.abs();
 	v/=dx;
 	if(v*plane->n >0)return;
-	ovs->add(Contact(vp, v, dx, plane) );
+	ovs->add(Contact(vp, v, dx, p1, plane) );
 	//p1->fixToBody(HomVec(vp,1));
 	return;
 	}
@@ -149,6 +149,7 @@ void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *E1, CEllipsoid  *E2)
 TRY
 	
 	ERROR(E1==E2, "A particle is checked for overlapping against itself for overlapping.")
+	((E1->Xc-E2->Xc).abs()>1.001*(E1->radius+E2->radius));
 	if((E1->Xc-E2->Xc).abs()>1.001*(E1->radius+E2->radius))return;
 
 	//if(ovs->set)if( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)) return;

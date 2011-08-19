@@ -4,7 +4,34 @@
 
 class Test{
 	public:
-	static vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1){
+	static vec static_friction(Contact &c, double fn, vec vt, CProperty &m){
+	TRY
+		const GeomObjectBase *p1=static_cast<const GeomObjectBase*>(c.p1);
+		const GeomObjectBase *p2=static_cast<const GeomObjectBase*>(c.p2);
+		if(!c.static_friction_on){
+			c.x1=p1->q.toBody(c.x);
+			c.x2=p2->q.toBody(c.x); 
+			c.static_friction_on=true;
+			return vec(0,0,0);
+			}
+		vec x1=p1->q.toWorld(c.x1);
+		vec x2=p2->q.toWorld(c.x2);
+		vt.normalize();
+		double project=vt*(c.x1-c.x2);
+		double dx2=project*project;
+		double f=m.static_friction*dx2;
+		
+		cerr<< f <<endl;
+		if(f>m.friction_threshold){
+			c.x1=p1->q.toBody(c.x);
+			c.x2=p2->q.toBody(c.x); 
+			c.static_friction_on=false;
+			return vec(0,0,0);
+			}
+		return f*vt;
+	CATCH
+		}
+	static vec contactForce(Contact &c, const vec &dv, CProperty &m, double tmp=1){
 	TRY
 		double proj=(dv*c.n);
 		double ksi=c.dx_n;
@@ -13,9 +40,11 @@ class Test{
 		
 		if(ksi<0)ksi=0; //to eliminate artifical attractions
 		vec fn=-ksi*c.n; //normal force
-		vec ft=-tmp*m.friction*(fn.abs())*((dv - proj*c.n));//dynamic frictions
+		vec vt=(dv - proj*c.n);
+		vec ft=-tmp*m.friction*(fn.abs())*vt;//dynamic frictions
+		vec fs=static_friction(c,fn.abs(), vt, m);
 
-		return fn+ft; //visco-elastic Hertz law
+		return fn+ft+fs; //visco-elastic Hertz law
 	CATCH
 		}
 	static bool interact(CParticle *p1,CParticle *p2){

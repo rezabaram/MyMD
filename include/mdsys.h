@@ -21,7 +21,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(vec(0.0, 0.495, 0.0), vec(1,.015,2.5), config.get_param<string>("boundary")), 
+	walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary")), 
 	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), 
 	#ifdef WITH_VERLET
@@ -356,7 +356,7 @@ TRY
 			if(it==particles.end())break;
 			}
 		}
-	if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
+	if(config.get_param<string>("initialization")=="generate" and maxh< .6+2*maxRadii ) 
 		{
 		add_particle_layer(maxh+1.02*maxRadii);
 		maxh=0;
@@ -497,12 +497,12 @@ void CSys::interactions(){
 
 inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
 TRY
-	static ShapeContact overlaps;
+	//static ShapeContact overlaps;
+	ShapeContact &overlaps=p1->vlist[p2];
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)p2);
 
 	static vec dv, r1, force, torque, vt, vn;
-	if(overlaps.size()==0)return false;
 	for(size_t i=0; i<overlaps.size(); i++){
 
 		r1=overlaps(i).x-p1->x(0);
@@ -583,7 +583,7 @@ void CSys::add_particle_layer(double z){
 	static unsigned int nRadii=0;
 	for(int i=0;i<celllist.nx;i++){
 		for(int j=0;j<celllist.ny;j++){
-		if(! (j==celllist.ny/2 and i==celllist.nx/2))continue;
+		//if(!(i==celllist.nx/2))continue;
 		if(particles.size()>=maxNParticle)break;
 		double a, b, c;
 		//spheroid(a, b, c, asphericity, asphericityWidth);
@@ -601,7 +601,7 @@ void CSys::add_particle_layer(double z){
 
 		xtemp=(i+0.5)*celllist.dx;
 		ytemp= (j+0.5)*celllist.dy;
-		xtemp=.5;
+		//xtemp=.5;
 		ytemp=.5;
 
 /*
@@ -641,7 +641,7 @@ void CSys::add_particle_layer(double z){
 		p->x(1)(1)=0.3*(1-2*rgen());
 		//p->x(1)(2)=mymax(top_v(2),-1.)+0.3*(1-2*rgen());
 		p->x(1)(2)=top_v(2);
-		//p->x(1)(2)=-2;
+		p->x(1)*=0;
 		add(p);
 		
 		}
@@ -702,11 +702,13 @@ TRY
 		CParticle *p = new CParticle(E2);
 		p->w(1)(0)=5.0*(1-2*rgen());
 		p->w(1)(1)=5.0*(1-2*rgen());
+		p->w(1)*=0.1;
 
 		p->x(1)(0)=0.1*(1-2*rgen());
 		p->x(1)(1)=0.1*(1-2*rgen());
 		p->x(1)(2)=0.1*(1-2*rgen());
 		p->x(1)(2)=0;
+		p->x(1)*=0;
 		add(p);
 		
 		}

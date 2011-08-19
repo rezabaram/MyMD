@@ -13,10 +13,16 @@ class BasicContact{
 
 class Contact : public BasicContact{
 	public:
-	Contact(const vec &_x, const vec &_n , double dd, const void * _p=NULL):BasicContact(_x, _n), dx_n(dd), p(_p){
+	Contact(const vec &_x, const vec &_n , double dd, const void * _p1, const void * _p2):
+		BasicContact(_x, _n), dx_n(dd), p1(_p1), p2(_p2),
+		static_friction_on(false)
+		{
+		
 		}
 	double dx_n;
-	const void *p;
+	const void *p1, *p2;
+	vec x1, x2;//used to implement static friction
+	bool static_friction_on;
 	};
 
 #endif /* CONTACT_H */

@@ -2,6 +2,7 @@
 #define BOX_H 
 #include<limits>
 #include"geombase.h"
+#include"phys_object.h"
 
 typedef enum{wall, soft, periodic} BoundaryType;
 
@@ -79,7 +80,7 @@ class CBox: public GeomObjectBase
 	CBox();
 	};
 
-class BoxContainer : public CBox
+class BoxContainer : public CBox, public PhysObject
 	{
 	public:
 	BoxContainer(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string _btype="wall"):

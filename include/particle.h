@@ -15,6 +15,7 @@
 #include"shapes.h"
 #include"verlet.h"
 #include"grid.h"
+#include"phys_object.h"
 
 
 typedef enum {frozen, onhold, rejected, ready_to_go} tState;
@@ -24,17 +25,17 @@ class CProperty
 	{
 	public:
 	CProperty():
-	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")), friction(paramsDouble("friction")), cohesion(paramsDouble("cohesion")), density(paramsDouble("density")), color(" 1"){
+	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")),  static_friction(paramsDouble("static_friction")), friction(paramsDouble("friction")), cohesion(paramsDouble("cohesion")), density(paramsDouble("density")), color(" 1"){
 		};
 	~CProperty(){}
-	double stiffness, damping, friction, cohesion;
+	double stiffness, damping, friction, static_friction, friction_threshold, cohesion;
 	double density;
 	string color;
  	private:
 	};
 
 
-class CParticle 
+class CParticle : public PhysObject
 	{
 //	CParticle(const CParticle&); disabled to make shallow copies for shadow particles
 	public:
@@ -139,7 +140,7 @@ class CParticle
 	//Quaternion q;//orientation
 	vec *forces, avgforces;
 	vec *torques, avgtorque;
-	CVerletList<CParticle> vlist, vlistold;
+	CVerletList<PhysObject> vlist, vlistold;
 	vector< CNode3D<CParticle> *> grid_nodes;
 
 	//to hold neighbours on the grid
