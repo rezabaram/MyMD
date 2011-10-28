@@ -8,6 +8,8 @@ using namespace std;
 void define_parameters()
 {
        config.add_param<vec>("Gravity", vec(0.0, 0.0, -10.0));
+       config.add_param<vec>("boxcorner", vec(0.0, 0.0, 0.0));
+       config.add_param<vec>("boxsize", vec(1.0, 1.0, 2.0));
 
 	//controlling the output
        config.add_param<double>("outStart", 0.00);
@@ -20,6 +22,8 @@ void define_parameters()
        config.add_param<double>("damping", 1); 
        config.add_param<double>("fluiddampping", 0.05); 
        config.add_param<double>("friction", 0); 
+       config.add_param<double>("static_friction", 0); 
+       config.add_param<double>("friction_threshold", 0); 
        config.add_param<double>("cohesion", 0); 
        config.add_param<double>("density", 10000.0); 
        config.add_param<double>("particleSize", 0.05); 

@@ -30,6 +30,9 @@ class GeomObjectBase
 	virtual double operator()(const vec &point)const{return 1e+100;}
 	virtual GeomObjectBase *clone()const{WARNING("This function should not be called");return NULL;}
 	virtual bool doesHit(const CPlane &plane)const {WARNING("This function should not be called");return false;}
+	virtual void spherize(){
+		ERROR(1,"This function should be implemented");
+                    };
 
 	virtual void moveto(const vec& v){//derived classes can override this. especially composite particles should!
 		Xc=v;

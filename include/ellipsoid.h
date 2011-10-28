@@ -104,11 +104,7 @@ class CEllipsoid: public GeomObjectBase
 	CEllipsoid(const vec &v,double _a, double _b, double _c, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c)
 		{
 		identifier=14;
-		radius=tmax(a, tmax(b,c));
 		setup();
-
-		rotateTo(q);
-		update_tranlation_mat();
 		}
 
 	~CEllipsoid(){}
@@ -148,8 +144,10 @@ class CEllipsoid: public GeomObjectBase
 			}
 		}
 
+
 	void setup(){
 
+		radius=tmax(a, tmax(b,c));
 		mat_init();
 
 		//Elements of the scaling matrix
@@ -172,6 +170,24 @@ class CEllipsoid: public GeomObjectBase
 		inert_mat(1,1)=0.2*(a*a+c*c);
 		inert_mat(2,2)=0.2*(a*a+b*b);
 
+
+		rotateTo(q);
+		update_tranlation_mat();
+		}
+	void spherize(){
+	
+		double V=a*b*c;
+		double rs=pow(V,1./3.);
+		a=rs*pow(a/rs,0.95);
+		b=rs*pow(b/rs,0.95);
+		c=rs*pow(c/rs,0.95);
+		
+		double corr=pow(a*b*c/V,1/3.);
+		a/=corr;
+		b/=corr;
+		c/=corr;
+		return;
+		
 		}
 
 	vec gradient (const vec &X)const 

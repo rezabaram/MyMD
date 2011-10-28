@@ -21,7 +21,7 @@ class CSys{
 	CSys();
 	public:
 	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(vec(0.0), vec(1,1,2.5), config.get_param<string>("boundary")), 
+	walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary")),
 	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
 	maxNParticle(maxnparticle), 
 	#ifdef WITH_VERLET
@@ -61,7 +61,8 @@ class CSys{
 	//void setup_grid(double d);
 
 	bool add(CParticle *p);
-	void remove(ParticleContainer::iterator &it);
+	void remove(ParticleContainer &packing, ParticleContainer::iterator &it);
+
 	inline bool exist(int i);
 
 	void output(string outname);
@@ -233,15 +234,13 @@ double CSys::total_volume(){
 	}
 
 
-
-
-void CSys::remove(ParticleContainer::iterator &it){
+void CSys::remove(ParticleContainer &packing, ParticleContainer::iterator &it){
 TRY
-	delete (*it);
-	*it=particles.back();
-	particles.pop_back();
+        delete (*it);
+       packing.erase(it);
 CATCH
-	}
+        }
+
 
 bool CSys::add(CParticle *p){
 TRY
@@ -347,8 +346,24 @@ CATCH
 
 void CSys::forward(double &dt){
 TRY
-	if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
-		add_particle_layer(maxh+1.02*maxRadii);
+       ParticleContainer::iterator it;
+       CParticle *p1;
+       for(it=particles.begin(); it!=particles.end(); ++it){
+               p1=*it;
+               //if((vec2d(p1->x(0)(0),p1->x(0)(1))-vec2d(0.5, 0.5)).abs()>0.7*(1.2-p1->x(0)(2)))p1->expired=true;
+               //if(abs(p1->x(0)(0)-0.5)>0.4*(1.2-p1->x(0)(2)))p1->expired=true;
+	       //if(p1->x(0)(2)<config.get_param<double>("particleSize")/2.)p1->frozen=true;
+               if((*it)->expired){
+                       remove(particles, it);//As the side effect, "it" is set to next value
+                       if(it==particles.end())break;
+                       }
+               }
+       if(config.get_param<string>("initialization")=="generate" and maxh< .6+2*maxRadii ) 
+               {
+               add_particle_layer(maxh+1.02*maxRadii);
+               maxh=0;
+               }
+
 
 	static int count=0, outN=0,outPutN=outDt/DT;
 	static ofstream out;
@@ -371,19 +386,22 @@ TRY
 			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			//for relaxation
-			if(t>2 and G.abs()>1){
+			if(0)if(t>2 and G.abs()>1){
 					G*=0.9;
 					dt*=1.08;	
 					cerr<<"t: "<<t<<" G: "<<G<<" dt: "<<dt<<endl;
 					}
+			for(it=particles.begin(); it!=particles.end(); ++it){
+			(*it)->shape->spherize();
+			}
 			}
 	//bool allforwarded=false;
 	maxh=0;
-	ParticleContainer::iterator it;
 	
 	for(it=particles.begin(); it!=particles.end(); ++it){
-	//	if(!(*it)->frozen) 
-		(*it)->calPos(dt);
+		if(!(*it)->frozen) 
+			(*it)->calPos(dt);
+
 		if((*it)->top()>maxh) {
 				maxh=(*it)->top();
 				top_v=(*it)->x(1);
@@ -399,11 +417,6 @@ TRY
 	double vtemp;
 	maxv=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
-		if(walls.btype=="periodic" and (*it)->expire()){
-			remove(it);
-			--it;//FIXME Better mechanism needed. Maybe this is wrong already
-			continue;
-			}
 	//	if(!(*it)->frozen) 
 		(*it)->calVel(dt);
 		vtemp=(*it)->x(1).abs()+(*it)->w(1).abs()*(*it)->shape->radius;
@@ -491,7 +504,7 @@ void CSys::interactions(){
 
 inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
 TRY
-	static ShapeContact overlaps;
+	ShapeContact &overlaps=p1->vlist[p2];
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)p2);
 

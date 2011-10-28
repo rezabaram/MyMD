@@ -26,6 +26,9 @@ animate: test.avi
 test.avi: 
 	sh bin/genFrames.sh out0* > /dev/null 2>&1
 
+movie:
+	mencoder mf://*.jpg -mf fps=15:type=jpg -ovc lavc -ffourcc XVID -nosound -o out.avi
+
 clean:
 	rm -f log_energy log out0* *jpg test.avi 
 	#$(ECHO) cleaning up in .
@@ -51,4 +54,3 @@ sync:
 
 force_look :
 	true
-
