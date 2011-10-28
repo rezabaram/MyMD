@@ -186,6 +186,7 @@ class CEllipsoid: public GeomObjectBase
 		a/=corr;
 		b/=corr;
 		c/=corr;
+		setup();
 		return;
 		
 		}

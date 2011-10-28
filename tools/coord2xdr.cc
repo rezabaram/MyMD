@@ -50,6 +50,7 @@ class CLattice{
 		ifstream inputFile(input.c_str());
 		ERROR(!inputFile.good(), "Unable to open input file: "+input);
 		define_parameters();
+		cerr<< input <<endl;
 		packing.parse(inputFile);
 		packing.BuildGrid();
 		}
@@ -97,12 +98,14 @@ class CLattice{
 	    for(long int k=0;k<nz;++k) {
 		/* Check output of xdr file*/
 		float x=1;
-		if(packing.is_in_void(vec(i*dx, j*dy, k*dz)))x=0;
+		//if(packing.is_in_void(vec(i*dx, j*dy, k*dz)))x=0;
+		if(packing.is_in_void(vec(k*dz, j*dy, i*dx)))x=0;//rotate to have z in x direction, for Ariels convenience
 		m_xdr->add(x);
 	      }
 	    }
 	  }
 	}
+/*
 	void out_hdf(char *FILENAME)
 	{
 	     hid_t   file, dataset;
@@ -132,6 +135,7 @@ class CLattice{
 	     ret = H5Dclose (dataset);
 	     ret = H5Sclose (fid);
 	}
+*/
 
 CXdr *m_xdr;
 CPacking<CParticle> packing;

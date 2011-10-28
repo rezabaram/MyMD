@@ -4,27 +4,30 @@
 # this looks for all the "out" files and make their corresponding .xdr file for given resolutions
 #to clean the created file:  rm -f `tree -if mono/ | grep .xdr`
 
-bin=`dirname $0`
-res="516"
+res="256"
 input=$*
+suffix="z"
 
+current=`pwd`
+bin=`dirname $0`
 for i in $input
 do
-	inputdir=`dirname i`
+	cd $current
+	inputdir=$current/`dirname $i`
+	inputname=`basename $i`
 	for r in $res
 	do
 
-	if [ -f $inputdir/$i$r.xdr ] ;
+	if [ -f $inputdir/$inputname$r$suffix.xdr ] ;
 	then 
 		continue
 	fi
 
+	$bin/coord2xdr $inputdir/$inputname $r
 	cd $inputdir
-	echo $i
-	$bin/coord2xdr $i $r
-	mv $i.xdr $inputdir/$i$r.xdr
-	zip $inputdir/$i$r.xdr.zip $inputdir/$i$r.xdr
-	rm $inputdir/$i$r.xdr
+	mv $inputname.xdr $inputname$r$suffix.xdr
+	zip $inputname$r$suffix.xdr.zip $inputname$r$suffix.xdr
+	rm $inputname$r$suffix.xdr
 	done
 done
 

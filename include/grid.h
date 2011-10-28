@@ -142,7 +142,7 @@ CRecGrid<T>::CRecGrid(list<T *> *p, const vec &_corner, const vec & _L, double _
 	{
 TRY
 	
-	ERROR(_d<0.00000001,"Grid size either negative or too small");
+	ERROR(_d<0.00000001,"Grid size either negative or too small: "+stringify(_d));
 	if(_d>L(0))_d=L(0);
 	if(_d>L(1))_d=L(1);
 	if(_d>L(2))_d=L(2);

@@ -44,7 +44,7 @@ aclean:
 	rm -rf test.avi 
 
 pov:
-	bin/coord_convert -p $(FILE) > out.dat && bin/coord2pov out.dat > out.pov && povray -A0.05 Antialias_Threshold=20  -w1200 -h1200 out.pov 
+	bin/coord_convert -p $(FILE) > out.dat && bin/coord2pov out.dat > out.pov && povray -A0.05 Antialias_Threshold=20  -w900 -h900 out.pov 
 
 zip:
 	zip md.zip *.cc *h Makefile genFrames.sh run.sh config

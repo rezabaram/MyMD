@@ -89,7 +89,7 @@ class CSys{
 	#endif
 	double Energy, rEnergy, pEnergy, kEnergy;
  	private:
-	bool do_read_radii, softwalls;
+	bool do_read_radii, softwalls, spherize_on;
 	string out_name;
 	double epsFreeze;
 	ofstream outEnergy;
@@ -140,6 +140,7 @@ TRY
 	string particleType=config.get_param<string>("particleType");
 	string init_method=config.get_param<string>("initialization");
 	softwalls=config.get_param<bool>("softwalls");
+	spherize_on=config.get_param<bool>("spherize_on");
 
 	double dr=config.get_param<double>("particleSizeWidth");
 	DisBetaDistribution ibeta_dist(3,3,dr);
@@ -391,7 +392,7 @@ TRY
 					dt*=1.08;	
 					cerr<<"t: "<<t<<" G: "<<G<<" dt: "<<dt<<endl;
 					}
-			for(it=particles.begin(); it!=particles.end(); ++it){
+			if(spherize_on)for(it=particles.begin(); it!=particles.end(); ++it){
 			(*it)->shape->spherize();
 			}
 			}

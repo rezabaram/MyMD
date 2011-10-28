@@ -2,10 +2,10 @@ include ../Makefile.inc
 CC=g++
 INCLUDES=-I/sw/include/ -I$(HOME)/workstation/mysrc/
 LIBS=-L/sw/lib/ -L$(HOME)/workstation/mysrc/
-FLAGS=-Wall -lmylibs -lgsl -lgslcblas 
+FLAGS=-Wall  -lgsl -lgslcblas 
 targetdir=../bin/
 
-all: coord_convert packing_density fabric coord2xdr
+all: coord_convert packing_density fabric coord2xdr periodic2full
 	cp coord_convert packing_density fabric coord2xdr $(targetdir)
 
 packing_density:	packing_density.cc  ../include/packing.h ../include/ellipsoid.h
@@ -18,6 +18,8 @@ coord_convert: coord_convert.cc ../include/packing.h
 coord2xdr: coord2xdr.cc
 	g++ -o coord2xdr $(INCLUDES) $(LIBS) $(FLAGS) coord2xdr.cc 
 
+periodic2full: periodic2full.cc
+	g++ -o periodic2full $(INCLUDES) $(LIBS) $(FLAGS) periodic2full.cc 
 #asphericity:asphericity.cc
 #	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) asphericity.cc -o asphericity
 
