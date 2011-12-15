@@ -10,6 +10,9 @@
 #include"map_asph_aspect.h"
 #include"ibeta_dist.h"
 
+#include<tr1/random>
+std::tr1::ranlux64_base_01 eng;
+
 //#define WITH_VERLET
 
 extern MTRand rgen;
@@ -170,6 +173,20 @@ TRY
 			maxRadii=max(r,max(a,max(b,c)));
 			radii.push_back(vec(a, b, c));
 
+			}
+		else if(particleType=="sandstone"){
+			
+			double rmin=config.get_param<double>("rmin");
+			double rmax=config.get_param<double>("rmax");
+			std::tr1::uniform_real<double> unif(rmin, rmax);
+			
+			for(int i=0; i<10000;i++){
+				double a = unif(eng);
+				double b = unif(eng);
+				double c = unif(eng);
+				maxRadii=max(a,max(b,c));
+				radii.push_back(vec(a, b, c));
+				}
 			}
 		else if(particleType=="oblate"){
 			
@@ -359,7 +376,7 @@ TRY
                        if(it==particles.end())break;
                        }
                }
-       if(config.get_param<string>("initialization")=="generate" and maxh< .6+2*maxRadii ) 
+       if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
                {
                add_particle_layer(maxh+1.02*maxRadii);
                maxh=0;
@@ -472,6 +489,9 @@ void CSys::solve(){
 		}
 	}catch(CException e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
+		}
+	catch(...){
+		ERROR(1,"Unknown error at t= "+ stringify(t));
 		}
 	}
 

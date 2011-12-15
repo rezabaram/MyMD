@@ -186,6 +186,7 @@ class CEllipsoid: public GeomObjectBase
 		a/=corr;
 		b/=corr;
 		c/=corr;
+		radius=tmax(a, tmax(b,c));
 		setup();
 		return;
 		

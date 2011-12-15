@@ -9,7 +9,7 @@ a.out:	*.cc include/*.h
 	$(CC)  main.cc -Wall  $(LDFLAGS) $(DEBUGFLAGS)
 
 condor_a.out:	*.cc include/*.h 
-	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_a.out
+	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a  -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_a.out
 
 tools:
 	$(MAKE) -C tools

@@ -51,7 +51,8 @@ class CLattice{
 		ERROR(!inputFile.good(), "Unable to open input file: "+input);
 		define_parameters();
 		cerr<< input <<endl;
-		packing.parse(inputFile);
+		packing.parse(inputFile, true);
+		cerr<< packing.size() <<endl;
 		packing.BuildGrid();
 		}
 	~CLattice(){
@@ -97,9 +98,10 @@ class CLattice{
 	    for(long int j=0;j<ny;++j) {
 	    for(long int k=0;k<nz;++k) {
 		/* Check output of xdr file*/
+		if(k*dz<0.15 or k*dz >0.95)continue;
 		float x=1;
-		//if(packing.is_in_void(vec(i*dx, j*dy, k*dz)))x=0;
-		if(packing.is_in_void(vec(k*dz, j*dy, i*dx)))x=0;//rotate to have z in x direction, for Ariels convenience
+		if(packing.is_in_void(vec(i*dx, j*dy, k*dz)))x=0;
+		//if(packing.is_in_void(vec(k*dz, j*dy, i*dx)))x=0;//rotate to have z in x direction, for Ariels convenience
 		m_xdr->add(x);
 	      }
 	    }

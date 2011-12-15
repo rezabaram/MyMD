@@ -5,8 +5,8 @@ LIBS=-L/sw/lib/ -L$(HOME)/workstation/mysrc/
 FLAGS=-Wall  -lgsl -lgslcblas 
 targetdir=../bin/
 
-all: coord_convert packing_density fabric coord2xdr periodic2full
-	cp coord_convert packing_density fabric coord2xdr $(targetdir)
+all: coord_convert packing_density fabric coord2xdr periodic2full compact correlation
+	cp coord_convert packing_density fabric coord2xdr compact correlation $(targetdir)
 
 packing_density:	packing_density.cc  ../include/packing.h ../include/ellipsoid.h
 	$(ECHO) here
@@ -17,6 +17,12 @@ coord_convert: coord_convert.cc ../include/packing.h
 
 coord2xdr: coord2xdr.cc
 	g++ -o coord2xdr $(INCLUDES) $(LIBS) $(FLAGS) coord2xdr.cc 
+
+correlation: correlation.cc
+	g++ -o correlation $(INCLUDES) $(LIBS) $(FLAGS) correlation.cc 
+
+compact: compact.cc
+	g++ -o compact $(INCLUDES) $(LIBS) $(FLAGS) compact.cc 
 
 periodic2full: periodic2full.cc
 	g++ -o periodic2full $(INCLUDES) $(LIBS) $(FLAGS) periodic2full.cc 

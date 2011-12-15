@@ -1,17 +1,16 @@
-#include<iostream>
-#include<stdlib.h>
 #include"include/main.h"
-#include"include/mdsys.h"
 using namespace std;
 
 
 long RNGSeed;
 extern MTRand rgen;
 
+string config_file="config";
+
 void Initialize(){
 	rgen.seed(RNGSeed);
 	define_parameters();
-	config.parse("config");
+	config.parse(config_file);
 	//config.parse(cin);
 	}
 
@@ -25,10 +24,13 @@ void Run(){
 int main(int pi, char **params){
 	if(pi==1)
 		RNGSeed=0;
-	else
+	if(pi>=2)
 		RNGSeed=313*atoi(params[1])+1;
+	if(pi>=3)
+		config_file=(string)params[2];
 
 	cerr<<"RNG Seed: "<<RNGSeed<<endl;
+	cerr<<"Config file: "<<config_file<<endl;
 	
 	try {
 	Initialize();

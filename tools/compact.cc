@@ -2,12 +2,14 @@
 #include"../include/define_params.h"
 #include"../include/particle.h"
 #include"../include/packing.h"
+#include"../include/slice.h"
 using namespace std;
 
 long RNGSeed;
 extern MTRand rgen;
 CPacking<CParticle> packing;
 
+string	inputFileName;
 
 void Initialize(int n_params, char **params){
 	rgen.seed(RNGSeed);
@@ -15,22 +17,40 @@ void Initialize(int n_params, char **params){
 
 	ERROR(n_params!=2, "Usage: convert2raster input-file");
 	
+	inputFileName=(params[1]);
 	ifstream inputFile(params[1]);
 	ERROR(!inputFile.good(), "Unable to open input file"+(string)(params[1]));
 	
 	define_parameters();
 	packing.parse(inputFile, true);
-
-	cerr<< packing.size() <<endl;
-
 	}
 
 void Run(){
 	
-	vec x1 (0, 0, 0.15000);
-	vec x2 (1, 1, 0.95);
-	cout<< packing.packFraction(x1,x2, 1000000 ) <<endl;
+	vec x1 (0, 0, 0.10000);
+	vec x2 (1, 1, 0.9);
+	double overalscale=1;
+	double scale=1;
+	while(1){
+		cerr<< "Give scale: ";
+		cin>>scale;
+		if(scale<=0)break;
+		overalscale*=scale;
+		cout<< packing.packFraction(x1,x2, 100000, scale ) <<endl;
+		}
+	cerr<<"Final scale factor: "<<overalscale  <<endl;
+	ofstream output((inputFileName+"_scaled").c_str());
+	packing.print(output);
+	CSlice slice;
+	double density;
+	for(double z=0.0; z<1.01; z+=0.02){
+		density=packing.get_slice(slice, z, 1000000);
+		slice.reset();
+		cout<< z<<"  "<<density <<endl;
 	}
+	//slice.export_ppm("out.ppm");
+	}
+	
 
 int main(int n_params, char **params){
 	if(n_params==1)

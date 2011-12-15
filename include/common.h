@@ -63,7 +63,11 @@ using namespace math;
 
 
 vec randomVec(const vec &x1, const vec &x2){
-	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(0)+(x2(2)-x1(2))*rgen());
+	return vec( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen(), x1(2)+(x2(2)-x1(2))*rgen());
+	}
+
+vec2d randomVec2d(const vec2d &x1, const vec2d &x2){
+	return vec2d( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen());
 	}
 
 //obtaining the polynomial | B + lambda A | = 0

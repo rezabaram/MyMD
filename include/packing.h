@@ -4,6 +4,7 @@
 #include"common.h"
 #include"shapes.h"
 #include"grid.h"
+#include"slice.h"
 #include"ellips_contact.h"
 #include"MersenneTwister.h"
 #include"interaction.h"
@@ -35,14 +36,15 @@ class CPacking : public list<T *>
 	void printEuler(std::ostream& out)const;
 	void parse(string infilename, bool periodic=false);
 	void parse(istream &inputFile, bool periodic=false);
-	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000);
+	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000, double scale=1);
+	double get_slice(CSlice &slice,  double z=0.5, unsigned long N=10000);
 	bool is_in_void(const vec &x);
 	void output_contact_network(ostream &out);
 	double totalVolume();
 	void BuildContactNetwork();
 	void BuildGrid(){
 		if(grid_built){
-			WARNING("The grid is already built.");
+			//WARNING("The grid is already built.");
 			return;
 			}
 		grid=(new CRecGrid<T>(this, vec(0.0, 0.0, 0.0), vec(1.5, 1.5, 1.5), 1.1*maxr));
@@ -74,7 +76,7 @@ double CPacking<T>::totalVolume(){
 
 //calculating packing fraction inside cube with x1, x2 az opposite corners
 template < class T>
-double CPacking<T>::packFraction(const vec &x1, const vec &x2, unsigned long N){
+double CPacking<T>::packFraction(const vec &x1, const vec &x2, unsigned long N, double scale){
 TRY
 	BuildGrid();
 	double n=0, nt=0;
@@ -83,6 +85,12 @@ TRY
 	//double boxvolume=fabs(l(0)*l(1)*l(2));
 	double d=1;
 	typename CNode3D<T>::const_iterator it;
+
+	typename CPacking<T>::iterator it2;
+	if(fabs(scale-1)>1e-10) 
+		for(it2=this->begin(); it2!=this->end(); it2++){
+			(*it2)->shape->scale(scale);
+		}
 
 	for(unsigned long i=0; i<N; i++){
 		++nt;
@@ -100,6 +108,37 @@ TRY
 	return n/nt;
 CATCH
 	}
+
+template < class T>
+double CPacking<T>::get_slice(CSlice &slice,  double z, unsigned long N){
+	vec2d x1=slice.corner;
+	vec2d x2=slice.corner+slice.L;
+	
+	BuildGrid();
+	double d;
+	double n=0, nt=0;
+	for(unsigned long i=0; i<N; i++){
+		++nt;
+		bool in_void=true;
+		vec2d x=randomVec2d(x1,x2);
+		vec x3d=vec(x(0),x(1),z);
+		CNode3D<T> *node=grid->which(x3d);
+		assert(node);
+		typename CNode3D<T>::const_iterator it;
+		for(it=node->begin(); it!=node->end(); it++){
+			d=(*(**it).shape)(x3d);
+			if(d<0) {
+				++n;
+				in_void=false;
+				break;
+				}
+			}
+		if(in_void)slice.add(x, 0);
+		else slice.add(x, 1);
+		}
+
+	return n/nt;
+}
 
 template < class T>
 bool CPacking<T>::is_in_void(const vec &x){
@@ -139,14 +178,11 @@ void CPacking<T>::printEuler(std::ostream& out)const{
 		}
 
 template < class T>
-void CPacking<T>::parse(string infilename, bool periodic) {
+void CPacking<T>::parse(string infilename, bool periodicity) {
 	ifstream inputFile(infilename.c_str());
-	if(!inputFile.good())
-	{
-	cerr << "Unable to open input file: " << infilename << endl;
-	return;
-	}
-	parse(inputFile, periodic);
+	ERROR(!inputFile.good(), "Unable to open input file: ")
+
+	parse(inputFile, periodicity);
 	inputFile.close();
 	}
 

@@ -27,6 +27,9 @@ void define_parameters()
        config.add_param<double>("cohesion", 0); 
        config.add_param<double>("density", 10000.0); 
        config.add_param<double>("particleSize", 0.05); 
+       config.add_param<double>("rmin", 0.05); 
+       config.add_param<double>("rmax", 0.05); 
+
        config.add_param<double>("particleSizeWidth", 0); 
        config.add_param<double>("timeStep", 0.00001); 
        config.add_param<double>("maxTime", 4.0); 

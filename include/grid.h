@@ -150,6 +150,10 @@ TRY
 	N(0)=(unsigned int)(L(0)/_d+1e-12);
 	N(1)=(unsigned int)(L(1)/_d+1e-12);
 	N(2)=(unsigned int)(L(2)/_d+1e-12);
+	if(N(0)<1)N(0)=1;
+	if(N(1)<1)N(1)=1;
+	if(N(2)<1)N(2)=1;
+
 	dL(0)=L(0)/(double)(N(0));
 	dL(1)=L(1)/(double)(N(1));
 	dL(2)=L(1)/(double)(N(2));

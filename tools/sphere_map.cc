@@ -19,17 +19,26 @@ void Initialize(int n_params, char **params){
 	ERROR(!inputFile.good(), "Unable to open input file"+(string)(params[1]));
 	
 	define_parameters();
-	packing.parse(inputFile, true);
-
-	cerr<< packing.size() <<endl;
-
+	packing.parse(inputFile, false);
 	}
+
+class SMap
+	{
+	public:
+	SMap(unsigned long int n){
+		}
+	
+	//void step
+ 	private:
+	Vec<3,unsigned long int> index;
+	};
 
 void Run(){
 	
-	vec x1 (0, 0, 0.15000);
-	vec x2 (1, 1, 0.95);
-	cout<< packing.packFraction(x1,x2, 1000000 ) <<endl;
+	packing.BuildGrid();
+	vec x(10,13,17);
+	packing.test(x);
+
 	}
 
 int main(int n_params, char **params){
