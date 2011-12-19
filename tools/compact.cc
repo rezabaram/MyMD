@@ -41,14 +41,15 @@ void Run(){
 	cerr<<"Final scale factor: "<<overalscale  <<endl;
 	ofstream output((inputFileName+"_scaled").c_str());
 	packing.print(output);
-	CSlice slice;
+	CSlice slice(vec2d(0.0),vec2d(1.0),1./256);
 	double density;
-	for(double z=0.0; z<1.01; z+=0.02){
+	if(0)for(double z=0.0; z<1.01; z+=0.02){
 		density=packing.get_slice(slice, z, 1000000);
 		slice.reset();
 		cout<< z<<"  "<<density <<endl;
 	}
-	//slice.export_ppm("out.ppm");
+	density=packing.get_slice_uniform(slice, 0.5, 256);
+	slice.export_ppm("out.ppm");
 	}
 	
 

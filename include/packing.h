@@ -37,6 +37,7 @@ class CPacking : public list<T *>
 	void parse(string infilename, bool periodic=false);
 	void parse(istream &inputFile, bool periodic=false);
 	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000, double scale=1);
+	double get_slice_uniform(CSlice &slice,  double z=0.5, unsigned long N=100);
 	double get_slice(CSlice &slice,  double z=0.5, unsigned long N=10000);
 	bool is_in_void(const vec &x);
 	void output_contact_network(ostream &out);
@@ -109,6 +110,43 @@ TRY
 CATCH
 	}
 
+template < class T>
+double CPacking<T>::get_slice_uniform(CSlice &slice,  double z, unsigned long N){
+	vec2d x1=slice.corner;
+	vec2d x2=slice.corner+slice.L;
+	
+	BuildGrid();
+	double d;
+	double n=0, nt=0;
+	double dx=1.0/(double)N;
+	vec2d x=x1;
+	for(;;x+=vec2d(dx,0)){
+		if(x(0)>x2(0)){
+			x(0)=x1(0);
+			x(1)+=dx;
+			if(x(1)>x2(1))break;
+		}
+	
+		++nt;
+		bool in_void=true;
+		vec x3d=vec(x(0),x(1),z);
+		CNode3D<T> *node=grid->which(x3d);
+		assert(node);
+		typename CNode3D<T>::const_iterator it;
+		for(it=node->begin(); it!=node->end(); it++){
+			d=(*(**it).shape)(x3d);
+			if(d<0) {
+				++n;
+				in_void=false;
+				break;
+				}
+			}
+		if(in_void)slice.add(x, 0);
+		else slice.add(x, 1);
+		}
+
+	return n/nt;
+}
 template < class T>
 double CPacking<T>::get_slice(CSlice &slice,  double z, unsigned long N){
 	vec2d x1=slice.corner;
