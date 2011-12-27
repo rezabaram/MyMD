@@ -20,7 +20,7 @@ void Initialize(int n_params, char **params)
 	ifstream inputFile(params[1]);
 	ERROR(!inputFile.good(), "Unable to open input file");
 	
-	packing.parse(inputFile);
+	packing.parse(inputFile, true);
 
 }
 

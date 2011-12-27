@@ -1,36 +1,31 @@
 include ../Makefile.inc
-CC=g++
-INCLUDES=-I/sw/include/ -I$(HOME)/workstation/mysrc/
-LIBS=-L/sw/lib/ -L$(HOME)/workstation/mysrc/
-FLAGS=-Wall  -lgsl -lgslcblas 
 targetdir=../bin/
 
 all: coord_convert packing_density fabric coord2xdr periodic2full compact correlation
 	cp coord_convert packing_density fabric coord2xdr compact correlation $(targetdir)
 
 packing_density:	packing_density.cc  ../include/packing.h ../include/ellipsoid.h
-	$(ECHO) here
-	$(CC) -O2 -o packing_density $(INCLUDES) $(LIBS) $(FLAGS) packing_density.cc 
+	$(CC) -O2 -o packing_density  packing_density.cc  $(FLAGS)
 
 coord_convert: coord_convert.cc ../include/packing.h
-		g++ -o coord_convert $(INCLUDES) $(LIBS) $(FLAGS) coord_convert.cc 
+		g++ -o coord_convert   coord_convert.cc  $(FLAGS)
 
 coord2xdr: coord2xdr.cc
-	g++ -o coord2xdr $(INCLUDES) $(LIBS) $(FLAGS) coord2xdr.cc 
+	g++ -o coord2xdr   coord2xdr.cc  $(FLAGS)
 
 correlation: correlation.cc
-	g++ -o correlation $(INCLUDES) $(LIBS) $(FLAGS) correlation.cc 
+	g++ -o correlation   correlation.cc  $(FLAGS)
 
 compact: compact.cc
-	g++ -o compact $(INCLUDES) $(LIBS) $(FLAGS) compact.cc 
+	g++ -o compact   compact.cc  $(FLAGS)
 
 periodic2full: periodic2full.cc
-	g++ -o periodic2full $(INCLUDES) $(LIBS) $(FLAGS) periodic2full.cc 
+	g++ -o periodic2full  periodic2full.cc   $(FLAGS)
 #asphericity:asphericity.cc
 #	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) asphericity.cc -o asphericity
 
 fabric: fabric.cc ../include/packing.h ../include/ellips_contact.h ../include/interaction.h ../include/contact_network.h ../include/eigsys.h ../include/ellipsoid.h
-	$(CC)  $(INCLUDES) $(LIBS) $(FLAGS) fabric.cc -o fabric
+	$(CC)    fabric.cc -o fabric  $(FLAGS)
 
 clean:
 	rm -f fabric coord_convert packing_density *.o

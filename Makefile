@@ -6,7 +6,7 @@ run: a.out
 	time bin/run.sh
 
 a.out:	*.cc include/*.h 
-	$(CC)  main.cc -Wall  $(LDFLAGS) $(DEBUGFLAGS)
+	$(CC)  main.cc $(FLAGS) 
 
 condor_a.out:	*.cc include/*.h 
 	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a  -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_a.out
