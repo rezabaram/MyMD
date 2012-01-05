@@ -27,7 +27,7 @@ void Initialize(int n_params, char **params)
 void Run()
 {
 	packing.BuildContactNetwork();
-	packing.contacts.print_eigen(cout);
+	packing.contacts.print_eigen(cout, vec(0.0,0.0,0.20), vec(1.0,1.0,.95));
 	//packing.contacts.print_branch_vectors(cout);
 	//packing.contacts.print_branch_vectors(cout, vec(0.0,0.0,0.15), vec(1,1,.95));
 	//packing.print_particle_axes(cout, vec(0.0,0.0,0.15), vec(1,1,.95));;

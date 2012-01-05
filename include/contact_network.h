@@ -8,20 +8,22 @@
 using namespace std;
 
 template<class T>
-class TContact : public BasicContact{ 
+class TContact : public Contact{ 
 	public: 
-	TContact(T *_p1, T *_p2, vec _x, vec _n):BasicContact(_x, _n), p1(_p1), p2(_p2),l(_x-_p1->shape->Xc){} ; 
-	TContact(T *_p1, T *_p2, const BasicContact &bc):BasicContact(bc), p1(_p1), p2(_p2),l(bc.x-_p1->shape->Xc), n(bc.n){} ; 
+	//TContact(T *_p1, T *_p2, vec _x, vec _n):Contact(_x, _n), p1(_p1), p2(_p2),l(_x-_p1->shape->Xc){} ; 
+	TContact(T *_p1, T *_p2, const Contact &bc):Contact(bc), p1(_p1), p2(_p2),l(bc.x-_p1->shape->Xc), n(bc.n),fn(bc.n*pow(bc.dx_n,1.5) ){} ; 
 	T * p1, *p2; 
-	vec l, n;
+	vec l, n, fn;
 	}; 
 
 template<class T>
 class TNode : public vector<TContact<T> >{
 	public:
-	TNode():branch_fabric_M(Matrix(3,3)), normal_fabric_M(Matrix(3,3)){};
+	TNode(T *_p):p(_p),branch_fabric_M(Matrix(3,3)), normal_fabric_M(Matrix(3,3)){};
 	Matrix &branch_fabric_tensor()
 	{
+		bool calculated=false;
+		if(calculated) return branch_fabric_M;
 		typename TNode<T>::iterator it;
 		for(int i=0; i<3; i++)
 			for(int j=0; j<3; j++)
@@ -31,11 +33,14 @@ class TNode : public vector<TContact<T> >{
 			for(int j=0; j<3; j++)
 				for(it=this->begin(); it!=this->end(); it++)
 					branch_fabric_M(i,j)+=(*it).l(i)*(*it).l(j);
+		calculated=true;
 		return branch_fabric_M;
 	}
 
 	Matrix &normal_fabric_tensor()
 	{
+		bool calculated=false;
+		if(calculated) return branch_fabric_M;
 		typename TNode<T>::iterator it;
 		for(int i=0; i<3; i++)
 			for(int j=0; j<3; j++)
@@ -45,6 +50,7 @@ class TNode : public vector<TContact<T> >{
 			for(int j=0; j<3; j++)
 				for(it=this->begin(); it!=this->end(); it++)
 					normal_fabric_M(i,j)+=(*it).n(i)*(*it).n(j);
+		calculated=true;
 		return normal_fabric_M;
 	}
 
@@ -63,6 +69,9 @@ class TNode : public vector<TContact<T> >{
 			//if((*it).n*vec3d(0,0,1)>0)out<<spherical((*it).n)<<endl;
 		}
 
+	
+	T *p;
+	private:
 	Matrix branch_fabric_M;
 	Matrix normal_fabric_M;
 	};
@@ -105,25 +114,27 @@ class ContactNetwork : public vector< TNode<T> >
 		}
 
 	void build(){
-		typename vector<T *>::const_iterator it;
 		N=packing->size();
 
-		for(size_t i=0;  i<N; i++){
-			this->push_back(TNode<T>());
+		typename list<T *>::const_iterator it;
+		for(it=packing->begin();  it!=packing->end(); it++){
+			this->push_back(TNode<T>(*it));
 			}
 
 		typename list<T *>::const_iterator it1, it2;
 		size_t i=0, j=0;
 		for(it1=packing->begin(), i=0;  it1!=packing->end(); it1++, ++i){
+			ERROR(*it1!=this->at(i).p, "In consistency in contact network");
 			for(it2=it1, ++it2, j=i+1;  it2!=packing->end(); it2++, ++j){
 				ShapeContact ovs((*it1)->shape,(*it2)->shape);
 				CInteraction::overlaps(&ovs, (*it1)->shape, (*it2)->shape ); 
 				if(!ovs.empty()) {
 					assert(ovs.size()==1);
-					BasicContact temp=static_cast<BasicContact>(ovs.back());
+					Contact temp=ovs.back();
 					this->at(i).push_back(TContact<T>((*it1), (*it2), temp ));
 					temp.n*=-1.0;
 					this->at(j).push_back(TContact<T>((*it2), (*it1), temp ));
+					ERROR(*it2!=this->at(j).p, "Inconsistency in contact network");
 					}
 				}
 			}
@@ -145,14 +156,22 @@ class ContactNetwork : public vector< TNode<T> >
 			it1->print_branch_vectors(out,box_c1,box_c2);
 			}
 		}
-	void print_eigen(ostream &out){
+	void print_eigen(ostream &out ,const vec3d &c1=vec3d(0,0,0),const vec3d &c2=vec3d(1,1,1)){
 		//CEigSys eigsys(branch_fabric_tensor());
 		//eigsys.print_eigen_vals(cout);
 		typename ContactNetwork<T>::iterator it1;
 		size_t i=0;
 		for(it1=this->begin(), i=0;  it1!=this->end(); it1++, ++i){
-			CEigSys eigsys1((*it1).branch_fabric_M);
-			CEigSys eigsys2((*it1).normal_fabric_M);
+			vec3d x=it1->p->shape->Xc;
+			if(it1->p->is_shadow) continue;
+			if( x(0)<c1(0) or 
+			x(0)>c2(0) or 
+			x(1)<c1(1) or 
+			x(1)>c2(1) or 
+			x(2)<c1(2) or 
+			x(2)>c2(2) ) continue;
+			CEigSys eigsys1((*it1).branch_fabric_tensor());
+			CEigSys eigsys2((*it1).normal_fabric_tensor());
 			eigsys1.print_eigens(cout);
 			eigsys2.print_eigens(cout);
 			cout<<endl;
