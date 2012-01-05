@@ -11,28 +11,43 @@ template<class T>
 class TContact : public BasicContact{ 
 	public: 
 	TContact(T *_p1, T *_p2, vec _x, vec _n):BasicContact(_x, _n), p1(_p1), p2(_p2),l(_x-_p1->shape->Xc){} ; 
-	TContact(T *_p1, T *_p2, const BasicContact &bc):BasicContact(bc), p1(_p1), p2(_p2),l(bc.x-_p1->shape->Xc){} ; 
+	TContact(T *_p1, T *_p2, const BasicContact &bc):BasicContact(bc), p1(_p1), p2(_p2),l(bc.x-_p1->shape->Xc), n(bc.n){} ; 
 	T * p1, *p2; 
-	vec l;
+	vec l, n;
 	}; 
 
 template<class T>
 class TNode : public vector<TContact<T> >{
 	public:
-	TNode():F(Matrix(3,3)){};
-	Matrix &cal_fabric_tensor()
+	TNode():branch_fabric_M(Matrix(3,3)), normal_fabric_M(Matrix(3,3)){};
+	Matrix &branch_fabric_tensor()
 	{
 		typename TNode<T>::iterator it;
 		for(int i=0; i<3; i++)
 			for(int j=0; j<3; j++)
-				F(i,j)=0;
+				branch_fabric_M(i,j)=0;
 
 		for(int i=0; i<3; i++)
 			for(int j=0; j<3; j++)
 				for(it=this->begin(); it!=this->end(); it++)
-					F(i,j)+=(*it).l(i)*(*it).l(j);
-		return F;
+					branch_fabric_M(i,j)+=(*it).l(i)*(*it).l(j);
+		return branch_fabric_M;
 	}
+
+	Matrix &normal_fabric_tensor()
+	{
+		typename TNode<T>::iterator it;
+		for(int i=0; i<3; i++)
+			for(int j=0; j<3; j++)
+				normal_fabric_M(i,j)=0;
+
+		for(int i=0; i<3; i++)
+			for(int j=0; j<3; j++)
+				for(it=this->begin(); it!=this->end(); it++)
+					normal_fabric_M(i,j)+=(*it).n(i)*(*it).n(j);
+		return normal_fabric_M;
+	}
+
 	void print_branch_vectors(ostream &out,const vec3d &c1=vec3d(0,0,0),const vec3d &c2=vec3d(1,1,1)){
 		typename TNode<T>::iterator it;
 		for(it=this->begin(); it!=this->end(); it++){
@@ -48,30 +63,47 @@ class TNode : public vector<TContact<T> >{
 			//if((*it).n*vec3d(0,0,1)>0)out<<spherical((*it).n)<<endl;
 		}
 
-	Matrix F;
+	Matrix branch_fabric_M;
+	Matrix normal_fabric_M;
 	};
 
 template<class T>
 class ContactNetwork : public vector< TNode<T> >
 	{
 	public:
-	ContactNetwork(list<T *> *_p): F(Matrix(3,3)), N(0), packing(_p){}
+	ContactNetwork(list<T *> *_p): branch_fabric_M(Matrix(3,3)), normal_fabric_M(Matrix(3,3)), N(0), packing(_p){}
 	~ContactNetwork(){
 		}
 
-	Matrix cal_fabric_tensor(){
+	Matrix branch_fabric_tensor(){
 		double N=this->size();
 
 		for(int i=0; i<3; i++)
-			for(int j=0; j<3; j++)
-				F(i,j)=0;
+			for(int j=0; j<3; j++){
+				branch_fabric_M(i,j)=0;
+				}
 
 		for(size_t i=0;  i<N; i++){
-			F+=this->at(i).cal_fabric_tensor();
+			branch_fabric_M+=this->at(i).branch_fabric_tensor();
 			}
-		F=F/N;
-		return F;
+		branch_fabric_M=branch_fabric_M/N;
+		return branch_fabric_M;
 		}
+	Matrix normal_fabric_tensor(){
+		double N=this->size();
+
+		for(int i=0; i<3; i++)
+			for(int j=0; j<3; j++){
+				normal_fabric_M(i,j)=0;
+				}
+
+		for(size_t i=0;  i<N; i++){
+			normal_fabric_M+=this->at(i).normal_fabric_tensor();
+			}
+		normal_fabric_M=normal_fabric_M/N;
+		return normal_fabric_M;
+		}
+
 	void build(){
 		typename vector<T *>::const_iterator it;
 		N=packing->size();
@@ -114,13 +146,16 @@ class ContactNetwork : public vector< TNode<T> >
 			}
 		}
 	void print_eigen(ostream &out){
-		CEigSys eigsys(cal_fabric_tensor());
-		eigsys.print_eigen_vals(cout);
+		//CEigSys eigsys(branch_fabric_tensor());
+		//eigsys.print_eigen_vals(cout);
 		typename ContactNetwork<T>::iterator it1;
 		size_t i=0;
 		for(it1=this->begin(), i=0;  it1!=this->end(); it1++, ++i){
-			CEigSys eigsys((*it1).F);
-			eigsys.print_eigen_vals(cout);
+			CEigSys eigsys1((*it1).branch_fabric_M);
+			CEigSys eigsys2((*it1).normal_fabric_M);
+			eigsys1.print_eigens(cout);
+			eigsys2.print_eigens(cout);
+			cout<<endl;
 			}
 		}
 
@@ -148,7 +183,8 @@ class ContactNetwork : public vector< TNode<T> >
 	}
 		
 
-	Matrix F;//fabric tensor
+	Matrix branch_fabric_M;//fabric tensor of branch vectors (center to contact points)
+	Matrix normal_fabric_M;//fabric tensor of contact normals
 	size_t N;
 	private:
 	list<T *> *packing;

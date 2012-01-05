@@ -36,12 +36,7 @@ class CPacking : public list<T *>
 	void printEuler(std::ostream& out)const;
 	void parse(string infilename, bool periodic=false);
 	void parse(istream &inputFile, bool periodic=false);
-	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000, double scale=1);
-	double get_slice_uniform(CSlice &slice,  double z=0.5, unsigned long N=100);
-	double get_slice(CSlice &slice,  double z=0.5, unsigned long N=10000);
-	bool is_in_void(const vec &x);
 	void output_contact_network(ostream &out);
-	double totalVolume();
 	void BuildContactNetwork();
 	void BuildGrid(){
 		if(grid_built){
@@ -52,6 +47,11 @@ class CPacking : public list<T *>
 		grid->build();
 		grid_built=true;
 		};
+	double packFraction(const vec &x1, const vec &x2, unsigned long N=10000, double scale=1);
+	double get_slice_uniform(CSlice &slice,  double z=0.5, unsigned long N=100);
+	double totalVolume();
+	double get_slice(CSlice &slice,  double z=0.5, unsigned long N=10000);
+	bool is_in_void(const vec &x);
 
 	double avg_contact_number(){
 		return contacts.avg_contact_number();

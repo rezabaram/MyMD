@@ -17,13 +17,12 @@ class CEigSys{
 		eigens(M,eigvals, eigvecs);
 		solved=true;
 		}
-	void print_eigen_vals(ostream &out){
+	void print_eigens(ostream &out){
 		if(!solved)solve();
 		//out<< real(charPolynom.root(0)) <<"\t"<< real(charPolynom.root(1)) <<"\t"<< real(charPolynom.root(2)) <<endl;
 		for(unsigned int i=0; i<eigvals.size(); i++){
 			out<<eigvals.at(i)<<"   "<<spherical(eigvecs.at(i))<<"   ";
 			}
-		out<<endl;
 		}
 
 	const Matrix &M;

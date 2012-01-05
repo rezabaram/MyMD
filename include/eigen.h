@@ -119,7 +119,7 @@ void eigens(const Matrix &M, vector<double> &eigenvals, vector<vec3d> &eigenvecs
 	for(indexType i=0; i<N; ++i){
 		ind[i]=i;
 		}
-	//mysort(eval, ind, N);
+	mysort(eval, ind, N);
 ///
          for (indexType i = 0; i < N; i++) {
 		gsl_complex eval_i = gsl_vector_complex_get (eval, ind[i]);

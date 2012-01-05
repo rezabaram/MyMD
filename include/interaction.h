@@ -148,7 +148,7 @@ inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *E1, CEllipsoid  *E2){
 TRY
 	
-	ERROR(E1==E2, "A particle is checked for overlapping against itself for overlapping.")
+	ERROR(E1==E2, "A particle is checked for overlapping against itself.")
 	if((E1->Xc-E2->Xc).abs()>1.001*(E1->radius+E2->radius))return;
 
 	//if(ovs->set)if( !E1->doesHit(ovs->plane) and !E2->doesHit(ovs->plane)) return;
