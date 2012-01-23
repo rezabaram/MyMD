@@ -3,7 +3,6 @@
 #include<iostream>
 #include<fstream>
 #include<string>
-#include"../include/define_params.h"
 #include"../include/particle.h"
 #include"../include/packing.h"
 #include <stdio.h>
@@ -27,7 +26,6 @@ class CLattice{
 		//allocate();
 		ifstream inputFile(input.c_str());
 		ERROR(!inputFile.good(), "Unable to open input file: "+input);
-		define_parameters();
 		packing.parse(inputFile, true);
 		cerr<< packing.size()  <<endl;
 		packing.BuildGrid();

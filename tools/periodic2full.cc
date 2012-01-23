@@ -1,7 +1,6 @@
 #include<iostream>
 #include<fstream>
 #include<string>
-#include"../include/define_params.h"
 #include"../include/particle.h"
 #include"../include/packing.h"
 #include <stdio.h>

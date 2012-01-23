@@ -6,10 +6,9 @@ long RNGSeed;
 extern MTRand rgen;
 
 string config_file="config";
-
+CConfig config;
 void Initialize(){
 	rgen.seed(RNGSeed);
-	define_parameters();
 	config.parse(config_file);
 	//config.parse(cin);
 	}

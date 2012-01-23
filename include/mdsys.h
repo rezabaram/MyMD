@@ -2,6 +2,7 @@
 #define MDSYS_H 
 #include "common.h"
 #include"celllist.h"
+#include"config.h"
 #include"particle.h"
 #include"packing.h"
 #include"interaction.h"
@@ -9,6 +10,8 @@
 #include"particlecontact.h"
 #include"map_asph_aspect.h"
 #include"ibeta_dist.h"
+
+extern CConfig config;
 
 #include<tr1/random>
 std::tr1::ranlux64_base_01 eng;
@@ -132,6 +135,7 @@ double TruncGaussRand(double r, double dr=0.0){
 	return x;
 	}
 
+CMaterial particle_material;
 void CSys::initialize(const CConfig &config){
 TRY
 	G=config.get_param<vec>("Gravity");
@@ -148,11 +152,23 @@ TRY
 	double dr=config.get_param<double>("particleSizeWidth");
 	DisBetaDistribution ibeta_dist(3,3,dr);
 
+	particle_material.stiffness=paramsDouble("stiffness");
+	particle_material.damping=paramsDouble("damping");
+	particle_material.friction=paramsDouble("friction");
+	particle_material.static_friction=paramsDouble("static_friction");
+	particle_material.cohesion=paramsDouble("cohesion");
+	particle_material.density=paramsDouble("density");
 
 
 	if(init_method=="restart"){
 		particles.parse(config.get_param<string>("input"));
 		maxRadii=particles.maxr;
+		ParticleContainer::iterator it1;
+		for(it1=particles.begin(); it1!=particles.end(); ++it1){
+			(*it1)->set_material(particle_material);
+			}
+		}
+	else if(init_method=="RCP"){
 		}
 	else if(init_method=="generate"){
 		if(particleType=="general" or particleType=="gen1" or particleType=="gen2"
@@ -270,8 +286,8 @@ TRY
 		//}
 	if(maxr<p->shape->radius)maxr=p->shape->radius;
 	if(p->top()>maxh) maxh=p->top();
-
-	particles.push_back(p);
+	p->set_material(particle_material);
+	particles.add(p);
 	particles.back()->id=particles.TotalParticlesN;
 	 ++(particles.TotalParticlesN);
 
@@ -293,12 +309,12 @@ TRY
 //FROMTIME
 	//FIXME make it dimensionless
 
-	ParticleContainer::iterator it1, it2, ittemp;
 	#ifdef WITH_VERLET
 	CVerletList<CParticle>::iterator neigh;
 	#endif
 	//reset forces
 	vec cm=center_of_mass();
+	ParticleContainer::iterator it1, it2, ittemp;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->reset_forces(G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1));//gravity plus damping (coef of dumping is ad hoc)
 		(*it1)->reset_torques(vec(0.0));

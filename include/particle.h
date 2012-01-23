@@ -10,30 +10,18 @@
 #include<iomanip>
 
 #include"common.h"
-#include"params.h"
-#include"define_params.h"
 #include"dfreedom.h"
 #include"shapes.h"
 #include"verlet.h"
 #include"grid.h"
 #include"phys_object.h"
+#include"material.h"
+
 
 
 typedef enum {frozen, onhold, rejected, ready_to_go} tState;
 
 using namespace std;
-class CProperty
-	{
-	public:
-	CProperty():
-	 	stiffness(paramsDouble("stiffness")), damping(paramsDouble("damping")),  friction(paramsDouble("friction")), static_friction(paramsDouble("static_friction")), cohesion(paramsDouble("cohesion")), density(paramsDouble("density")), color(" 1"){
-		};
-	~CProperty(){}
-	double stiffness, damping, friction, static_friction, friction_threshold, cohesion;
-	double density;
-	string color;
- 	private:
-	};
 
 
 class CParticle : public PhysObject
@@ -67,6 +55,7 @@ class CParticle : public PhysObject
 		delete torques;
 	}
 
+	
 
 	virtual void reset_forces(const vec &v=vec(0.0)){
 		*forces=v;
@@ -133,7 +122,9 @@ class CParticle : public PhysObject
 	virtual void calVel(double dt);
 	void get_grid_neighbours(set<CParticle *> &neigh)const;
 
-	CProperty material;
+	void set_material(const CMaterial &m){material=m;}
+
+	CMaterial material;
 	CDFreedom<3> x, x0, x_p;//TranslationalDFreedom;
 	CDFreedom<3> w, w0, w_p;//Rotational;
 	long id;

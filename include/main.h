@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H 
 
-#include"define_params.h"
+#include"config.h"
 #include<iostream>
 #include<stdlib.h>
 #include<string>

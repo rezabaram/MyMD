@@ -9,6 +9,7 @@
 #include"MersenneTwister.h"
 #include"interaction.h"
 #include"contact_network.h"
+#include"material.h"
 
 
 //member classes for contact network
@@ -16,7 +17,7 @@
 template < class T>
 class CPacking : public list<T *>
 	{
-
+	//void push_back ( const T* x );
 	public:
 	CPacking():contacts(ContactNetwork<T>(this)), TotalParticlesN(0)
 		{
@@ -29,6 +30,10 @@ class CPacking : public list<T *>
 		for(it=this->begin(); it!=this->end(); it++)
 			delete (*it);
 		}
+
+	void add( T *x){
+		push_back (x);
+		};
 
 	void print(std::ostream& out, bool raster=false)const;
 	void print_particle_axes(ostream &out,const vec3d &c1=vec3d(0,0,0),const vec3d &c2=vec3d(1,1,1) );

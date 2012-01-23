@@ -4,7 +4,7 @@
 
 class Test{
 	public:
-	static vec contactForce(const Contact &c, const vec &dv, CProperty &m, double tmp=1){
+	static vec contactForce(const Contact &c, const vec &dv, CMaterial &m, double tmp=1){
 	TRY
 		double proj=(dv*c.n);
 		double ksi=c.dx_n;

@@ -1,5 +1,4 @@
 #include<iostream>
-#include"../include/define_params.h"
 #include"../include/particle.h"
 #include"../include/packing.h"
 #include"../include/slice.h"
@@ -21,7 +20,6 @@ void Initialize(int n_params, char **params){
 	ifstream inputFile(params[1]);
 	ERROR(!inputFile.good(), "Unable to open input file"+(string)(params[1]));
 	
-	define_parameters();
 	packing.parse(inputFile, true);
 	}
 
