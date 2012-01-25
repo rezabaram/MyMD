@@ -23,22 +23,31 @@ extern MTRand rgen;
 
 typedef CPacking<CParticle> ParticleContainer;
 
+class ctest 
+	{
+	public:
+	ctest(double t=1){
+		exit(0);
+		}
+ 	private:
+	};
+
 typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01), 
-	walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary")),
-	maxr(0), maxh(0), maxv(0), G(vec(0.0)),
-	maxNParticle(maxnparticle), 
+	CSys(unsigned long maxnparticle):t(0), outDt(0.01) 
+	,maxr(0), maxh(0), maxv(0), G(vec(0.0))
+	,maxNParticle(maxnparticle)
 	#ifdef WITH_VERLET
-	verlet((&particles)), 
+	verlet((&particles))
 	#else 
 	#endif
 
-	epsFreeze(1.0e-12), outEnergy("log_energy"),
-	maxRadii(0), top_v(vec(0.0,0.0,0.0)),
-	celllist(CCellList<ParticleContainer, CParticle>(&walls))
+	,epsFreeze(1.0e-12)//, outEnergy("log_energy")
+	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
+	,walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary"))
+	,celllist(CCellList<ParticleContainer, CParticle>(&walls))
 	{
 	TRY
 	CATCH
@@ -78,10 +87,12 @@ class CSys{
 	double t, tMax, dt,DT, outDt, outStart, outEnd;
 
 	//contains the pointers to the particles
+	BoxContainer walls;
 	ParticleContainer particles;
+	CCellList<ParticleContainer, CParticle> celllist;
+	CSizeDistribution size_dist;
 	
 
-	BoxContainer walls;
 	CPlane *sp;
 	double minr, maxr, maxh, maxv;
 	#ifdef WITH_VERLET
@@ -99,16 +110,14 @@ class CSys{
 	bool do_read_radii, softwalls, spherize_on;
 	string out_name;
 	double epsFreeze;
-	ofstream outEnergy;
 	vector<vec> radii;
 	ifstream inputRadii;
 	double maxRadii;
 	vec top_v;
 
-	CCellList<ParticleContainer, CParticle> celllist;
 
-	CSizeDistribution size_dist;
 	
+	ofstream outEnergy;
 	};
 
 CSys::~CSys(){
@@ -173,8 +182,41 @@ TRY
 		for(it1=particles.begin(); it1!=particles.end(); ++it1){
 			(*it1)->set_material(particle_material);
 			}
+		
+		celllist.build(particles);
 		}
-	else if(init_method=="RCP"){
+	else if(init_method=="Stillinger"){
+
+		double eta=config.get_param<double>("eta");
+		double xi=config.get_param<double>("xi");
+		int N=200;
+		double dl=2./pow((double)N,1./3.);
+		tr1::uniform_real<double> unif(0, 1);
+
+		cerr<< dl <<endl;
+		celllist.setup(dl);
+		for(int i=0; i<N; i++){
+			vec x=vec(unif(eng), unif(eng), unif(eng));
+			double r=0.02*size_dist.get();
+			cerr<< r <<endl;
+			double a =r*pow(eta,1./3.)/pow(xi,1./3);
+			double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
+			double c =r*xi*pow(eta/xi,1./3.);
+
+			double alpha=rgen()*M_PI;
+			double beta=rgen()*M_PI;
+			double phi=rgen()*M_PI;
+			Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(beta),0,0,sin(beta))*Quaternion(cos(phi),0,sin(phi),0 );
+			CEllipsoid E2(x, a,b,c, q);
+			CParticle *p = new CParticle(E2);
+			p->w(1)(0)=5.0*(1-2*rgen());
+			p->w(1)(1)=5.0*(1-2*rgen());
+
+			p->x(1)(0)=0.3*(1-2*rgen());
+			p->x(1)(1)=0.3*(1-2*rgen());
+			p->x(1)(2)=top_v(2)+0.3*(1-2*rgen());
+			add(p);
+			}
 		}
 	else if(init_method=="generate"){
 		if(particleType=="general" or particleType=="gen1" or particleType=="gen2"
@@ -243,13 +285,11 @@ TRY
 	else{
 		ERROR(1, "Unknown initialization method: "+init_method);
 		}
-
 	#ifdef WITH_VERLET
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
 	verlet.update();
 	#else
 	celllist.setup(2.0*maxRadii);
-	celllist.build(particles);
 	#endif
 
 	 //add_particle_layer(1.02*maxRadii);
@@ -423,7 +463,7 @@ TRY
 			count=0;
 			outN++;
 			Energy=rEnergy+kEnergy+pEnergy;
-			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
+			//outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			//for relaxation
 			if(t>2 and G.abs()>1){
@@ -673,7 +713,7 @@ void CSys::add_particle_layer(double z){
 		//CParticle *p = new CParticle(CSphere(x,size*(1-0.0*rgen())));
 		//CEllipsoid E(x, 1-0.0*rgen(), 1-0.0*rgen(),1-0.0*rgen(), size*(1+0.0*rgen()));
 		//CParticle *p = new CParticle(E);
-		CSphere E1(x,maxRadii);
+		//CSphere E1(x,maxRadii);
 		//CEllipsoid E2(x, 1, 1, 1, size, q);
 
 		//to implement constant volume (4/3 Pi r^3) while changing the shape

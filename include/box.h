@@ -22,7 +22,6 @@ class CBox: public GeomObjectBase
 
 		face[3]=new CPlane (corner+L,-u0);
 		face[4]=new CPlane (corner+L,-u1);
-//		face[5]=new CPlane (corner+L,-u2);
 
 		if(btype=="periodic_x")
 			{
@@ -36,6 +35,16 @@ class CBox: public GeomObjectBase
 			face[1]->solid=false;
 			face[4]->solid=false;
 			}
+		else if(btype=="periodic_xyz")
+			{
+			face[0]->solid=false;
+			face[3]->solid=false;
+			face[1]->solid=false;
+			face[4]->solid=false;
+			face[2]->solid=false;
+			face[5]=new CPlane (corner+L,-u2);
+			face[5]->solid=false;
+			}
 		else if(btype=="wall"){}
 		else{ERROR(1, "Boundary condition not defined");}
 		};
@@ -43,6 +52,7 @@ class CBox: public GeomObjectBase
 		for(int i=0; i<5; i++){
 			delete face[i];
 			}
+		if(btype=="periodic_xyz")delete face[5];
 		delete [] face;
 		}
 
@@ -86,6 +96,7 @@ class BoxContainer : public CBox, public PhysObject
 	BoxContainer(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string _btype="wall"):
 	CBox(corner, _L, _btype)
 		{ 
+		
 		//assert(corner<L); FIXME make this work
 		}	
 

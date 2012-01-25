@@ -57,20 +57,31 @@ template<typename TParticleContainer, typename TParticle>
 class CCellList
 	{
 	public:
-	CCellList(CBox *box):nodes(NULL),periodic_x(false),periodic_y(false), periodic_z(false) {
+	CCellList(CBox *box):nodes(NULL),periodic_x(false),periodic_y(false), periodic_z(false), is_set_up(false) {
 		c=box->corner;
 		diag=box->L;
 		if(box->btype=="periodic_x")periodic_x=true;
-		if(box->btype=="periodic_xy"){
+		else if(box->btype=="periodic_xy"){
 			periodic_x=true;
 			periodic_y=true;
 			}
+		else if(box->btype=="periodic_xyz"){
+			periodic_x=true;
+			periodic_y=true;
+			periodic_z=true;
+			}
+		else{
+			ERROR(1,"Boundary type not defined")
+			}
+
 		}
 
 	~CCellList(){
 		delete [] nodes;
 		}
 	void setup(double d){
+		if(is_set_up)return;
+		
 		ERROR(d<1e-10, "Invalid grid size: "+stringify(d));
 		cerr<< "Constructing the grid ... ";
 		nx=max(1,(int)floor(diag(0)/d));
@@ -80,9 +91,11 @@ class CCellList
 		dy=diag(1)/(double)ny;
 		dz=diag(2)/(double)nz;
 		if(nodes!=NULL)delete [] nodes;
+		cerr<< nx*ny*nz <<endl;
 		nodes=new CCell<TParticle>[nx*ny*nz];
 		build_neighbors();
 		cerr<< "done: "<<nx<<" X "<<ny <<" X "<<nz<<endl;
+		is_set_up=true;
 		}
 	void clear(){
 		for(int i=0; i<nx*ny*nz; i++){
@@ -166,7 +179,7 @@ class CCellList
 	double dx, dy, dz;
 	CCell<TParticle> *nodes;
  	private:
-	bool periodic_x, periodic_y, periodic_z;
+	bool periodic_x, periodic_y, periodic_z, is_set_up;
 	TParticleContainer particles;
 	};
 
@@ -174,6 +187,7 @@ class CCellList
 template<typename TParticleContainer, typename TParticle>
 CCell<TParticle> *CCellList<TParticleContainer, TParticle>::boundary_mask(int i,int j, int k, vec &shift, bool &is_shifted){
 	
+		cerr<< i<<"  "<<j<<"  "<<k <<endl;
 		shift*=0;
 		is_shifted=false;
 		if(i >= nx){
