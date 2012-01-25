@@ -76,6 +76,13 @@ ostream &operator<<(ostream &out, CParam<T> &param){
 			return out;
 			}
 
+class CCompositeParam : public CParamBase
+	{
+	public:
+ 	private:
+	map<string, CParamBase *> params;
+	};
+
 // the class CBaseConfig is a singleton 
 class CBaseConfig {
 	public:

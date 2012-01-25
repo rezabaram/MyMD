@@ -2,6 +2,7 @@
 #define DEFINE_PARAMS_H 
 #include"baseconfig.h"
 #include"vec.h"
+#include"size_dist.h"
 #include<string>
 using namespace std;
 
@@ -18,6 +19,8 @@ class CConfig : public CBaseConfig{
 
 	void define_parameters()
 	{
+	       add_param<CSizeDistribution>("SizeDistribution", CMonoDist(1.0));
+
 	       add_param<vec>("Gravity", vec(0.0, 0.0, -10.0));
 	       add_param<vec>("boxcorner", vec(0.0, 0.0, 0.0));
 	       add_param<vec>("boxsize", vec(1.0, 1.0, 2.0));

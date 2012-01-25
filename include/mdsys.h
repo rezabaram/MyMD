@@ -10,6 +10,7 @@
 #include"particlecontact.h"
 #include"map_asph_aspect.h"
 #include"ibeta_dist.h"
+#include"size_dist.h"
 
 extern CConfig config;
 
@@ -105,6 +106,8 @@ class CSys{
 	vec top_v;
 
 	CCellList<ParticleContainer, CParticle> celllist;
+
+	CSizeDistribution size_dist;
 	
 	};
 
@@ -159,6 +162,9 @@ TRY
 	particle_material.cohesion=paramsDouble("cohesion");
 	particle_material.density=paramsDouble("density");
 
+
+	size_dist=config.get_param<CSizeDistribution>("SizeDistribution");
+	
 
 	if(init_method=="restart"){
 		particles.parse(config.get_param<string>("input"));
