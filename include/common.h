@@ -9,7 +9,6 @@
 #include<time.h>
 #include<memory>
 #include<limits>
-#include<iomanip>
 #include<sstream>
 #include<ostream>
 #include<vector>
@@ -50,15 +49,6 @@ return a>b?a:b;
 }
 
 
-template <class T>
-string stringify(T x, int width=15, const char ch=' ')
- {
-   std::ostringstream o;
-   if (!(o << setw(width)<<setfill(ch)<<x))
-     cerr<<"Bad coversion to string"<<endl;
-   return o.str();
- }
-
 using namespace math;
 
 
@@ -69,6 +59,34 @@ vec randomVec(const vec &x1, const vec &x2){
 vec2d randomVec2d(const vec2d &x1, const vec2d &x2){
 	return vec2d( x1(0)+(x2(0)-x1(0))*rgen(), x1(1)+(x2(1)-x1(1))*rgen());
 	}
+
+vec randomDirection(){
+        double theta = rgen()*2.0*M_PI;
+	double u=rgen()*2-1;
+        double x = sqrt(1-u*u)*cos(theta);
+        double y = sqrt(1-u*u)*sin(theta);
+	double z=u;
+	vec v(x,y,z);
+	return v;
+	}
+Quaternion randomQuaternion(){
+	double phi= rgen()*2*M_PI;
+	double theta = rgen()*M_PI;
+	double psi= rgen()*2*M_PI;
+
+	double cosPhi=cos(phi/2);
+	double cosTheta=cos(theta/2);
+	double cosPsi=cos(psi/2);
+	double sinPhi=sin(phi/2);
+	double sinTheta=sin(theta/2);
+	double sinPsi=sin(psi/2);
+
+	return Quaternion(cosPhi*cosTheta*cosPsi + sinPhi*sinTheta*sinPsi,
+	sinPhi*cosTheta*cosPsi - cosPhi*sinTheta*sinPsi,
+	cosPhi*sinTheta*cosPsi +  sinPhi*cosTheta*sinPsi,
+	cosPhi*cosTheta*sinPsi -  sinPhi*sinTheta*cosPsi);
+       
+}
 
 //obtaining the polynomial | B + lambda A | = 0
 CQuartic characteristicPolynom(const Matrix &AB){

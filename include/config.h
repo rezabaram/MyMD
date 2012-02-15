@@ -58,6 +58,7 @@ class CConfig : public CBaseConfig{
 	       add_param<double>("xiWidth", 0); 
 	       add_param<double>("asphericity", -0.5); 
 	       add_param<double>("asphericityWidth", 0.1); 
+	       add_param<double>("scaling", 1.0); 
 
 	       add_param<string>("boundary", "wall"); 
 

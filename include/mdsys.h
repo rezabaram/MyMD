@@ -23,14 +23,6 @@ extern MTRand rgen;
 
 typedef CPacking<CParticle> ParticleContainer;
 
-class ctest 
-	{
-	public:
-	ctest(double t=1){
-		exit(0);
-		}
- 	private:
-	};
 
 typedef GeomObjectBase * BasePtr;
 class CSys{
@@ -44,7 +36,7 @@ class CSys{
 	#else 
 	#endif
 
-	,epsFreeze(1.0e-12)//, outEnergy("log_energy")
+	,epsFreeze(1.0e-12), outEnergy("log_energy")
 	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
 	,walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary"))
 	,celllist(CCellList<ParticleContainer, CParticle>(&walls))
@@ -108,6 +100,7 @@ class CSys{
 	double Energy, rEnergy, pEnergy, kEnergy;
  	private:
 	bool do_read_radii, softwalls, spherize_on;
+	double scaling;
 	string out_name;
 	double epsFreeze;
 	vector<vec> radii;
@@ -115,8 +108,6 @@ class CSys{
 	double maxRadii;
 	vec top_v;
 
-
-	
 	ofstream outEnergy;
 	};
 
@@ -160,6 +151,7 @@ TRY
 	string init_method=config.get_param<string>("initialization");
 	softwalls=config.get_param<bool>("softwalls");
 	spherize_on=config.get_param<bool>("spherize_on");
+	scaling=config.get_param<double>("scaling");
 
 	double dr=config.get_param<double>("particleSizeWidth");
 	DisBetaDistribution ibeta_dist(3,3,dr);
@@ -189,32 +181,49 @@ TRY
 
 		double eta=config.get_param<double>("eta");
 		double xi=config.get_param<double>("xi");
-		int N=200;
-		double dl=2./pow((double)N,1./3.);
+		int N=config.get_param<int>("nParticle");
+		double dl=1./pow((double)N,1./3.);
 		tr1::uniform_real<double> unif(0, 1);
 
-		cerr<< dl <<endl;
+		cerr<<"Cell size: "<< dl <<endl;
 		celllist.setup(dl);
+		double dx=celllist.dx;
+		double dy=celllist.dy;
+		double dz=celllist.dz;
+		double xx,yy,zz;
+		xx=0;yy=zz=0.5*dl;
+		ofstream testout("orient");
 		for(int i=0; i<N; i++){
-			vec x=vec(unif(eng), unif(eng), unif(eng));
-			double r=0.02*size_dist.get();
-			cerr<< r <<endl;
+			xx+=dl;
+			if(xx>1){xx=0.5*dx; yy+=dy;}
+			if(yy>1){xx=0.5*dx; yy=0.5*dy; zz+=dz;}
+			if(zz>1)break;
+			vec x=vec(xx-0.5*dl+0.5*unif(eng)*dl,yy-0.5*dl+0.5*unif(eng)*dl, zz-0.5*dl+0.5*unif(eng)*dl);
+			double r=0.2*dl*size_dist.get();
 			double a =r*pow(eta,1./3.)/pow(xi,1./3);
 			double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
 			double c =r*xi*pow(eta/xi,1./3.);
 
-			double alpha=rgen()*M_PI;
-			double beta=rgen()*M_PI;
-			double phi=rgen()*M_PI;
-			Quaternion q=Quaternion(cos(alpha),sin(alpha),0,0)*Quaternion(cos(beta),0,0,sin(beta))*Quaternion(cos(phi),0,sin(phi),0 );
+			double phi=2*rgen()*M_PI;
+			double beta=asin(rgen());
+			double alpha=(2*rgen()-1)*M_PI;
+			//Quaternion q=Quaternion(cos(alpha),0,0,sin(alpha))*Quaternion(cos(beta),0,sin(beta),0)*Quaternion(cos(phi),sin(phi),0 ,0);
+			Quaternion q=randomQuaternion();
+			//q=q*randomQuaternion();
+			testout<<spherical(q.toBody(vec(1,0,0)))<<endl;
+			//testout<<spherical(randomDirection())<<endl;
+			//testout<<spherical(q.v)<<endl;
+			q*=0;
+			q.u=1;
 			CEllipsoid E2(x, a,b,c, q);
 			CParticle *p = new CParticle(E2);
-			p->w(1)(0)=5.0*(1-2*rgen());
-			p->w(1)(1)=5.0*(1-2*rgen());
+			//p->w(1)(0)=5.0*(1-2*rgen());
+			//p->w(1)(1)=5.0*(1-2*rgen());
+			//p->w(1)(2)=5.0*(1-2*rgen());
 
 			p->x(1)(0)=0.3*(1-2*rgen());
 			p->x(1)(1)=0.3*(1-2*rgen());
-			p->x(1)(2)=top_v(2)+0.3*(1-2*rgen());
+			p->x(1)(2)=0.3*(1-2*rgen());
 			add(p);
 			}
 		}
@@ -449,8 +458,6 @@ TRY
 	static ofstream out;
 
 
-
-
 	//this is for a messure of performance
 	static double starttime=clock();
 	if((10*count)%outPutN==0)
@@ -463,7 +470,7 @@ TRY
 			count=0;
 			outN++;
 			Energy=rEnergy+kEnergy+pEnergy;
-			//outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
+			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
 			//for relaxation
 			if(t>2 and G.abs()>1){
@@ -473,6 +480,15 @@ TRY
 					}
 			if(spherize_on)for(it=particles.begin(); it!=particles.end(); ++it){
 				(*it)->shape->spherize();
+				}
+			static bool done=false;
+			if(scaling>1.0000001){
+				if(!done && particles.totalVolume()>0.5 ){done=true;scaling=1.01;}
+				for(it=particles.begin(); it!=particles.end(); ++it){
+				(*it)->scale(scaling);
+				//(*it)->x(1)=0;
+				//(*it)->w(1)=0;
+				}
 				}
 			}
 	//bool allforwarded=false;

@@ -3,7 +3,7 @@ DIRS= tools
 
 
 run: a.out
-	time bin/run.sh
+	time bin/run.sh $(CONFIG)
 
 a.out:	*.cc include/*.h 
 	$(CC)  main.cc $(FLAGS) 

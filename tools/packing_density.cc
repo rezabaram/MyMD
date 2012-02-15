@@ -27,7 +27,7 @@ void Run(){
 	
 	vec x1 (0, 0, 0.15000);
 	vec x2 (1, 1, 0.95);
-	cout<< packing.packFraction(x1,x2, 1000000 ) <<endl;
+	cout<< packing.packFraction(x1,x2, 1000000 )<<"   "<<packing.totalVolume() <<endl;
 	}
 
 int main(int n_params, char **params){

@@ -2,6 +2,17 @@
 #define EXCEPTION_H 
 #include<iostream>
 #include<sstream>
+#include<iomanip>
+#include<string>
+
+template <class T>
+std::string stringify(T x, int width=15, const char ch=' ')
+ {
+   std::ostringstream o;
+   if (!(o << std::setw(width)<<std::setfill(ch)<<x))
+     std::cerr<<"Bad coversion to string"<<std::endl;
+   return o.str();
+ }
 
 class CException
 	{

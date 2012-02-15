@@ -91,7 +91,6 @@ class CCellList
 		dy=diag(1)/(double)ny;
 		dz=diag(2)/(double)nz;
 		if(nodes!=NULL)delete [] nodes;
-		cerr<< nx*ny*nz <<endl;
 		nodes=new CCell<TParticle>[nx*ny*nz];
 		build_neighbors();
 		cerr<< "done: "<<nx<<" X "<<ny <<" X "<<nz<<endl;
@@ -187,7 +186,6 @@ class CCellList
 template<typename TParticleContainer, typename TParticle>
 CCell<TParticle> *CCellList<TParticleContainer, TParticle>::boundary_mask(int i,int j, int k, vec &shift, bool &is_shifted){
 	
-		cerr<< i<<"  "<<j<<"  "<<k <<endl;
 		shift*=0;
 		is_shifted=false;
 		if(i >= nx){

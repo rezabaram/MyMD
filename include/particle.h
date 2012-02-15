@@ -9,6 +9,7 @@
 #include<algorithm>
 #include<iomanip>
 
+#include"exception.h"
 #include"common.h"
 #include"dfreedom.h"
 #include"shapes.h"
@@ -72,13 +73,20 @@ class CParticle : public PhysObject
 			w(i)=0.0;
 			}
 		
-		mass=material.density*shape->vol();
+		set_mass(material.density*shape->vol());
+		};
+	void set_mass(double d){
+		mass=d;
 		Ixx=mass*shape->I(vec(1,0,0));
 		Iyy=mass*shape->I(vec(0,1,0));
 		Izz=mass*shape->I(vec(0,0,1));
-		};
+		}
 	double vol(){
 		return shape->vol();
+		}
+	void scale(double s){
+		set_mass(mass*pow(s,3));
+		return shape->scale(s);
 		}
 
 	double kEnergy(){
@@ -188,10 +196,13 @@ TRY
 	dq.v(2) = -shape->q.v(1)*wp(0) + shape->q.v(0)*wp(1) + shape->q.u *  wp(2);
 
 	shape->q+=dq*dt*0.5;
+	ERROR(shape->q.abs2()<1e-10, "Cannot normalize q (quaternion): "+stringify(shape->q));
 	shape->q.normalize();
 	
 	
+	ERROR(shape->q.abs2()<1e-10, "Cannot normalize q (quaternion): "+stringify(shape->q)+stringify(w(2)));
 	shape->rotateTo(shape->q);
+	ERROR(shape->q.abs2()<1e-10, "Cannot normalize q (quaternion): "+stringify(shape->q));
 	shape->moveto(x(0));
 CATCH
 	}
@@ -207,6 +218,7 @@ void CParticle::calVel(double dt){
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;
 	torquep=shape->q.toBody(*torques);
+	ERROR(torquep.abs2()>1e+30, "Torques too large"+stringify(torquep)+stringify(mass));
 
 	wp=shape->q.toBody(w(1));
 	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;

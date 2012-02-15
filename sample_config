@@ -1,0 +1,18 @@
+boxsize		1 1 1
+density  	1
+Gravity  	0   0   0
+outDt  		0.01
+timeStep 	0.0001
+maxTime		9.02
+SizeDistribution uniform 0.5 0.5001
+particleSize 	0.04
+nParticle 	3000
+stiffness  	5e+02
+damping		5e+0
+friction	2.0e-1
+output		out	
+initialization	Stillinger
+boundary        periodic_xyz
+eta 1.4
+xi 1.4
+scaling		1.1

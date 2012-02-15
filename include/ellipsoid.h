@@ -172,6 +172,7 @@ class CEllipsoid: public GeomObjectBase
 
 
 		rotateTo(q);
+		ERROR(q.abs2()<1e-10, "Quaternion cannot be zero.");
 		update_tranlation_mat();
 		}
 	void spherize(){
@@ -234,14 +235,16 @@ class CEllipsoid: public GeomObjectBase
 	CATCH
 		}
 
-	void rotateTo(const Quaternion &q) {
+	void rotateTo(const Quaternion &_q) {
 	TRY
-		quaternionToMatrix(q, rotat_mat);
+		ERROR(q.abs2()<1e-10, "Quaternion cannot be zero.");
+		quaternionToMatrix(_q, rotat_mat);
 		//Matrix temp=(rotat_mat*(~rotat_mat));
 		//cerr<< temp <<endl;
 		//assert(fabs((rotat_mat*(~rotat_mat)).Det-1) < 0.0001);
 		//ellip_mat=~rotat_mat*scale_mat*rotat_mat;
 		update_tranlation_mat();
+		q=_q;
 		//P=ellip_mat*P0;
 	CATCH
 		}
@@ -267,12 +270,12 @@ class CEllipsoid: public GeomObjectBase
 		update_tranlation_mat();
 		}
 
-	void scale(double scale)
+	void scale(double s)
 		{
-		a*=scale;
-		b*=scale;
-		c*=scale;
-		radius*=scale;
+		a*=s;
+		b*=s;
+		c*=s;
+		radius*=s;
 		setup();
 		}
 

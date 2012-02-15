@@ -10,7 +10,7 @@ class CBox: public GeomObjectBase
 	{
 	public:
 	CBox(vec corner=vec(std::numeric_limits<double>::max()), vec _L=vec(0.0), string _btype="wall"):
-		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L), nFaces(5),
+		GeomObjectBase(corner+_L/0.5, tbox), corner(corner), L(_L), nFaces(6),
 		btype(_btype),
 		u0(vec(1.0,0.0,0.0)), u1(vec(0.0,1.0,0.0)), u2(vec(0.0,0.0,1.0))
 		 {
@@ -22,6 +22,7 @@ class CBox: public GeomObjectBase
 
 		face[3]=new CPlane (corner+L,-u0);
 		face[4]=new CPlane (corner+L,-u1);
+
 
 		if(btype=="periodic_x")
 			{
