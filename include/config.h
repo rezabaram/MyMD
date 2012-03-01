@@ -32,14 +32,14 @@ class CConfig : public CBaseConfig{
 	       add_param<string>("output", "out");
 	       add_param<string>("outDensity", "density");
 
-	       add_param<double>("stiffness", 5.0e+05); 
-	       add_param<double>("damping", 1); 
+	       add_param<double>("stiffness", 5.0e+02); 
+	       add_param<double>("damping", 5); 
 	       add_param<double>("fluiddampping", 0.05); 
-	       add_param<double>("friction", 0); 
+	       add_param<double>("friction", 0.2); 
 	       add_param<double>("static_friction", 0); 
 	       add_param<double>("friction_threshold", 0); 
 	       add_param<double>("cohesion", 0); 
-	       add_param<double>("density", 10000.0); 
+	       add_param<double>("density", 1.0); 
 	       add_param<double>("particleSize", 0.05); 
 	       add_param<double>("rmin", 0.05); 
 	       add_param<double>("rmax", 0.05); 
@@ -50,7 +50,7 @@ class CConfig : public CBaseConfig{
 	       add_param<double>("verletfactor", 0.1); 
 	       add_param<unsigned int>("nParticle", 5); 
 	       add_param<string>("particleType", "general"); 
-	       add_param<string>("initialization", "generate"); 
+	       add_param<string>("method", "generate"); 
 	       add_param<double>("e", 0.5); 
 	       add_param<double>("eta", 1.0); 
 	       add_param<double>("etaWidth", 0.0); 

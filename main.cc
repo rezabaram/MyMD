@@ -7,6 +7,7 @@ extern MTRand rgen;
 
 string config_file="config";
 CConfig config;
+
 void Initialize(){
 	rgen.seed(RNGSeed);
 	config.parse(config_file);

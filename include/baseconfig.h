@@ -17,6 +17,7 @@ Disclaimer:
 #include<sstream>
 #include<vector>
 #include<map>
+#include"exception.h"
 
 using namespace std;
 class CParamBase {
@@ -26,8 +27,8 @@ class CParamBase {
 		CParamBase(string _name):name(_name){}
 		virtual ~CParamBase();
 		const string name;
-		virtual void parse(istream &in)=0;
-		virtual void print(ostream &out, CParamBase::out_type def=Normal)=0;
+		virtual void parse(istream &in=cin)=0;
+		virtual void print(ostream &out=cout, CParamBase::out_type def=Normal)const=0;
 	
  	private:
 	};
@@ -49,7 +50,7 @@ class CParam : public CParamBase {
 		void parse(istream &in){
 			in>>value;//param.name<<":   "<<param.value;
 			}
-		void print(ostream &out, CParamBase::out_type def=Normal){
+		void print(ostream &out, CParamBase::out_type def=Normal)const{
 			if(def==CParamBase::Default) out<<def_value;
 
 			else out<<value;
@@ -76,55 +77,71 @@ ostream &operator<<(ostream &out, CParam<T> &param){
 			return out;
 			}
 
-class CCompositeParam : public CParamBase
-	{
-	public:
- 	private:
-	map<string, CParamBase *> params;
-	};
 
 // the class CBaseConfig is a singleton 
-class CBaseConfig {
+class CBaseConfig : public CParamBase {
 	public:
-	CBaseConfig(){
+	CBaseConfig(const string name="main_config"):CParamBase(name){
 		}; 
 	virtual ~CBaseConfig();                                 
 	//static CBaseConfig& Instance();
-	bool isValid(string fname)const;
+	bool isValidParam(string fname)const;
+	bool isValidSection(string fname)const;
 	void parse(string fname);
-	void parse(istream &input);
 	void print(string fname="config");
-	void print(ostream &out=cout);
-	virtual void define_parameters()=0;
+	void parse(istream &input);
+	void print(ostream &out=cout, CParamBase::out_type def=Normal)const;
+
+	virtual void define_parameters(){};
+	void validate_param(string name)const{
+		ERROR( !isValidParam(name), name+" is not a valid parameter or keyword.");
+		}
+	void validate_section(string name)const{
+		ERROR( !isValidSection(name), name+" is not a valid section name.");
+		}
 
 	template<class T>
 	T get_param(string name, CParamBase::out_type def=CParamBase::Normal)const {
 		//const CParamBase  *pp=params[name];
-	      if(!isValid(name)){
-			cerr<< "Warning: "<<name<<" is not a valid parameter or keyword" <<endl;
-			return T();
-			}
+		validate_param(name);
 		CParam<T> * const p = static_cast< CParam<T>* > (params.find(name)->second );//i dont know if there is a better solution, i like this tough
 
 		if(def==CParamBase::Default) return p->get_default();
 		else return p->get();
 		};
 
+	CBaseConfig& get_section(string name){
+		validate_section(name);
+		return *(sections.find(name)->second);
+	}
 	template<class T>
 	void add_param(string name, T value){
 		try{
 		CParam<T> *p=new CParam<T>(name,value);
 		params[name]=p;
-		name_dict.push_back(name);
+		param_name_dict.push_back(name);
 		}catch(...){
-			cerr<< "error: invalid paramter." <<endl;
+			ERROR(1, "Failed creating new paramter.");
+			}
+		};
+
+	CBaseConfig &add_section(string name){
+		try{
+		CBaseConfig *c=new CBaseConfig(name);
+		sections[name]=c;
+		section_name_dict.push_back(name);
+		return *(sections.find(name)->second);
+		}catch(...){
+			ERROR(1, "Failed creating new paramter section.");
 			}
 		};
 
 	map<string, CParamBase *> params;
+	map<string, CBaseConfig *> sections;
 
 	protected:
-	vector<string> name_dict;
+	vector<string> param_name_dict;
+	vector<string> section_name_dict;
 
 	CBaseConfig(const CBaseConfig&);                 // Prevent copy-construction
 
@@ -162,8 +179,8 @@ void CBaseConfig::print(string outname){
 	print(outputFile);
 }
 
-void CBaseConfig::print(ostream &out){
-	map<string, CParamBase *>::iterator it;
+void CBaseConfig::print(ostream &out, CParamBase::out_type def)const{
+	map<string, CParamBase *>::const_iterator it;
 	for(it=params.begin(); it != params.end(); it++){
 		out<<it->first<<"  ";
 		it->second->print(out);
@@ -204,7 +221,7 @@ void CBaseConfig::parse(istream &inputFile) {
 	//Skip to next line if this one starts with a # (i.e. a comment)
 	if(vname.find("#",0)==0) continue;
 
-	if(!isValid(vname)){
+	if(!isValidParam(vname)){
 		cerr<< "Warning: "<<vname<<" is not a valid parameter or keyword" <<endl;
 		continue;
 		}
@@ -214,9 +231,17 @@ void CBaseConfig::parse(istream &inputFile) {
 	}
 }
 
-bool CBaseConfig::isValid(string vname) const{
+bool CBaseConfig::isValidParam(string vname) const{
 	vector<string>::const_iterator it;
-	for( it=name_dict.begin(); it!=name_dict.end(); ++it){
+	for( it=param_name_dict.begin(); it!=param_name_dict.end(); ++it){
+		if(vname==(*it))return true;
+		}
+	return false;
+	}
+
+bool CBaseConfig::isValidSection(string vname) const{
+	vector<string>::const_iterator it;
+	for( it=section_name_dict.begin(); it!=section_name_dict.end(); ++it){
 		if(vname==(*it))return true;
 		}
 	return false;

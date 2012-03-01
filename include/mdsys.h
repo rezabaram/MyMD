@@ -148,7 +148,7 @@ TRY
 	outEnd=config.get_param<double>("outEnd");
 	fluiddampping=config.get_param<double>("fluiddampping");
 	string particleType=config.get_param<string>("particleType");
-	string init_method=config.get_param<string>("initialization");
+	string simul_method=config.get_param<string>("method");
 	softwalls=config.get_param<bool>("softwalls");
 	spherize_on=config.get_param<bool>("spherize_on");
 	scaling=config.get_param<double>("scaling");
@@ -167,7 +167,7 @@ TRY
 	size_dist=config.get_param<CSizeDistribution>("SizeDistribution");
 	
 
-	if(init_method=="restart"){
+	if(simul_method=="restart"){
 		particles.parse(config.get_param<string>("input"));
 		maxRadii=particles.maxr;
 		ParticleContainer::iterator it1;
@@ -177,7 +177,7 @@ TRY
 		
 		celllist.build(particles);
 		}
-	else if(init_method=="Stillinger"){
+	else if(simul_method=="Stillinger"){
 
 		double eta=config.get_param<double>("eta");
 		double xi=config.get_param<double>("xi");
@@ -227,7 +227,7 @@ TRY
 			add(p);
 			}
 		}
-	else if(init_method=="generate"){
+	else if(simul_method=="generate"){
 		if(particleType=="general" or particleType=="gen1" or particleType=="gen2"
 					   or particleType=="gen3" or particleType=="gen4"){
 			string fileRadii=config.get_param<string>("radii");
@@ -292,7 +292,7 @@ TRY
 			ERROR(1, "Unknown particle type: "+particleType);
 		}
 	else{
-		ERROR(1, "Unknown initialization method: "+init_method);
+		ERROR(1, "Unknown method: "+simul_method);
 		}
 	#ifdef WITH_VERLET
 	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
@@ -447,7 +447,7 @@ TRY
                        if(it==particles.end())break;
                        }
                }
-       if(config.get_param<string>("initialization")=="generate" and maxh< 1.+2*maxRadii ) 
+       if(config.get_param<string>("method")=="generate" and maxh< 1.+2*maxRadii ) 
                {
                add_particle_layer(maxh+1.02*maxRadii);
                maxh=0;

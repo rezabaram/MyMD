@@ -17,7 +17,8 @@ Disclaimer:
 #include<sstream>
 #include<vector>
 #include<map>
-
+#include"exception.h"
+adfasdf
 using namespace std;
 class CParamBase {
 	public:
@@ -30,7 +31,7 @@ class CParamBase {
 		virtual void print(ostream &out, CParamBase::out_type def=Normal)=0;
 	
  	private:
-	};
+};
 
 
 template <class T>
@@ -67,37 +68,38 @@ class CParam : public CParamBase {
 
 template <class T>
 istream &operator>>(istream &in, CParam<T> &param){
-			in>>param.value;//param.name<<":   "<<param.value;
-			return in;
-			}
+		in>>param.value;//param.name<<":   "<<param.value;
+		return in;
+		}
 template <class T>
 ostream &operator<<(ostream &out, CParam<T> &param){
-			out<<param.name<<":   "<<param.value;
-			return out;
-			}
+		out<<param.name<<":   "<<param.value;
+		return out;
+		}
 
-// the class CConfig is a singleton 
 class CConfig {
 	public:
 	~CConfig();                                 
-	static CConfig& Instance();
 	bool isValid(string fname)const;
 	void parse(string fname);
 	void parse(istream &input);
 	void print(string fname="config");
 	void print(ostream &out=cout);
 
+	void validate(string name){
+		ERROR( !isValid(name), name+" is not a valid parameter or keyword.");
+		}
 	template<class T>
 	T get_param(string name, CParamBase::out_type def=CParamBase::Normal)const {
 		//const CParamBase  *pp=params[name];
-	      if(!isValid(name)){
-			cerr<< "Warning: "<<name<<" is not a valid parameter or keyword" <<endl;
-			return T();
-			}
+		validate(name);
 		CParam<T> * const p = static_cast< CParam<T>* > (params.find(name)->second );//i dont know if there is a better solution, i like this tough
 
 		if(def==CParamBase::Default) return p->get_default();
 		else return p->get();
+		};
+
+	CConfig &section(string name){
 		};
 
 	template<class T>
@@ -112,6 +114,7 @@ class CConfig {
 		};
 
 	map<string, CParamBase *> params;
+	map<string, CConfig *> sections;
 
 	protected:
 	CConfig(){};                                 // Private constructor
@@ -120,7 +123,6 @@ class CConfig {
 	CConfig(const CConfig&);                 // Prevent copy-construction
 
 	private:
-	static CConfig *pConfig;
 	CConfig& operator=(const CConfig&);      // Prevent assignment
 };
 

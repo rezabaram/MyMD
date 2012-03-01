@@ -2,14 +2,14 @@ include Makefile.inc
 DIRS= tools
 
 
-run: a.out
+run: ellipmd
 	time bin/run.sh $(CONFIG)
 
-a.out:	*.cc include/*.h 
-	$(CC)  main.cc $(FLAGS) 
+ellipmd:	*.cc include/*.h 
+	$(CC)  main.cc  $(FLAGS) -o ellipmd
 
-condor_a.out:	*.cc include/*.h 
-	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a  -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_a.out
+condor_ellipmd:	*.cc include/*.h 
+	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a  -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_ellipmd
 
 tools:
 	$(MAKE) -C tools
