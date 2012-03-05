@@ -227,7 +227,7 @@ TRY
 			add(p);
 			}
 		}
-	else if(simul_method=="generate"){
+	else if(simul_method=="deposition"){
 		if(particleType=="general" or particleType=="gen1" or particleType=="gen2"
 					   or particleType=="gen3" or particleType=="gen4"){
 			string fileRadii=config.get_param<string>("radii");
@@ -447,7 +447,7 @@ TRY
                        if(it==particles.end())break;
                        }
                }
-       if(config.get_param<string>("method")=="generate" and maxh< 1.+2*maxRadii ) 
+       if(config.get_param<string>("method")=="deposition" and maxh< 1.+2*maxRadii ) 
                {
                add_particle_layer(maxh+1.02*maxRadii);
                maxh=0;

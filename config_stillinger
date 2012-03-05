@@ -11,7 +11,7 @@ stiffness  	5e+02
 damping		5e+0
 friction	2.0e-1
 output		out	
-initialization	Stillinger
+method		Stillinger
 boundary        periodic_xyz
 eta 1.4
 xi 1.4

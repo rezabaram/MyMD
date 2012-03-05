@@ -58,10 +58,14 @@ void CInteraction::overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBas
 		};
 inline
 void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CBox *b){
+	
 	static vec v;
 	static double d, dd;
+	
 	for(size_t i=0; i<b->nFaces; ++i){//FIXME to generalize Box to any polygon, 6 should be the number of faces
+		cerr<< i <<endl;
 		v=b->face[i]->normal_from_point(p1->Xc, 0);// p1->radius);//vertical vector from the center of sphere to the plane
+		cerr<< "  "<<i <<endl;
 		d=v.abs();
 		dd=p1->radius-d;
 		//if(dd>0) ovs->push_back( CInteraction(p1->getpos()+v+(0.5*dd)*b->face[i]->n, (dd/d)*v) );

@@ -22,3 +22,12 @@ How periodic boundary was implemented
 Through this a shadow particle can be treated almost exactly like a real particle.
 
 For details look in files: box.h, particle.h and mdsys.h
+
+
+
+
+Boundary types
+	- wall
+	- periodic_x
+	- periodic_xy 
+	- periodic_xyz

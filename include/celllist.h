@@ -70,6 +70,8 @@ class CCellList
 			periodic_y=true;
 			periodic_z=true;
 			}
+		else if(box->btype=="solid"){
+			}
 		else{
 			ERROR(1,"Boundary type not defined")
 			}
@@ -122,9 +124,9 @@ class CCellList
 		int i=(int)(floor(xp(0)/dx));
 		int j=(int)(floor(xp(1)/dy));
 		int k=(int)(floor(xp(2)/dz));
-		if(!periodic_x) ERROR(i<0 or i>=nx, "Point out of grid: "+stringify(x)+stringify(i)+" " +stringify(j)+" "+stringify(k));
-		if(!periodic_y) ERROR(j<0 or j>=ny, "Point out of grid: "+stringify(x)+stringify(i)+" " +stringify(j)+" "+stringify(k));
-		if(!periodic_z) ERROR(k<0 or k>=nz, "Point out of grid: "+stringify(x)+stringify(i)+" " +stringify(j)+" "+stringify(k));
+		if(!periodic_x) ERROR(i<0 or i>=nx, "Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): "+stringify(i,2)+" " +stringify(j,2)+" "+stringify(k,2));
+		if(!periodic_y) ERROR(j<0 or j>=ny, "Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): "+stringify(i,2)+" " +stringify(j,2)+" "+stringify(k,2));
+		if(!periodic_z) ERROR(k<0 or k>=nz, "Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): "+stringify(i,2)+" " +stringify(j,2)+" "+stringify(k,2));
 		vec shift(0,0,0);
 		bool is_shifted=false;
 		CCell<TParticle> *cell=boundary_mask(i,j, k, shift, is_shifted);

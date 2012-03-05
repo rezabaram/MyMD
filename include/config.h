@@ -60,7 +60,7 @@ class CConfig : public CBaseConfig{
 	       add_param<double>("asphericityWidth", 0.1); 
 	       add_param<double>("scaling", 1.0); 
 
-	       add_param<string>("boundary", "wall"); 
+	       add_param<string>("boundary", "solid"); 
 
 	       add_param<bool>("read_radii", false); 
 	       add_param<bool>("softwalls", false); 

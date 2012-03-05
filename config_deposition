@@ -1,0 +1,11 @@
+Gravity  	0   0   -10
+outDt  		0.1
+timeStep 	0.0001
+maxTime		9.02
+particleSize 	0.04
+nParticle 	10000
+output		out	
+method 		generate	
+particleType 	abc
+eta 		1.5
+xi 		1.5
