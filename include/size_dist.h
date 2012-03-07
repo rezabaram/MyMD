@@ -107,6 +107,53 @@ ostream & operator<< (ostream &out, const CUniformDist &dist){
 	}
 
 
+class CReadDist: public CBaseDistribution
+	{
+	public:
+	CReadDist():CBaseDistribution("read"),max_value(0.0) {}
+	double get(){
+		return values.at(unif(eng0));
+		}
+	void parse(istream &in){
+		in>>filename;
+		read(filename);
+		}
+	
+	void read(string file){ 
+		ifstream ifile(file.c_str());
+		string line;
+		//Parse the line
+		double r;
+		while(getline(ifile,line)){
+			stringstream ss(line);
+			ss>>r;
+			values.push_back(r);
+			max_value=max(max_value,r);
+			}
+		unif=tr1::uniform_int<int> (0, values.size()-1);
+		}
+
+	void print(ostream &out)const{
+		out<<name<<"  from  "<<filename;
+		}
+
+	friend istream & operator>>(istream &in, CUniformDist &dist);
+	friend ostream & operator<< (ostream &out, const CUniformDist &dist);
+
+ 	private:
+	tr1::uniform_int<int> unif;
+	vector<int> values;
+	string filename;
+	double max_value;
+	};
+istream & operator>>(istream &in, CReadDist &dist){
+	dist.parse(in);
+	}
+ostream & operator<< (ostream &out, const CReadDist &dist){
+	dist.print(out);
+	}
+
+
 
 istream & operator>>(istream &in, CSizeDistribution &dist){
 	string name;
@@ -117,6 +164,10 @@ istream & operator>>(istream &in, CSizeDistribution &dist){
 		}
 	if(name=="uniform") { 
 		dist.p_dist=new CUniformDist();
+		dist.p_dist->parse(in);
+		}
+	if(name=="read") { 
+		dist.p_dist=new CReadDist();
 		dist.p_dist->parse(in);
 		}
 }
