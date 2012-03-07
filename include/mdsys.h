@@ -195,9 +195,9 @@ TRY
 		ofstream testout("orient");
 		for(int i=0; i<N; i++){
 			xx+=dl;
-			if(xx>1){xx=0.5*dx; yy+=dy;}
-			if(yy>1){xx=0.5*dx; yy=0.5*dy; zz+=dz;}
-			if(zz>1)break;
+			if(xx>walls.L(0)){xx=0.5*dx; yy+=dy;}
+			if(yy>walls.L(1)){xx=0.5*dx; yy=0.5*dy; zz+=dz;}
+			if(zz>walls.L(2))break;
 			vec x=vec(xx-0.5*dl+0.5*unif(eng)*dl,yy-0.5*dl+0.5*unif(eng)*dl, zz-0.5*dl+0.5*unif(eng)*dl);
 			double r=0.2*dl*size_dist.get();
 			double a =r*pow(eta,1./3.)/pow(xi,1./3);
