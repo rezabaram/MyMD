@@ -11,14 +11,18 @@ std::tr1::ranlux64_base_01 eng0;
 class CBaseDistribution
 	{
 	public:
-	CBaseDistribution(string _name):name(_name){}
+	CBaseDistribution(string _name):name(_name), max_value(0){}
 	virtual double get()=0;
 	virtual void parse(istream &in)=0;
 	virtual void print(ostream &out)const=0;
+	double get_max(){return max_value;}
 	string name;
+	protected:
+	double max_value;
  	private:
 	};
 
+//a primitive factory 
 class CSizeDistribution
 	{
 	public:
@@ -53,6 +57,7 @@ class CMonoDist : public CBaseDistribution
 	double get(){return r;}
 	void parse(istream &in){
 		in>>r;
+		max_value=r;
 		}
 
 	void print(ostream &out)const{
@@ -86,6 +91,7 @@ class CUniformDist: public CBaseDistribution
 	void parse(istream &in){
 		in>>min>>max;
 		unif=tr1::uniform_real<double> (min, max);
+		max_value=max;
 		}
 
 	void print(ostream &out)const{
@@ -110,7 +116,7 @@ ostream & operator<< (ostream &out, const CUniformDist &dist){
 class CReadDist: public CBaseDistribution
 	{
 	public:
-	CReadDist():CBaseDistribution("read"),max_value(0.0) {}
+	CReadDist():CBaseDistribution("read") {}
 	double get(){
 		return values.at(unif(eng0));
 		}
@@ -144,7 +150,6 @@ class CReadDist: public CBaseDistribution
 	tr1::uniform_int<int> unif;
 	vector<int> values;
 	string filename;
-	double max_value;
 	};
 istream & operator>>(istream &in, CReadDist &dist){
 	dist.parse(in);
@@ -162,13 +167,16 @@ istream & operator>>(istream &in, CSizeDistribution &dist){
 		dist.p_dist=new CMonoDist();
 		dist.p_dist->parse(in);
 		}
-	if(name=="uniform") { 
+	else if(name=="uniform") { 
 		dist.p_dist=new CUniformDist();
 		dist.p_dist->parse(in);
 		}
-	if(name=="read") { 
+	else if(name=="read") { 
 		dist.p_dist=new CReadDist();
 		dist.p_dist->parse(in);
+		}
+	else{
+		ERROR(1,"distribution"+name+"not defined!");
 		}
 }
 ostream & operator<<(ostream &out, const CSizeDistribution &dist){
