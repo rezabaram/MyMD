@@ -19,7 +19,9 @@ Disclaimer:
 #include<map>
 #include"exception.h"
 
+
 using namespace std;
+const string comm="#";
 class CParamBase {
 	public:
 		typedef enum {Normal, Default} out_type;
@@ -87,9 +89,8 @@ class CBaseConfig : public CParamBase {
 	//static CBaseConfig& Instance();
 	bool isValidParam(string fname)const;
 	bool isValidSection(string fname)const;
-	void parse(string fname);
-	void print(string fname="config");
-	void parse(istream &input);
+	virtual void parse(istream &input){
+		};
 	void print(ostream &out=cout, CParamBase::out_type def=Normal)const;
 
 	virtual void define_parameters(){};
@@ -170,14 +171,6 @@ CBaseConfig& CBaseConfig::Instance() {
 	}
 */
 
-void CBaseConfig::print(string outname){
-	ofstream outputFile(outname.c_str());
-	if(!outputFile.good() ){
-		cerr << "WARNING: Unable to open input file: " << outname << endl;
-		return;
-		}
-	print(outputFile);
-}
 
 void CBaseConfig::print(ostream &out, CParamBase::out_type def)const{
 	map<string, CParamBase *>::const_iterator it;
@@ -188,48 +181,7 @@ void CBaseConfig::print(ostream &out, CParamBase::out_type def)const{
 		}
 }
 
-void CBaseConfig::parse(string infilename) {
 
-	ifstream inputFile(infilename.c_str());
-
-	if(!inputFile.good())
-	{
-	cerr << "WARNING: Unable to open input file: " << infilename << endl;
-	return;
-	}
-	parse(inputFile);
-	inputFile.close();
-}
-
-void CBaseConfig::parse(istream &inputFile) {
-	const string comm="#";
-	string line;
-	string vname;
-
-	//Parse the line
-	while(getline(inputFile,line))
-	{
-
-	line = line.substr( 0, line.find(comm) );
-
-	//Insert the line string into a stream
-	stringstream ss(line);
-
-	//Read up to first whitespace
-	ss >> vname;
-
-	//Skip to next line if this one starts with a # (i.e. a comment)
-	if(vname.find("#",0)==0) continue;
-
-	if(!isValidParam(vname)){
-		cerr<< "Warning: "<<vname<<" is not a valid parameter or keyword" <<endl;
-		continue;
-		}
-
-	//Read up to second whitespace
-	params[vname]->parse(ss);
-	}
-}
 
 bool CBaseConfig::isValidParam(string vname) const{
 	vector<string>::const_iterator it;

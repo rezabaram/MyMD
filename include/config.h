@@ -17,6 +17,37 @@ class CConfig : public CBaseConfig{
                 define_parameters();
                 }
 
+	void parse(string fname);
+	void print(string fname)const;
+
+	void parse(istream &inputFile) {
+		string line;
+		string vname;
+
+		//Parse the line
+		while(getline(inputFile,line))
+		{
+
+		line = line.substr( 0, line.find(comm) );
+
+		//Insert the line string into a stream
+		stringstream ss(line);
+
+		//Read up to first whitespace
+		ss >> vname;
+
+		
+		//Skip to next line if this one starts with a # (i.e. a comment)
+		if(vname.find("#",0)==0) continue;
+
+		if(!isValidParam(vname)){
+			cerr<< "Warning: "<<vname<<" is not a valid parameter or keyword" <<endl;
+			continue;
+			}
+
+		params[vname]->parse(ss);
+		}
+	}
 	void define_parameters()
 	{
 	       add_param<CSizeDistribution>("SizeDistribution", CMonoDist(1.0));
@@ -70,4 +101,24 @@ class CConfig : public CBaseConfig{
 	}
 };
 
+void CConfig::print(string outname)const{
+	ofstream outputFile(outname.c_str());
+	if(!outputFile.good() ){
+		cerr << "WARNING: Unable to open input file: " << outname << endl;
+		return;
+		}
+	CBaseConfig::print(outputFile);
+}
+void CConfig::parse(string infilename) {
+
+	ifstream inputFile(infilename.c_str());
+
+	if(!inputFile.good())
+	{
+	cerr << "WARNING: Unable to open input file: " << infilename << endl;
+	return;
+	}
+	parse(inputFile);
+	inputFile.close();
+}
 #endif /* DEFINE_PARAMS_H */
