@@ -1,11 +1,17 @@
+boxsize		1 1 1.2
+density  	1
 Gravity  	0   0   -10
-outDt  		0.1
+outDt  		0.01
 timeStep 	0.0001
-maxTime		9.02
+maxTime		10.02
+SizeDistribution uniform 0.5 0.5001
 particleSize 	0.04
-nParticle 	10000
+nParticle 	3000
+stiffness  	5e+02
+damping		5e+0
+friction	2.0e-1
 output		out	
-method 		generate	
-particleType 	abc
-eta 		1.5
-xi 		1.5
+method		deposition	
+boundary        periodic_xy
+eta 	1.4
+xi 	1.4

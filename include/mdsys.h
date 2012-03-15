@@ -228,7 +228,7 @@ TRY
 			}
 		}
 	else if(simul_method=="deposition"){
-		if(particleType=="general" or particleType=="gen1" or particleType=="gen2"
+		if( particleType=="gen1" or particleType=="gen2"
 					   or particleType=="gen3" or particleType=="gen4"){
 			string fileRadii=config.get_param<string>("radii");
 			inputRadii.open(fileRadii.c_str());
@@ -271,7 +271,7 @@ TRY
 			maxRadii=max(r,max(a,max(b,c)));
 			radii.push_back(vec(a, b, c));
 			}
-		else if(particleType=="abc"){
+		else if(particleType=="general"){
 			double eta0=config.get_param<double>("eta");
 			double etaW=config.get_param<double>("etaWidth");
 			double xi0=config.get_param<double>("xi");

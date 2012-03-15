@@ -77,11 +77,11 @@ class CConfig : public CBaseConfig{
 
 	       add_param<double>("particleSizeWidth", 0); 
 	       add_param<double>("timeStep", 0.00001); 
-	       add_param<double>("maxTime", 4.0); 
+	       add_param<double>("maxTime", 10.0); 
 	       add_param<double>("verletfactor", 0.1); 
 	       add_param<unsigned int>("nParticle", 5); 
 	       add_param<string>("particleType", "general"); 
-	       add_param<string>("method", "generate"); 
+	       add_param<string>("method", "deposition"); 
 	       add_param<double>("e", 0.5); 
 	       add_param<double>("eta", 1.0); 
 	       add_param<double>("etaWidth", 0.0); 

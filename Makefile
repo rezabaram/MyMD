@@ -11,6 +11,8 @@ ellipmd:	*.cc include/*.h
 condor_ellipmd:	*.cc include/*.h 
 	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a  -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_ellipmd
 
+update:
+	git pull origin master
 tools:
 	$(MAKE) -C tools
 
