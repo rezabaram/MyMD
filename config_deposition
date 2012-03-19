@@ -13,5 +13,5 @@ friction	2.0e-1
 output		out	
 method		deposition	
 boundary        periodic_xy
-eta 	1.4
-xi 	1.4
+eta 1.4
+zeta 	1.4

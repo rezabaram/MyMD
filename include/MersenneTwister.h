@@ -1,3 +1,10 @@
+// This file is a part of Molecular Dynamics code for 
+// simulating ellipsoidal packing. The author cannot 
+// guarantee the correctness nor the intended functionality.
+//
+// March 2012, Reza Baram 
+
+
 // MersenneTwister.h
 // Mersenne Twister random number generator -- a C++ class MTRand
 // Based on code by Makoto Matsumoto, Takuji Nishimura, and Shawn Cokus

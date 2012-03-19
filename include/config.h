@@ -1,3 +1,10 @@
+// This file is a part of Molecular Dynamics code for 
+// simulating ellipsoidal packing. The author cannot 
+// guarantee the correctness nor the intended functionality.
+//
+// March 2012, Reza Baram 
+
+
 #ifndef DEFINE_PARAMS_H
 #define DEFINE_PARAMS_H 
 #include"baseconfig.h"
@@ -83,10 +90,10 @@ class CConfig : public CBaseConfig{
 	       add_param<string>("particleType", "general"); 
 	       add_param<string>("method", "deposition"); 
 	       add_param<double>("e", 0.5); 
+	       add_param<double>("zeta", 1.0); 
+	       add_param<double>("zetaWidth", 0.0); 
 	       add_param<double>("eta", 1.0); 
-	       add_param<double>("etaWidth", 0.0); 
-	       add_param<double>("xi", 1.0); 
-	       add_param<double>("xiWidth", 0); 
+	       add_param<double>("etaWidth", 0); 
 	       add_param<double>("asphericity", -0.5); 
 	       add_param<double>("asphericityWidth", 0.1); 
 	       add_param<double>("scaling", 1.0); 

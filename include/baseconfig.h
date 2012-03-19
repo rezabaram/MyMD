@@ -1,3 +1,10 @@
+// This file is a part of Molecular Dynamics code for 
+// simulating ellipsoidal packing. The author cannot 
+// guarantee the correctness nor the intended functionality.
+//
+// March 2012, Reza Baram 
+
+
 /*By: 	Reza Baram
 CopyRight: 
 	Do whatever you want with this code. You can even replace 

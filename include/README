@@ -1,0 +1,13 @@
+The structure of the code
+
+The main part of the MD is done in class CSys in mdsys.h. 
+Different components are separated in different header files 
+and are included (directly or indirectly) in mdsys.h:
+
+- exception.h: A class for producing informative exceptions (errors)
+- common.h: Some routines used in different places
+- config.h baseconfig.h: Configuration classes an input parameters definitions
+- vec.h: Vector template class with simple algebraic operatoins. 
+	 vec2d and vec3d are shorthands for 2 and 3 dimensional vectors (Resp.)
+- matrix.h: A borrowed simple matrix class used mainly for ellipsoid.h
+-  

@@ -1,9 +1,15 @@
+// This file is a part of Molecular Dynamics code for 
+// simulating ellipsoidal packing. The author cannot 
+// guarantee the correctness nor the intended functionality.
+//
+// March 2012, Reza Baram 
+
+
 #ifndef MDSYS_H
 #define MDSYS_H 
 #include "common.h"
-#include"celllist.h"
 #include"config.h"
-#include"particle.h"
+#include"celllist.h"
 #include"packing.h"
 #include"interaction.h"
 #include"interaction_force.h"
@@ -28,7 +34,7 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle):t(0), outDt(0.01) 
+	CSys(unsigned long maxnparticle=100000000):t(0), outDt(0.01) 
 	,maxr(0), maxh(0), maxv(0), G(vec(0.0))
 	,maxNParticle(maxnparticle)
 	#ifdef WITH_VERLET
@@ -180,7 +186,7 @@ TRY
 	else if(simul_method=="Stillinger"){
 
 		double eta=config.get_param<double>("eta");
-		double xi=config.get_param<double>("xi");
+		double zeta=config.get_param<double>("zeta");
 		int N=config.get_param<int>("nParticle");
 		double dl=1./pow((double)N,1./3.);
 		tr1::uniform_real<double> unif(0, 1);
@@ -200,9 +206,9 @@ TRY
 			if(zz>walls.L(2))break;
 			vec x=vec(xx-0.5*dl+0.5*unif(eng)*dl,yy-0.5*dl+0.5*unif(eng)*dl, zz-0.5*dl+0.5*unif(eng)*dl);
 			double r=0.2*dl*size_dist.get();
-			double a =r*pow(eta,1./3.)/pow(xi,1./3);
-			double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
-			double c =r*xi*pow(eta/xi,1./3.);
+			double a =r*pow(zeta,1./3.)/pow(eta,1./3);
+			double b =r/(pow(zeta,2./3.)*pow(eta, 1/3.));
+			double c =r*eta*pow(zeta/eta,1./3.);
 
 			double phi=2*rgen()*M_PI;
 			double beta=asin(rgen());
@@ -272,18 +278,18 @@ TRY
 			radii.push_back(vec(a, b, c));
 			}
 		else if(particleType=="general"){
+			double zeta0=config.get_param<double>("zeta");
+			double zetaW=config.get_param<double>("zetaWidth");
 			double eta0=config.get_param<double>("eta");
 			double etaW=config.get_param<double>("etaWidth");
-			double xi0=config.get_param<double>("xi");
-			double xiW=config.get_param<double>("xiWidth");
 			double r0=config.get_param<double>("particleSize");
 			for(int i=0; i<10000;i++){
-				double eta=eta0*TruncGaussRand(1, etaW);
-				double xi =xi0*TruncGaussRand(1, xiW);
+				double zeta=eta0*TruncGaussRand(1, etaW);
+				double eta =eta0*TruncGaussRand(1, etaW);
 				double r=r0*ibeta_dist.rnd();
-				double a =r*pow(eta,1./3.)/pow(xi,1./3);
-				double b =r/(pow(eta,2./3.)*pow(xi, 1/3.));
-				double c =r*xi*pow(eta/xi,1./3.);
+				double a =r*pow(zeta,1./3.)/pow(eta,1./3);
+				double b =r/(pow(zeta,2./3.)*pow(eta, 1/3.));
+				double c =r*eta*pow(zeta/eta,1./3.);
 				maxRadii=max(r,max(a,max(b,c)));
 				radii.push_back(vec(a, b, c));
 				}

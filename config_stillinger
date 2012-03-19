@@ -14,5 +14,5 @@ output		out
 method		Stillinger
 boundary        periodic_xyz
 eta 1.4
-xi 1.4
+zeta 1.4
 scaling		1.1
