@@ -10,4 +10,12 @@ and are included (directly or indirectly) in mdsys.h:
 - vec.h: Vector template class with simple algebraic operatoins. 
 	 vec2d and vec3d are shorthands for 2 and 3 dimensional vectors (Resp.)
 - matrix.h: A borrowed simple matrix class used mainly for ellipsoid.h
--  
+- quaternion.h: A class for quaternion
+- geombase.h: Class CGeomBase is the class from which all shapes are derived.
+- sphere.h: Class for sphere 
+- ellipsoid.h: Class for ellipsoid
+- cylinder.h: Class for cylinder (not complete)
+- packing.h: A container for particles with more functionalities.
+- composite.h: Class for a particle composed of several spheres (maybe not fully working)
+- ray.h: Class for a line in 3D space which can intersect with other geometric shapes.
+- box.h: The class for system boundaries which can be periodic or solid
