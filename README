@@ -1,33 +1,101 @@
-still need to write it
+
+DEPENDENCIES:
+- gsl libarary
+- raster3d (for graphics, it is not needed for running)
+- feh (recommended, it is a nice lightweight image viewer which I use for seeing the frames)
+
+COMPILATION & RUN:
+Just run: 
+
+>> make
+
+It will compile first (if needed) and run the program. This will read config file which 
+should be present, if not present, it will give a warning and run with default parameters. 
+If there are output (out00xx) files from pervious runs it will complain and stop. Run:
+
+>> make clean
+
+to delete them and then run "make" again.
+
+
+OUTPUT
+
+The output configurations are save in files with name "out00xxx" with the following format:
+- first few lines give print the coordinates of the wall planes (3 points for each)
+- the lines preceded by id 14 are the ellipsoids: 14 x y z a b c q0 q1 q2 q3 
+  where (x,y,z) is the centeroid, (a,b,c) semi-axis radii and (q0,q1,q2,q3) the
+  quaternion representing the orientation.
+
+GENERATING IMAGES
+
+>> make animate
+
+This will run bin/genFrames.sh which reads the output files and converts them 
+to a format compatible with raster3d and then use raster3d (render) to produce 
+graphics corresponding to all output files. 
+
+GENERATE IMAGE USING POVRAY:
+
+>> make pov FILE=out00001 
+
+This will create out.png containing the graphic.
 
 
 
-expressions for sphericities of prolate (s1) and oblate (s2) spheriods
-source: http://planetcalc.com/149/ 
-c(x)=(3/4./pi/x**2)**(1./3.); ae(x)=acos(x)
-s1(x)=((x*c(x))**2 + x*c(x)*c(x)*ae(x)/sin(ae(x)))/2/(c(1)**2); s2(x)=((x*c(x))**2 + c(x)*c(x)/sin(ae(1/x))*log( (1+sin(ae(1/x))) /cos(ae(1/x))) )  /2/(c(1)**2)
-plot [1:1500.1] log(s1(1/x)), log(s2(x)), log(x)/3+pi/13, 2*log(x)/3-6*pi/27 
+PARAMETERES IN THE CONFIG FILE:
+
+- size of the box Lx, Ly, Lz
+  boxsize		1 1 1.2
+
+- density of the particles
+  density  	1
+
+-Graviti, gx, gy, gz
+  Gravity  	0   0   -10
+
+- time step with which the configurations are printed out
+  outDt  		0.01
+
+- time step for the solver
+  timeStep 	0.0001
+
+- max time
+  maxTime		10.02
+
+- size distribution of the particles 
+  SizeDistribution uniform 0.05 0.15
+  SizeDistribution mono 0.05 
+  
+- number of particles
+  nParticle 	3000
+
+- stiffness of the particles
+  stiffness  	5e+02
+- damping factor
+  damping		5e+0
+- dynamic friction (no static friction implemented)
+  friction	2.0e-1
+
+- prefix for the output files; the code will add number like 0001 0002 (corresponding to each snapshot)
+  output		out	
+
+- methods implemented
+  method	deposition (for an example config file for this see config_deposition)
+  method	Stillinger (for an example config file for this see config_stillinger)
 
 
+-Boundary conditions (for Stillinger use the last one)
+ boundary	wall
+ boundary       periodic_x
+ boundary       periodic_xy
+ boundary       periodic_xyz
+
+- shape parameter (defined like in the paper: eta=a/b, xi=b/c)
+ eta 	1.4
+ xi 	1.4
+
+- there are some more parameter which are less useful or too just adhoc.
+
+Let me know if you have any question: reza.baram@gmail.com
 
 
-------------------------------------
-How periodic boundary was implemented
-
-
--define shadow particle derived from particle class. 
--declare functions in particle class to be virtual (not pure)
--in shadow particle keep track of the boundary plane(s) to which it is associated
-
-Through this a shadow particle can be treated almost exactly like a real particle.
-
-For details look in files: box.h, particle.h and mdsys.h
-
-
-
-
-Boundary types
-	- wall
-	- periodic_x
-	- periodic_xy 
-	- periodic_xyz

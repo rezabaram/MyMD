@@ -78,7 +78,7 @@ class CConfig : public CBaseConfig{
 	       add_param<double>("friction_threshold", 0); 
 	       add_param<double>("cohesion", 0); 
 	       add_param<double>("density", 1.0); 
-	       add_param<double>("particleSize", 0.05); 
+	       add_param<double>("particleSize", 1); 
 	       add_param<double>("rmin", 0.05); 
 	       add_param<double>("rmax", 0.05); 
 
