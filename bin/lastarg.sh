@@ -1,4 +1,0 @@
-eval last=\${$#}
-echo $last
-
-
