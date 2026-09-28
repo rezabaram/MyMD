@@ -34,6 +34,11 @@ point; the entries below cover the port and modernisation work.
   `config_base_periodic` set `initialization` — none of them registered
   parameters, all of which warned on every run.
 - `config_relax` pointed at an absolute `/home/reza/...` path for its radii file.
+- The regression reference snapshots were themselves gitignored (the repo's
+  `*out*` rule matched `expected/outend`), so `make check` passed locally while
+  having no reference data in a fresh clone.  They are now stored as
+  `expected/final.snapshot` and `bench/reference/**` is exempted from the
+  output rules.
 
 ### Removed
 
@@ -55,7 +60,12 @@ point; the entries below cover the port and modernisation work.
 ### Added
 
 - `bench/check_physics.py` and `make check`: three physics regression cases with
-  calibrated tolerances, plus invariants and a case-specific energy check.
+  calibrated tolerances, plus invariants and a case-specific energy check.  The
+  `elastic_bounce` case exists specifically to catch integrator errors, which a
+  snapshot comparison cannot see.
+- A clean-checkout verification: `git archive HEAD` into an empty directory,
+  `make ellipmd`, `make tools`, `make check` and the Python tooling all succeed
+  with nothing but a compiler and GSL.
 - `bench/run_bench.py`, `bench/configs/` and `bench/results.json`, so the
   performance baseline can be re-measured and diffed.
 - `tools/web_viewer.py`, `tools/ovito_reader.py`, `tools/snapshot_to_dump.py`,

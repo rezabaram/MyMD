@@ -183,6 +183,11 @@ picture from the README alone.
 **Acceptance:** a clean checkout builds on a machine with no prior setup beyond
 a compiler, CMake and GSL/Eigen.
 
+*Verified so far, without CMake:* `git archive HEAD` into an empty directory,
+then `make ellipmd`, `make tools`, `make check` and the Python tooling all
+succeed with only a compiler and GSL.  Worth wiring into CI, which is the point
+of this phase.
+
 ---
 
 ## Phase 4 — Bug fixes (correctness)  — **in progress**
