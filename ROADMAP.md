@@ -291,15 +291,28 @@ The goal is fewer concepts, and failures that are loud and early.
 
 ---
 
-## Phase 6 — Performance
+## Phase 6 — Performance  — **6a DONE, 6b open**
 
 Ordered by (expected win) / (risk). Each step re-runs `bench/run_bench.py` and
-records the delta.
+records the delta.  See `docs/BENCHMARK.md` Part 2 for the full log.
+
+**Phase 6a, done:** `-O3` (-14%), deleting work whose result was discarded in
+`doOverlap` (-19%), one pose update per step instead of two (-24%), and
+allocation-free matrix arithmetic (-34%).  Full re-baseline: B1 -32.0%, B2
+-29.0%, B3 -35.6%, B4 -28.8%, with `make check` unchanged throughout.
+
+Two things measured and rejected: `-march=native` (no effect at all) and a
+conservative inscribed-sphere rejection test (correct, but it fired on 0.09% of
+candidate pairs).  Both are written up in `docs/BENCHMARK.md`.
+
+`bench/run_bench.py` gained `--repeat N` after discovering that a single run
+varies by up to ~20%.
 
 ### Low-hanging fruit — no algorithmic change
 
-- [ ] **`-O3 -march=native`** instead of `-O2`. Free; measure it.
-- [ ] **Hoist work out of the timestep.** `CSys::forward` calls
+- [x] **`-O3`** instead of `-O2` (-14% on B2).  `-march=native` measured at
+      zero effect; it stays opt-in behind `NATIVE=1`.
+- [x] **Hoist work out of the timestep.** `CSys::forward` calls
       `config.get_param<string>("method")` and `add_particle_layer` on *every*
       step even after all particles are placed; `config.get_param` is a `map`
       lookup by string plus a `static_cast`.
@@ -312,6 +325,9 @@ records the delta.
       hottest traversal. `std::vector<CParticle*>` (or `vector<CParticle>`)
       would be markedly more cache-friendly; the list is only used for stable
       iterators during removal.
+- [ ] **Re-measure the cell-list rebuild.**  It clears and refills every cell
+      each step, but the profile never showed it above noise, so it is not a
+      priority despite looking like one.
 - [ ] **Avoid `findMin`'s 500 iterations when it has already converged** — it
       checks convergence, but the loop bound is unconditional in the callers.
 

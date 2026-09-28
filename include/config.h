@@ -47,6 +47,10 @@ class CConfig : public CBaseConfig{
 		//Skip to next line if this one starts with a # (i.e. a comment)
 		if(vname.find("#",0)==0) continue;
 
+		// A blank line, or one holding nothing but a comment, leaves vname
+		// empty; without this it was reported as an unknown parameter.
+		if(vname.empty()) continue;
+
 		if(!isValidParam(vname)){
 			cerr<< "Warning: "<<vname<<" is not a valid parameter or keyword" <<endl;
 			continue;

@@ -1,4 +1,16 @@
-# Timing benchmark: 10x particles x 1/10 time step
+# Timing benchmark
+
+Two things live here: the scaling study that shows how cost moves with particle
+count and time step, and the log of what the optimisation work actually bought.
+Numbers are from `bench/results.json`, which is committed.
+
+**A single run varies by up to ~20% on a laptop**, which is more than most
+optimisations are worth.  Use `--repeat N` (the median is recorded, along with
+every sample) before believing any delta below that.
+
+---
+
+# Part 1 — scaling: 10x particles x 1/10 time step
 
 Machine: Apple M1 Max, 10 cores, 32 GB, macOS 14.4.  Single-threaded run, no
 other load (the four runs were executed strictly one after another — running
@@ -133,3 +145,106 @@ python3 tools/web_viewer.py viz/large_run/out0* viz/large_run/outend \
 One gotcha found while doing this: OVITO's `Viewport.camera_up` defaults to
 **+Y**, but gravity here is along -Z, so without setting `camera_up = (0,0,1)`
 the box renders lying on its side.  `tools/ovito_reader.py` now sets it.
+
+
+---
+
+# Part 2 — optimisation log
+
+Starting point: the ported code before any performance work, built `-O2`.
+Everything below is measured on B2 (2500 particles, 2750 steps) unless stated,
+and `make check` reports the same 1e-12 delta throughout, so no contact decision
+moved.
+
+| step | B2 wall | ms/step | gain |
+|---|---|---|---|
+| baseline (`-O2`) | 78.58 s | 28.573 | — |
+| `-O3` | 67.34 s | 24.486 | -14% |
+| + drop dead work from `doOverlap` | 63.64 s | 23.142 | -19% |
+| + one pose update per step instead of two | 59.98 s | 21.811 | -24% |
+| + allocation-free pose matrices | 54.37 s | 19.771 | -31% |
+| + allocation-free matrix inverse | 52.06 s | 18.929 | -34% |
+| + GSL workspace reuse | ~52 s | ~18.9 | no measurable change |
+
+Full re-baseline afterwards (`bench/results.json`, single runs):
+
+| run | before | after | delta |
+|---|---|---|---|
+| B1 | 5.43 s | 3.69 s | **-32.0%** |
+| B2 | 78.58 s | 55.76 s | **-29.0%** |
+| B3 | 58.52 s | 37.66 s | **-35.6%** |
+| B4 | 782.82 s | 557.27 s | **-28.8%** |
+
+## What worked
+
+**Allocation-free matrix arithmetic.**  This was the whole game.  `matrixT`
+owns a row-pointer array plus one array per row -- five heap allocations for a
+4x4 -- and its operators each build a temporary.  `update_tranlation_mat()` ran
+the obvious two-line expression once per particle per step, so ~40 malloc/free
+pairs per particle-step, and a profile put about half the runtime in
+`matrixT`'s destructor, `clone()` and constructor.
+
+Two helpers, `matmul()` and `transpose_into()`, do the same arithmetic into
+caller-owned storage with the accumulation order copied from
+`matrixT::operator*=`, so results are bit-identical.  A third, `invert_into()`,
+replaces `operator!`, which takes its argument by value and then inverts in
+place -- so it cloned a 4x4 on every candidate contact pair.
+
+**Calling `update_tranlation_mat()` once instead of twice per step.**  `calPos`
+called `rotateTo()` then `moveto()`, and both end in that function, so the first
+of the two full rebuilds was thrown away one line later.  `GeomObjectBase` gained
+`setPose(q, x)` for this.
+
+**Deleting work whose result was discarded.**  When `doOverlap` finds a
+separating axis it used to carry on building the pole ray, intersecting it with
+both ellipsoids and constructing a separating plane, then return -- and the
+caller skips the contact block entirely in that case, so every write was dead.
+That is the *common* path, because the bounding-sphere test that gates the call
+is deliberately loose.
+
+## What did not work
+
+**`-march=native`.**  67.34 s with, 67.35 s without.  No effect on this
+workload; it now lives behind `NATIVE=1` rather than being a default, which is
+also the right call for a binary you might hand to somebody else.
+
+**A conservative inscribed-sphere rejection test.**  An ellipsoid contains its
+largest inscribed sphere, so if two particles' inscribed spheres overlap, the
+ellipsoids overlap and the eigensolve cannot say otherwise.  It was implemented,
+and then checked rather than assumed: a build with `-DVERIFY_INSCRIBED_SHORTCUT`
+ran the eigensolve anyway and compared verdicts.
+
+```
+420 000 candidate pairs, shortcut fired 383 times (0.09%), 0 disagreements
+```
+
+Correct, and useless here: the inscribed radius is `min(a,b,c)` (0.036 for these
+spheroids) against a circumscribed 0.07, so almost every overlapping pair sits
+between the two bounds.  Removed again.  Worth recording because it is exactly
+the kind of plausible optimisation that costs readability for nothing.
+
+**Reusing the GSL eigensolver workspace.**  Strictly fewer allocations, no
+measurable effect.  Kept, but not claimed as a win.
+
+## Where the time is now
+
+Re-profiled after the matrix work, B2:
+
+| % | |
+|---|---|
+| 47 | `matrix<double>` -- still the destructor and `clone()` |
+| 29 | the eigensolver (GSL 26.6 + the code's own Schur decomposition 2.6) |
+| 9 | the allocator |
+| rest | ellipsoid geometry, containers, everything else |
+
+The next real win has to come from the eigensolver, which currently runs once
+per candidate pair -- about 1500 times per step at 2500 particles.  The
+characteristic polynomial is a quartic and `characteristicPolynom()` and
+`CQuartic::solve()` already exist in the codebase (the call is commented out in
+`doOverlap`), so replacing a 4x4 non-symmetric eigendecomposition with a quartic
+root solve is the obvious next move.  It is a numerical change rather than a
+mechanical one, so it needs the regression harness to demonstrate that the
+contact decisions do not move near the complex/real boundary.
+
+Further out: the remaining `matrix<double>` cost is in the type itself, and
+replacing it with fixed-size stack types (or Eigen) would remove it.
