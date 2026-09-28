@@ -264,13 +264,17 @@ TRY
 			radii.push_back(vec(a, b, c));
 			}
 		else if(particleType=="general"){
+			// eta = a/b and zeta = b/c (see the README).  These two shape
+			// parameters must be drawn independently: this used to read
+			// zeta0/zetaW and then compute zeta from eta0/etaW, so setting
+			// zetaWidth did nothing and zeta silently tracked eta.
 			double zeta0=config.get_param<double>("zeta");
 			double zetaW=config.get_param<double>("zetaWidth");
 			double eta0=config.get_param<double>("eta");
 			double etaW=config.get_param<double>("etaWidth");
 			double r0=config.get_param<double>("particleSize");
 			for(int i=0; i<10000;i++){
-				double zeta=eta0*TruncGaussRand(1, etaW);
+				double zeta=zeta0*TruncGaussRand(1, zetaW);
 				double eta =eta0*TruncGaussRand(1, etaW);
 				double r=r0*ibeta_dist.rnd();
 				double a =r*pow(zeta,1./3.)/pow(eta,1./3);
