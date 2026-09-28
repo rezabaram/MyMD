@@ -1,0 +1,28 @@
+# Regression case 1: deposition onto a solid floor.
+#
+# Deliberately contact-dominated -- 250 polydisperse prolate spheroids settle
+# into a dense layer -- so a change to the force law or the contact geometry
+# shows up immediately.  Calibration for the tolerances in check_physics.py:
+# recompiling the unchanged source with -O3 -march=native perturbs positions
+# by ~1e-12, while scaling the Hertzian force by 1.0001 moves them by ~9e-6.
+boxsize		1 1 1.2
+boxcorner	0 0 0
+density		1
+Gravity		0   0   -10
+outDt		0.025
+timeStep	0.0001
+maxTime		0.275
+particleSize	0.05
+particleSizeWidth 0.05
+nParticle	250
+stiffness	5e+02
+damping		5e+0
+friction	2.0e-1
+cohesion	0.0
+output		out
+method		deposition
+boundary	solid
+eta		1.4
+etaWidth	0.25
+zeta		1.4
+zetaWidth	0.25

@@ -1,0 +1,361 @@
+# Roadmap: from research code to a shareable project
+
+Goal: a state that is correct, documented, buildable by someone else in one
+command, and fast enough to be useful — without silently changing the physics.
+
+Everything below is grounded in the code as it stands. Numbers come from
+`BENCHMARK.md` / `bench/results.json` and from a `sample` profile of run B2
+(2500 particles).
+
+---
+
+## Where we are
+
+**Working:** builds and runs on macOS with GCC 14 + GSL; deposition and
+Stillinger initialisation; solid and periodic boundaries; snapshots, energy log,
+fabric tensors; modern interactive visualisation (HTML viewer, OVITO, LAMMPS
+dump).
+
+**Measured baseline** (Apple M1 Max, single-threaded, `bench/results.json`):
+
+| run | configuration | wall | ms/step |
+|---|---|---|---|
+| B1 | 250 p, dt=1e-4 | 5.43 s | 1.975 |
+| B2 | 2500 p, dt=1e-4 | 78.58 s | 28.573 |
+| B3 | 250 p, dt=1e-5 | 58.52 s | 2.128 |
+| B4 | 2500 p, dt=1e-5 | 782.82 s | 28.466 |
+
+**Profile of B2** (self time, leaf frames):
+
+| % | what |
+|---|---|
+| **49.8%** | `math::matrix<double>` — the vendored linear algebra class |
+| **18.0%** | GSL, essentially all of it the 4×4 non-symmetric eigensolver |
+| 10.8% | ellipsoid contact geometry (`intersect`, `toBody`, `gradient`, `findMin`) |
+| 4.3% | allocator (`operator new[]` / `delete[]`) |
+| 16.8% | everything else |
+
+Drilling into the matrix block: destructor 16.4%, `operator*=` 8.6%, `clone()`
+5.1%, constructor 4.7%, `Inv()` 4.3%. That is not a mysterious hotspot — it is
+heap traffic. `matrix<double>` allocates a row-pointer array plus one array per
+row (five allocations for a 4×4), and `CEllipsoid` carries **six** 4×4 matrices
+per particle, three of which are rebuilt from scratch every timestep in
+`update_tranlation_mat()`.
+
+**The thing that makes all of this affordable to touch:** the code is currently
+*unverified*. There is no test that says "the physics is still the same". So
+Phase 0 comes first — without it, every later change is a gamble.
+
+---
+
+## Principles
+
+1. **Physics before speed.** A regression harness lands before any refactor.
+2. **Every change measured.** `bench/results.json` is the record; a change that
+   is not measured is not an optimisation.
+3. **Delete before refactor.** Dead code has no tests and no users; removing it
+   is the cheapest possible improvement.
+4. **Upstream first.** A modern toolchain solves problems we should not be
+   solving by hand (the matrix class, the eigensolver, TR1).
+5. **Presentable means a stranger can build it.** `git clone && make && make
+   check` on a clean machine, with a README that says why the project exists.
+
+---
+
+## Phase 0 — Safety net  *(must land first)*
+
+- [ ] `bench/check_physics.py`: run a fixed config with a fixed seed, compare
+      every snapshot against a committed reference within a tolerance
+      (max |Δposition|, |Δquaternion|, |Δsemi-axis|).
+- [ ] Two reference cases, to cover both initialisation paths:
+      - deposition + solid walls (`config_quick`)
+      - Stillinger + `periodic_xyz`
+- [ ] `make check` target; non-zero exit on failure.
+- [ ] Record why a tolerance rather than a hash: recompilation with different
+      flags may perturb the last bits, and a bit-exact test would block
+      legitimate optimisation.
+
+**Acceptance:** `make check` passes on the current code, and fails if the
+physics is perturbed (verify by nudging a constant and watching it fail).
+
+---
+
+## Phase 1 — Delete the dead weight
+
+Nothing here changes behaviour.
+
+**Vestigial translation units** (not even compiled — the Makefile builds only
+`main.cc`):
+- [ ] `CConfig.cc` — includes only.
+- [ ] `grid.cc` — a single `#include`.
+
+**Tools that cannot build** (already excluded from `tools/Makefile`):
+- [ ] `tools/asphericity.cc` — includes a nonexistent `<CStat.h>` and a
+      pre-`include/` path.
+- [ ] `tools/sphere_map.cc` — includes `include/define_params.h`, renamed to
+      `config.h` years ago.
+- [ ] `tools/correlation.cc`, `tools/coord2xdr.cc` — need HDF5 and Sun RPC/XDR.
+- [ ] `bin/coord2xdr.sh` — driver for the above.
+
+**Superseded pipeline:**
+- [ ] `bin/coord2pov`, `make pov` — the POV-Ray path, replaced by
+      `VISUALIZATION.md`.
+- [ ] `bin/coord2pr3d`, `bin/genFrames.sh`, `bin/encodejpg.sh`,
+      `make animate` / `movie` — the raster3d path.
+
+**Cluster scripts with the author's absolute paths baked in** (`/home/reza/...`),
+useless to anyone else:
+- [ ] `bin/jobs`, `bin/jobs_abc`, `bin/jobs_gen_asp`, `bin/jobs_relax`,
+      `bin/lastarg.sh`.
+- [ ] `bin/avgdensity.sh` — shells out to an `avg` binary that is not in the
+      repo and assumes a directory layout that no longer exists.
+
+**Half-finished features** that are referenced but never instantiated:
+- [ ] `include/cylinder.h` (`CCylinder`) — self-described as "not complete".
+- [ ] `include/composite.h` (`CComposite`) — "maybe not fully working"; needs
+      the `interaction.h` overloads and `shapes.h` include removed with it.
+- [ ] `include/verlet.h` — the Verlet list is `#undef`'d out and has therefore
+      never run in any build we have. Decide: repair and enable, or delete.
+      Deleting is defensible until Phase 6 makes the cell list fast enough that
+      it would only be needed for very large N.
+
+**To keep, but reclassify:**
+- [ ] `tools/generate_aspects.nb`, `tools/map_asph_aspect.nb` — the Mathematica
+      provenance for `include/map_asph_aspect.h`. Move to `tools/notebooks/`
+      and say so in the README.
+- [ ] `bin/density.sh`, `bin/multidensity.sh` — still meaningful drivers for
+      `packing_density`, but have hardcoded paths; rewrite or fold into an
+      `analysis/` tool.
+- [ ] `include/grid.h`, `include/slice.h` — only used by the analysis tools;
+      move under a clearly tool-facing umbrella.
+
+**Acceptance:** `make`, `make tools`, `make check` all still pass; the diff
+contains no functional change; the file count drops materially.
+
+---
+
+## Phase 2 — Documentation a stranger can use
+
+- [ ] **`README.md`** (replace the plain-text `README`). Sections: what the
+      problem is, one-paragraph physics summary, build in one command,
+      dependencies, quick start, where things live, how to cite, license.
+- [ ] **`docs/ARCHITECTURE.md`** — the object graph (`CSys` → `BoxContainer` /
+      `CPacking<CParticle>` / `CCellList`), one translation unit and why,
+      where each physics concept lives, the data flow of a timestep.
+- [ ] **`docs/FORMAT.md`** — the snapshot format as a specification: `id 6`
+      planes, `id 14` ellipsoids, quaternion convention (scalar-first — this
+      genuinely bites downstream), what `log_energy` columns mean, and the
+      "first line of `log_energy` is uninitialised" caveat until it is fixed.
+- [ ] **`docs/PHYSICS.md`** — the force law, the contact algorithm, the
+      integrator, and the assumptions (no static friction, no cohesion
+      actually wired up, `zetaWidth` ignored for `particleType general`).
+      Reference the original paper.
+- [ ] Fold `PORTING-NOTES.md` / `BENCHMARK.md` / `VISUALIZATION.md` into
+      `docs/` (keeping the filenames) so the root stays clean.
+- [ ] A short `CHANGELOG.md`, since the roadmap is about tracking improvements.
+
+**Acceptance:** someone who has never seen the repo can build it and produce a
+picture from the README alone.
+
+---
+
+## Phase 3 — Modernise the build and toolchain
+
+- [ ] **CMake** alongside (or replacing) the hand-written Makefiles:
+      `cmake -B build && cmake --build build`. This is what makes the project
+      installable and IDE-friendly, and it makes the GSL/Eigen dependency
+      explicit via `find_package`.
+- [ ] **C++17** (drop `-std=gnu++98`). This is unlocked by Phase 4's matrix
+      replacement: the only things pinning us to C++98 are the vendored
+      `matrix.h` exception specs and `<tr1/random>`.
+- [ ] Replace `<tr1/random>` with `<random>`; `ranlux64_base_01` →
+      `ranlux48_base` (note: changes the RNG stream, so it must be done with
+      Phase 0 in place, and the reference outputs regenerated deliberately).
+- [ ] Compiler flags: `-O3 -march=native` for release, `-Wall -Wextra
+      -Wpedantic` for development, and fix the 24 existing warnings
+      (`-Wreorder`, `-Wunused*`, `-Wuninitialized`, `-Wdelete-non-virtual-dtor`).
+- [ ] AddressSanitizer / UBSan build target — cheap, and this code has
+      reference-counted matrices and static scratch buffers that are exactly
+      the kind of thing it catches.
+- [ ] **CI** (GitHub Actions): build + `make check` on Linux and macOS. This is
+      most of what "presentable" means in practice.
+
+**Acceptance:** a clean checkout builds on a machine with no prior setup beyond
+a compiler, CMake and GSL/Eigen.
+
+---
+
+## Phase 4 — Bug fixes (correctness)
+
+From `PORTING-NOTES.md`, plus what the port surfaced. Ordered by how much they
+can silently mislead a result.
+
+- [ ] **`zeta` / `zetaWidth` are ignored for `particleType general`.** Reads
+      `zeta0`/`zetaW`, then computes `zeta = eta0 * TruncGaussRand(1, etaW)`.
+      The two shape parameters are therefore not independent and `zetaWidth`
+      does nothing. Any published result using unequal `eta`/`zeta` is suspect.
+- [ ] **`CSizeDistribution` destructor is inverted** (`if(!p_dist) delete
+      p_dist;`) and there is no deep copy, so it leaks and cannot simply be
+      flipped. Fix properly with a virtual `clone()` and a real copy
+      constructor.
+- [ ] **`CBaseConfig::get_param<T>` does an unchecked `static_cast`.** Asking
+      for `int` where the parameter was registered as `unsigned int` is UB that
+      currently happens to work. Store a type tag and check it, or at least
+      `dynamic_cast` in a debug build.
+- [ ] **First line of `log_energy` is uninitialised garbage** — energies are
+      written before they are computed on the first pass.
+- [ ] **The "Relaxation criterion reached ... KE < 1e-8" message is printed on
+      every exit**, including a normal `maxTime` exit.
+- [ ] **Default parameters are unusable** — `particleSize=1` in a `1×1×2` box
+      puts every particle outside the grid. Ship a `config` or fail loudly.
+- [ ] `CParticle::addforce` overwrites `avgforces` with the *last* contact
+      force rather than accumulating, and uses a `static prev` that is shared
+      across all particles — so "average force" is neither averaged nor
+      per-particle.
+- [ ] `CSys::add_particle_layer`: `nRadii` is a `static` that is never
+      incremented, so the guard `ERROR(nRadii>=radii.size(), ...)` is dead.
+- [ ] `TNode::normal_fabric_tensor()` returns `branch_fabric_M` from its dead
+      early return, and `bool calculated=false` is a local so the cache never
+      works.
+- [ ] `CPolynom<order,T>::operator()` uses function-local `static` accumulators
+      — not reentrant, and wrong if anything nests.
+- [ ] `CException` is thrown and caught **by value** everywhere, slicing the
+      type and making the `catch(...)` fallbacks load-bearing.
+
+**Acceptance:** each fix is a self-contained commit with a note in the
+CHANGELOG, and `make check` still passes (except where the fix deliberately
+changes a reference, which must be called out).
+
+---
+
+## Phase 5 — Design and robustness
+
+The goal is fewer concepts, and failures that are loud and early.
+
+- [ ] **Split the single translation unit.** Everything being header-only made
+      sense for a prototype; for sharing it means every edit recompiles the
+      world and every symbol is implicitly inline. Split into
+      `src/` + `include/` with real `.cpp` files.
+- [ ] **Replace `include/matrix.h`** (see Phase 6) — it is 1153 lines of
+      borrowed code with copy-on-write reference counting, used only for
+      fixed-size 3×3 and 4×4 matrices.
+- [ ] **Rename `include/eigen.h`** — it is a GSL eigensolver wrapper, and
+      collides conceptually with the Eigen library.
+- [ ] **Kill the global mutable state**: globals `config`, `rgen`, `eng`,
+      `particle_material`, `G`, `friction`, and the `static` scratch buffers in
+      `Test::interact`, `CSys::interact`, `eigens`, `polynom` and `CParticle`.
+      None of it is thread-safe, some of it is shared across particles in ways
+      that are outright wrong.
+- [ ] **Configuration**: a typed schema with validation and a `--print-config`
+      that echoes the effective parameters into the run directory, so a result
+      can be traced to the exact inputs that produced it.
+- [ ] **Errors**: throw by reference, one exception hierarchy, and stop using
+      exceptions for control flow in the inner loop (the `TRY`/`CATCH` macros
+      wrap almost every function).
+- [ ] **CLI**: replace the positional `ellipmd <seed> <config>` with proper
+      argument parsing, plus `--help` and `--version`.
+- [ ] **Output**: configurable precision, and a self-describing header in each
+      snapshot so downstream tools do not have to re-derive the format.
+- [ ] **Restart that actually works** — currently `method restart` reloads
+      positions and orientations but not velocities.
+
+**Acceptance:** no globals in the physics path; a run is reproducible from
+`config` + seed alone; ASan/UBSan clean on a short run.
+
+---
+
+## Phase 6 — Performance
+
+Ordered by (expected win) / (risk). Each step re-runs `bench/run_bench.py` and
+records the delta.
+
+### Low-hanging fruit — no algorithmic change
+
+- [ ] **`-O3 -march=native`** instead of `-O2`. Free; measure it.
+- [ ] **Hoist work out of the timestep.** `CSys::forward` calls
+      `config.get_param<string>("method")` and `add_particle_layer` on *every*
+      step even after all particles are placed; `config.get_param` is a `map`
+      lookup by string plus a `static_cast`.
+- [ ] **Stop rebuilding the cell list from scratch every step.**
+      `celllist.build()` clears and refills every one of `nx*ny*nz` cells
+      (4050 of them for the fine run, against 2500 particles) and
+      `interact()` walks all of them. Track occupied cells, or move particles
+      incrementally (`CCellList::update` already exists and is unused).
+- [ ] **`CPacking` is a `std::list<CParticle*>`** — pointer chasing in the
+      hottest traversal. `std::vector<CParticle*>` (or `vector<CParticle>`)
+      would be markedly more cache-friendly; the list is only used for stable
+      iterators during removal.
+- [ ] **Avoid `findMin`'s 500 iterations when it has already converged** — it
+      checks convergence, but the loop bound is unconditional in the callers.
+
+### The main event — the matrix class
+
+This is ~50% of the runtime and it is a data-structure problem, not a maths
+problem.
+
+- [ ] **Replace `matrix<double>` with fixed-size stack-allocated types** for
+      3×3 and 4×4 (or use **Eigen**, which is already installed on this
+      machine, `-I/opt/homebrew/include/eigen3`). `CEllipsoid` holds six 4×4
+      matrices; each one heap-allocates five blocks today.
+- [ ] **Stop recomputing `ellip_mat` in `update_tranlation_mat()` every step.**
+      It is `(~tempmat)*scale_mat*tempmat` — three 4×4 multiplies plus
+      temporaries and allocations per particle per step, to produce a matrix
+      whose only needed content is a symmetric 3×3 block and a centre vector.
+      Cache it against the last `(q, Xc)`, or reformulate the hot predicates
+      (`operator()`, `gradient`, `toBody`) to work from the quaternion and
+      centre directly — the quadratic form is
+      `(R(x-Xc))ᵀ S (R(x-Xc))` and never needs a 4×4.
+- [ ] Make `CEllipsoid`'s matrices `const`-after-setup so the compiler can see
+      what actually changes per step.
+
+### The eigensolver — 18%
+
+- [ ] **Add cheap rejection tests before `doOverlap`.** Today every candidate
+      pair pays `Inv()` + two 4×4 multiplies + a full GSL non-symmetric
+      eigensolve, before any bounding-sphere or separating-plane test. Reject
+      on the inscribed-sphere bound (`|ΔXc| > R₁+R₂`) first, then on a
+      circumscribed-sphere test; only then do the eigen work. Contact detection
+      is exactly the place where a cheap conservative test pays for itself.
+- [ ] For the 4×4 problem the code only reads the real parts of the
+      eigenvalues and the real eigenvector. The characteristic quartic is
+      already available (`characteristicPolynom`, `include/polynom.h`) and
+      `CQuartic::solve` exists — using it would remove GSL from the hot path
+      entirely, and possibly from the dependency list.
+- [ ] Reuse workspace/scratch instead of allocating the GSL workspace and
+      complex vectors per call.
+
+### Then, if still needed
+
+- [ ] Verlet list on top of the (now cheap) cell list, with a skin distance —
+      this is what makes 10⁴–10⁵ particles tractable.
+- [ ] OpenMP over particles for the force loop (needs Phase 5's static-state
+      removal first — this is the reason that item is on the list).
+- [ ] Optional single-precision contact geometry, if the stability analysis
+      supports it.
+
+**Acceptance:** each step is a commit with a `bench/results.json` delta in the
+message, and `make check` passes throughout. Target: at least 3× on B2 without
+changing the physics, which the profile suggests is achievable from the matrix
+work alone.
+
+---
+
+## Suggested order
+
+```
+Phase 0  safety net                    <-- first, non-negotiable
+Phase 1  delete dead code              <-- cheap, shrinks everything after
+Phase 2  documentation                 <-- while the design is fresh
+Phase 4  bug fixes                     <-- correctness before speed
+Phase 3  build modernisation           <-- unlocks C++17 for Phase 5/6
+Phase 6a low-hanging performance
+Phase 5  design refactor
+Phase 6b matrix + eigensolver          <-- the big win
+Phase 6c Verlet / OpenMP               <-- only if needed
+```
+
+Phases 3 and 4 can swap if the matrix replacement is done first — that is the
+single change that unlocks C++17 *and* removes half the runtime, so it is
+tempting to pull forward. The reason it sits late is risk: it rewrites the
+geometry every contact calculation depends on, and it should not be attempted
+before `make check` exists and the cheap wins are banked.

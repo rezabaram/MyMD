@@ -8,12 +8,24 @@ run: ellipmd
 ellipmd:	*.cc include/*.h 
 	$(CC)  main.cc  $(FLAGS) $(DEBUGFLAGS) -o ellipmd $(LDFLAGS)
 
+# Physics regression check -- run this before and after any change to the
+# solver.  See bench/check_physics.py and ROADMAP.md (Phase 0).
+check: ellipmd
+	python3 bench/check_physics.py
+
+# Timing benchmark.  Sequential on purpose; writes bench/results.json.
+#   make bench              # all four configurations (~16 min)
+#   make bench BENCH_ARGS="--only B2"    # ~80 s
+BENCH_ARGS ?=
+bench: ellipmd
+	python3 bench/run_bench.py $(BENCH_ARGS)
+
 condor_ellipmd:	*.cc include/*.h 
 	$(CC)  main.cc /usr/lib64/gcc/x86_64-suse-linux/4.3/libstdc++.a  -Wall  $(LDFLAGS) $(DEBUGFLAGS) -o condor_ellipmd
 
 update:
 	git pull origin master
-.PHONY: tools run clean animate aclean update tools gsl deps viewer viewer-check ovito ovito-render dump
+.PHONY: tools run clean animate aclean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench
 tools:
 	$(MAKE) -C tools
 

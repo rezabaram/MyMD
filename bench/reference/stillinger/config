@@ -1,0 +1,20 @@
+# regression case 2: Stillinger lattice + periodic_xyz.  Exercises the
+# SizeDistribution parser, the periodic image shifts in the cell list and the
+# scaling compression path.
+boxsize		1 1 1
+density		1
+Gravity		0   0   0
+outDt		0.01
+timeStep	0.0001
+maxTime		0.02
+SizeDistribution uniform 0.5 0.5001
+nParticle	200
+stiffness	5e+02
+damping		5e+0
+friction	2.0e-1
+output		out
+method		Stillinger
+boundary	periodic_xyz
+eta		1.4
+zeta		1.4
+scaling		1.1
