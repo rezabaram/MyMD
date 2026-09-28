@@ -609,6 +609,8 @@ function animate(now) {
   drawScene();
 }
 initVideoExport('export', 'vres', { frames: () => frames, show: showFrame });
+initFrameExport('savepng', 'vres',
+  () => (frames[current] ? frames[current].name : 'frame'));
 requestAnimationFrame(animate);
 loop();
 """
@@ -705,6 +707,7 @@ PAGE_HEAD = r"""<!DOCTYPE html>
       <option value="1920x1080">1080p</option>
     </select>
   <button id="export" title="record the 3D view to a video file">record</button>
+  <button id="savepng" title="save the current frame as a PNG">save png</button>
 </div>
 
 <div id="side">

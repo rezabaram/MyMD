@@ -396,6 +396,68 @@ function beginExportRender(width, height) {
   };
 }
 
+// ------------------------------------------------------------- frame export
+//
+// Saves the frame on screen as a PNG.  It goes through the same offscreen
+// renderer the video export uses, at the resolution chosen next to the button,
+// so the picture is a clean render with none of the interface in it and the
+// canvas you are looking at is not disturbed.
+//
+// Unlike the video this follows the view toggles rather than forcing them: you
+// asked for the frame you are looking at, so if the box is switched off in the
+// view it is off here too.  The camera spin is not applied -- there is nothing
+// to spin in a single frame.
+async function exportFrame(opts) {
+  opts = Object.assign({ width: 1280, height: 720, label: 'frame' }, opts || {});
+  const ex = beginExportRender(opts.width, opts.height);
+  try {
+    ex.render();
+    const blob = await new Promise((res) => ex.canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('could not read the canvas');
+    const base = String(opts.label).replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 60);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ellipmd-' + (base || 'frame') + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return blob.size;
+  } finally {
+    ex.dispose();
+  }
+}
+
+/// Wire up a save-frame button, if the page has one.
+function initFrameExport(btnId, resId, getLabel) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const res = resId ? document.getElementById(resId) : null;
+  btn.textContent = 'save png';
+  btn.title = 'save the current frame as a PNG at the resolution chosen beside '
+            + 'this button, with none of the interface in it';
+  btn.addEventListener('click', async () => {
+    let w = 1280, h = 720;
+    if (res && res.value) { const p = res.value.split('x'); w = +p[0]; h = +p[1]; }
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '\u2026';
+    try {
+      const size = await exportFrame({
+        width: w, height: h,
+        label: getLabel ? getLabel() : 'frame',
+      });
+      btn.textContent = (size / 1e6).toFixed(2) + ' MB';
+    } catch (e) {
+      alert('saving the frame failed: ' + (e && e.message ? e.message : e));
+      btn.textContent = label;
+    }
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = label; }, 4000);
+  });
+}
+
 // ------------------------------------------------------------ video export
 //
 // Records the 3D canvas to a video file.  Only the canvas is captured, so none

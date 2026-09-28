@@ -118,6 +118,20 @@ trajectory through once and downloads a video file.
   aspect rather than being stretched to the window's -- otherwise the picture
   visibly changes proportions for the whole recording.
 
+#### Saving a single frame
+
+The **save png** button beside them saves the frame currently on screen as a PNG
+at the chosen resolution, for a figure or a pull request comment.  It renders
+through the same offscreen path as the video, so nothing from the interface is
+in the image and the canvas you are looking at is not disturbed.
+
+Unlike the video it follows the view toggles rather than forcing them -- you
+asked for the frame you are looking at, so if the box is switched off in the
+view it is off in the PNG too.  The camera spin is not applied; a single frame
+has nothing to spin.
+
+The file is named after the frame, `ellipmd-out00727.png` and so on.
+
 #### For GitHub: use `make live`
 
 GitHub plays **H.264 in an MP4 container** inline and nothing else, and a

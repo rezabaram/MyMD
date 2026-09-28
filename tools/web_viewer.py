@@ -73,6 +73,7 @@ PAGE_HEAD = r"""<!DOCTYPE html>
       <option value="1920x1080">1080p</option>
     </select>
   <button id="export" title="record the 3D view to a video file">record</button>
+  <button id="savepng" title="save the current frame as a PNG">save png</button>
 </div>
 """ + ERROR_BLOCK + r"""
 <script id="trajectory" type="application/json">__DATA__</script>
@@ -155,6 +156,7 @@ function animate(now) {
   drawScene();
 }
 initVideoExport('export', 'vres', { frames: () => FRAMES, show: showFrame });
+initFrameExport('savepng', 'vres', () => (FRAMES[current] ? FRAMES[current].label : 'frame'));
 showFrame(0);
 requestAnimationFrame(animate);
 """
