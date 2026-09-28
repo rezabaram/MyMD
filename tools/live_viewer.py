@@ -290,6 +290,7 @@ LIVE_JS = r"""
 // ------------------------------------------------------------------ state
 let frames = [];
 let current = -1;
+let serverError = null;
 let follow = true;
 let playing = false;
 let seeded = false;

@@ -77,6 +77,22 @@ jobs:
       - name: Physics regression check
         run: make check
 
+  viewers:
+    name: Viewer pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # These pages are generated JavaScript, and the only way to know they
+      # work is to run them.  node --check parses them and misses exactly the
+      # runtime errors that matter.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Execute the generated viewer pages
+        run: python3 tools/viewer_smoketest.py
+
   sanitizers:
     name: Sanitizers
     runs-on: macos-latest

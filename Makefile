@@ -51,7 +51,7 @@ bench: ellipmd
 
 update:
 	git pull origin master
-.PHONY: all run clean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench asan asan-check live
+.PHONY: all run clean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench asan asan-check live viewer-smoke
 tools:
 	$(MAKE) -C tools
 
@@ -90,6 +90,14 @@ viewer-check:
 		-o orientation_sample.html \
 		--title "Orientation check (long axes: X, Y, Z, triaxial, then c/a = 1,2,3)"
 	@echo "open file://$(ROOT)/orientation_sample.html"
+
+# Execute the generated viewer pages under node with a stubbed browser.  This
+# is the only check that runs the viewer JavaScript rather than just parsing
+# it, and it exists because two runtime errors reached a browser from here
+# (a temporal-dead-zone ReferenceError and an undeclared variable) that
+# `node --check` cannot see.  Skipped if node is not installed.
+viewer-smoke:
+	python3 tools/viewer_smoketest.py
 
 # OVITO (https://ovito.org) python module in a local virtualenv:
 #   make ovito
