@@ -97,13 +97,37 @@ CQuartic characteristicPolynom(const Matrix &AB);
 // The same coefficients, written into caller storage, so the contact test can
 // reuse one CQuartic instead of constructing (and heap-allocating) one per
 // candidate pair.
+// 4x4 determinant by expansion along the first row, using 2x2 minors of the
+// bottom two rows.
+//
+// matrixT::Det() cannot be used here: it copies the matrix and clones the copy
+// so it has something to pivot on, which is five heap allocations for a 4x4,
+// and the characteristic polynomial below evaluates the determinant once per
+// candidate contact pair -- about 420,000 times in a single deposition run.
+// This is the same value to within rounding of a different summation order.
+inline double det4(const Matrix &m){
+	const double s0 = m(2,0)*m(3,1) - m(2,1)*m(3,0);
+	const double s1 = m(2,0)*m(3,2) - m(2,2)*m(3,0);
+	const double s2 = m(2,0)*m(3,3) - m(2,3)*m(3,0);
+	const double s3 = m(2,1)*m(3,2) - m(2,2)*m(3,1);
+	const double s4 = m(2,1)*m(3,3) - m(2,3)*m(3,1);
+	const double s5 = m(2,2)*m(3,3) - m(2,3)*m(3,2);
+
+	const double c5 = m(1,1)*s5 - m(1,2)*s4 + m(1,3)*s3;
+	const double c4 = m(1,0)*s5 - m(1,2)*s2 + m(1,3)*s1;
+	const double c3 = m(1,0)*s4 - m(1,1)*s2 + m(1,3)*s0;
+	const double c2 = m(1,0)*s3 - m(1,1)*s1 + m(1,2)*s0;
+
+	return m(0,0)*c5 - m(0,1)*c4 + m(0,2)*c3 - m(0,3)*c2;
+	}
+
 void characteristic_polynomial(const Matrix &AB, vector<double> &out){
 	out.resize(5);
 	out[0]=1;
 	out[1]=-AB.Tr();
 	out[2]=-(AB(0,1)*AB(1,0)) + AB(0,0)*AB(1,1) - AB(0,2)*AB(2,0) - AB(1,2)*AB(2,1) + AB(0,0)*AB(2,2) + AB(1,1)*AB(2,2) - AB(0,3)*AB(3,0) - AB(1,3)*AB(3,1) - AB(2,3)*AB(3,2) + AB(0,0)*AB(3,3) + AB(1,1)*AB(3,3) + AB(2,2)*AB(3,3);
 	out[3]=AB(0,2)*AB(1,1)*AB(2,0) - AB(0,1)*AB(1,2)*AB(2,0) - AB(0,2)*AB(1,0)*AB(2,1) + AB(0,0)*AB(1,2)*AB(2,1) + AB(0,1)*AB(1,0)*AB(2,2) - AB(0,0)*AB(1,1)*AB(2,2) + AB(0,3)*AB(1,1)*AB(3,0) - AB(0,1)*AB(1,3)*AB(3,0) + AB(0,3)*AB(2,2)*AB(3,0) - AB(0,2)*AB(2,3)*AB(3,0) - AB(0,3)*AB(1,0)*AB(3,1) + AB(0,0)*AB(1,3)*AB(3,1) + AB(1,3)*AB(2,2)*AB(3,1) - AB(1,2)*AB(2,3)*AB(3,1) - AB(0,3)*AB(2,0)*AB(3,2) - AB(1,3)*AB(2,1)*AB(3,2) + AB(0,0)*AB(2,3)*AB(3,2) + AB(1,1)*AB(2,3)*AB(3,2) + AB(0,1)*AB(1,0)*AB(3,3) - AB(0,0)*AB(1,1)*AB(3,3) + AB(0,2)*AB(2,0)*AB(3,3) + AB(1,2)*AB(2,1)*AB(3,3) - AB(0,0)*AB(2,2)*AB(3,3) - AB(1,1)*AB(2,2)*AB(3,3);
-	out[4]=AB.Det();
+	out[4]=det4(AB);
 	}
 
 CQuartic characteristicPolynom(const Matrix &AB){

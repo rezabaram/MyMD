@@ -172,6 +172,7 @@ moved.
 | + GSL workspace reuse | ~52 s | ~18.9 | no measurable change |
 | + quartic root solve replaces the eigensolver | 48.99 s | 17.813 | -16% |
 | + allocation-free `findMin` | 25.00 s | 9.089 | **-49%** |
+| + `det4`, and parentheses in `gradient` | 22.33 s | 8.120 | -5.5% |
 
 **The C++17 migration is performance-neutral** — B2 55.76 s before, 55.22 s
 after, both within the noise floor — which is what you would expect, since it
@@ -183,8 +184,8 @@ the last full sweep before the final two steps, which were ~1% each):
 
 | run | before | after | delta | speedup |
 |---|---|---|---|---|
-| B1 | 5.43 s | 1.51 s | **-72.2%** | 3.6x |
-| B2 | 78.58 s | 22.33 s | **-71.6%** | 3.5x |
+| B1 | 5.43 s | 1.38 s | **-74.6%** | 3.9x |
+| B2 | 78.58 s | 21.10 s | **-73.1%** | 3.7x |
 | B3 | 58.52 s | 14.50 s | **-75.2%** | 4.0x |
 | B4 | 782.82 s | 242.82 s | **-69.0%** | 3.2x |
 
@@ -237,6 +238,41 @@ scratch, the loop now allocates nothing.  That one change halved the runtime.
 
 `CQuartic::solve()` also built a `CCubic` per call, allocating two vectors; it
 now reuses one.
+
+## Counting allocations instead of guessing
+
+After the `findMin` rewrite, `matrix<double>` was still ~68% of the profile,
+nearly all destructor and `clone()` -- meaning temporaries, not arithmetic.  Two
+guesses about where they were both turned out wrong, so the next step was to
+count rather than reason: a temporary `-DCOUNT_MATRIX_ALLOCS` build with a
+counter in `base_mat`'s constructor, plus counters on the two functions I
+suspected.
+
+```
+                              matrix objects allocated, deposition, 2750 steps
+periodic (stillinger)                                   1 646
+deposition (walls + dense contacts)                 2 051 074
+after fixing gradient()                             1 651 506   (-303 368 = exactly its call count)
+after replacing matrixT::Det()                      1 616 506
+```
+
+What that showed:
+
+  * `CEllipsoid::gradient()` returned `2.0*ellip_mat*(X-Xc)`, which forms the
+    scalar product as a **matrix** temporary before multiplying by the vector.
+    `setcontact()` evaluates two per contact.  The fix is parentheses --
+    `2.0*(ellip_mat*(X-Xc))` -- and it removed exactly 303,368 allocations,
+    matching its call count precisely.
+  * `characteristic_polynomial` called `matrixT::Det()`, which copies the matrix
+    and clones the copy so it has something to pivot on.  `det4()`, an expansion
+    along the first row, agrees with it to 5.6e-16 relative over 20,000 random
+    4x4 matrices and allocates nothing.
+  * The wall path never calls `inv()` at all in the deposition run -- 0 calls --
+    which retroactively explains why caching it measured as a loss.
+  * What is left is ~1.6M matrix objects, about 3.8 per candidate pair, and by
+    arithmetic that is ~2% of the runtime: not worth chasing.  The remaining
+    large win is the matrix type itself, whose `operator()` bounds-checks and
+    reference-count-checks every element access; see ROADMAP Phase 5.
 
 ## What did not work
 

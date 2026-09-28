@@ -209,12 +209,18 @@ class CEllipsoid: public GeomObjectBase
 
 	vec gradient (const vec &X)const 
 		{
-		return 2.0*ellip_mat*(X-Xc);
+		// Note the parentheses.  Written as 2.0*ellip_mat*(X-Xc) -- which is
+		// how it was -- the scalar product is formed as a *matrix* temporary
+		// first: five heap allocations, on every gradient evaluation, and
+		// setcontact() evaluates two of them per contact.  Scaling the
+		// resulting vector instead is the same arithmetic and allocates
+		// nothing.
+		return 2.0*(ellip_mat*(X-Xc));
 		}
 
 	HomVec gradient (const HomVec &X)const 
 		{
-		return 2.0*ellip_mat*X;
+		return 2.0*(ellip_mat*X);
 		}
 
 	double operator() (const vec &X)const {

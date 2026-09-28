@@ -3,14 +3,14 @@
   "name": "B1",
   "label": "250 particles, dt=1e-4",
   "steps": 2750,
-  "wall_s": 1.51,
+  "wall_s": 1.38,
   "wall_s_all": [
-   1.48,
-   1.51
+   1.37,
+   1.38
   ],
   "repeats": 2,
-  "cpu_s": 1.44841,
-  "ms_per_step": 0.547,
+  "cpu_s": 1.33913,
+  "ms_per_step": 0.5,
   "particles": 250,
   "rc": 0
  },
@@ -18,14 +18,14 @@
   "name": "B2",
   "label": "2500 particles, dt=1e-4",
   "steps": 2750,
-  "wall_s": 22.33,
+  "wall_s": 21.1,
   "wall_s_all": [
-   22.33,
-   22.33
+   20.58,
+   21.1
   ],
   "repeats": 2,
-  "cpu_s": 22.2079,
-  "ms_per_step": 8.12,
+  "cpu_s": 20.4512,
+  "ms_per_step": 7.671,
   "particles": 2500,
   "rc": 0
  },

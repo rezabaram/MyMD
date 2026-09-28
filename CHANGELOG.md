@@ -7,6 +7,16 @@ point; the entries below cover the port and modernisation work.
 
 ### Fixed
 
+- **`CEllipsoid::gradient()` allocated a matrix on every call.**  It returned
+  `2.0*ellip_mat*(X-Xc)`, which forms the scalar product as a matrix temporary
+  before multiplying by the vector; `setcontact()` evaluates two per contact.
+  `2.0*(ellip_mat*(X-Xc))` is the same arithmetic and allocates nothing.
+- **`characteristic_polynomial()` called `matrixT::Det()`**, which copies the
+  matrix and clones the copy to pivot on -- five heap allocations, once per
+  candidate contact pair, roughly 420,000 times in one deposition run.  `det4()`
+  expands along the first row instead and agrees with `Det()` to 5.6e-16
+  relative over 20,000 random 4x4 matrices.
+
 - **A missing config file was a warning, not an error.**  The run then
   continued with the compiled-in defaults, which are not a working
   configuration (`particleSize=1` in a `1x1x2` box), and died later with a
