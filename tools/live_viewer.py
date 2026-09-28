@@ -79,6 +79,80 @@ def _config_params(text):
     return out
 
 
+
+class Encoder:
+    """Encodes PNG frames into an H.264 MP4 by piping them to ffmpeg.
+
+    GitHub's player wants H.264 in an MP4 container, and a browser's
+    MediaRecorder will not necessarily give that -- Chrome offers WebM, which
+    GitHub will not play inline.  Since ffmpeg is often already installed for
+    the OVITO movie path, the frames are encoded here instead, with
+    -pix_fmt yuv420p for compatibility and -movflags +faststart so the file
+    starts playing before it has finished downloading.
+    """
+
+    def __init__(self, outdir):
+        self.outdir = outdir
+        self.lock = threading.Lock()
+        self.sessions = {}
+        self.counter = 0
+        os.makedirs(outdir, exist_ok=True)
+
+    @staticmethod
+    def available():
+        return shutil.which("ffmpeg") is not None
+
+    def start(self, fps=30, crf=23, preset="slow"):
+        if not self.available():
+            raise RuntimeError("ffmpeg is not on PATH")
+        with self.lock:
+            self.counter += 1
+            token = "ellipmd-%d" % self.counter
+            out = os.path.join(self.outdir, token + ".mp4")
+            cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                   "-f", "image2pipe", "-framerate", str(fps), "-i", "-",
+                   "-c:v", "libx264", "-preset", preset, "-crf", str(crf),
+                   "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                    stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.PIPE)
+            self.sessions[token] = {"proc": proc, "out": out, "n": 0}
+            return token
+
+    def add(self, token, data):
+        with self.lock:
+            s = self.sessions.get(token)
+            if s is None:
+                raise RuntimeError("no such encoding session")
+            s["proc"].stdin.write(data)
+            s["n"] += 1
+            return s["n"]
+
+    def finish(self, token):
+        with self.lock:
+            s = self.sessions.pop(token, None)
+        if s is None:
+            raise RuntimeError("no such encoding session")
+        proc = s["proc"]
+        try:
+            proc.stdin.close()
+        except OSError:
+            pass
+        err = proc.stderr.read()
+        if proc.wait() != 0:
+            raise RuntimeError("ffmpeg failed: " + err.decode("utf-8", "replace"))
+        return s["out"], s["n"]
+
+    def abort(self, token):
+        with self.lock:
+            s = self.sessions.pop(token, None)
+        if s:
+            try:
+                s["proc"].kill()
+            except OSError:
+                pass
+
+
 class Run:
     """One solver process and the directory it is producing."""
 
@@ -232,11 +306,14 @@ def _bounds(params):
 
 
 class Viewer:
-    def __init__(self, config_path, rundir):
+    def __init__(self, config_path, rundir, export_dir=None):
         self.rundir = rundir
         self.config_path = config_path
         self.run = Run(rundir)
         self.cache = FrameCache()
+        self.encoder = Encoder(
+            export_dir or os.path.join(os.path.dirname(os.path.abspath(rundir)),
+                                       "exports"))
         with open(config_path) as fh:
             self.initial_config = fh.read()
 
@@ -272,6 +349,7 @@ class Viewer:
             "frames": list(self.cache.frames),
             "energy": energy,
             "log": self._log_tail(),
+            "ffmpeg": Encoder.available(),
         }
 
     def _log_tail(self):
@@ -395,6 +473,10 @@ async function poll() {
   } catch (e) {
     statusEl.textContent = 'server gone';
     return;
+  }
+  if (typeof st.ffmpeg === 'boolean' && st.ffmpeg !== serverEncode) {
+    serverEncode = st.ffmpeg;
+    if (initVideoExport.refresh) initVideoExport.refresh();
   }
   if (st.box && !boxReady) setBox(st.box);
   for (const k in st.ranges) ranges[k] = st.ranges[k];
@@ -692,6 +774,44 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, obj, code=200):
         self._send(code, json.dumps(obj), "application/json")
 
+    def _encode(self, path, body):
+        v = self.viewer
+        q = {}
+        if "?" in self.path:
+            for pair in self.path.split("?", 1)[1].split("&"):
+                if "=" in pair:
+                    k, _, val = pair.partition("=")
+                    q[k] = val
+        token = q.get("token", "")
+        try:
+            if path == "/api/encode/start":
+                opts = json.loads(body or b"{}")
+                return self._json({"token": v.encoder.start(
+                    fps=int(opts.get("fps", 30)),
+                    crf=float(opts.get("crf", 23)),
+                    preset=opts.get("preset", "slow"))})
+            if path == "/api/encode/frame":
+                return self._json({"n": v.encoder.add(token, body)})
+            if path == "/api/encode/finish":
+                out, n = v.encoder.finish(token)
+                with open(out, "rb") as fh:
+                    data = fh.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "video/mp4")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header(
+                    "X-Ellipmd-Frames", str(n))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            if path == "/api/encode/abort":
+                v.encoder.abort(token)
+                return self._json({"ok": True})
+        except Exception as exc:                       # noqa: BLE001
+            return self._send(500, "encode failed: %s" % exc)
+        return self._send(404, "not found")
+
     def do_GET(self):
         path = self.path.split("?", 1)[0]
         v = self.viewer
@@ -732,6 +852,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/stop":
             v.run.stop()
             return self._json({"ok": True})
+        if path.startswith("/api/encode/"):
+            return self._encode(path, body)
         if path == "/api/clear":
             v.run.stop()
             v.cache.reset()
@@ -763,6 +885,9 @@ def main(argv=None):
     ap.add_argument("--rundir", default=os.path.join(ROOT, "viz", "live"),
                     help="where the run writes its snapshots "
                          "(default viz/live)")
+    ap.add_argument("--export-dir", default=None,
+                    help="where encoded videos are written "
+                         "(default: 'exports' beside --rundir)")
     args = ap.parse_args(argv)
 
     if not os.path.exists(args.config):
@@ -771,7 +896,7 @@ def main(argv=None):
         print("warning: %s does not exist; run 'make ellipmd' first" % ELF,
               file=sys.stderr)
 
-    viewer = Viewer(args.config, args.rundir)
+    viewer = Viewer(args.config, args.rundir, args.export_dir)
     Handler.viewer = viewer
 
     port = _free_port(args.port)
@@ -780,6 +905,8 @@ def main(argv=None):
     print("ellipmd live viewer on %s" % url)
     print("  config:  %s" % args.config)
     print("  rundir:  %s" % args.rundir)
+    print("  ffmpeg:  %s" % ("found, mp4 export available"
+                             if Encoder.available() else "NOT FOUND"))
     print("  ctrl-c to stop")
     try:
         httpd.serve_forever()

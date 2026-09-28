@@ -176,7 +176,10 @@ function viridis(out, t) {
 
 // ------------------------------------------------------------------ scene
 const view = document.getElementById('view');
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// preserveDrawingBuffer keeps the rendered frame readable after the
+// compositor has taken it, which canvas.toBlob() during a video export needs.
+const renderer = new THREE.WebGLRenderer({ antialias: true,
+                                           preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 view.appendChild(renderer.domElement);
 
@@ -347,6 +350,8 @@ function applyFrame(arr, n) {
 // Set while a video is being recorded, so the wall-clock spin in animate()
 // does not fight the fixed per-frame spin the export applies.
 let exporting = false;
+/// True when the page is served by live_viewer and ffmpeg is available there.
+let serverEncode = false;
 
 function spinCamera(dt) {
   if (exporting) return;
@@ -376,6 +381,84 @@ function spinCamera(dt) {
 // The page supplies where the frames come from, because the two pages keep
 // them differently -- the static viewer has a fixed FRAMES array, the live one
 // a list that grows as the run goes.
+
+
+// Encodes through the server's ffmpeg instead of the browser's MediaRecorder.
+//
+// GitHub plays H.264 in an MP4 container and nothing else inline, and a
+// browser will not necessarily produce that -- Chrome offers WebM.  When the
+// page is served by tools/live_viewer.py and ffmpeg is on PATH, the frames are
+// rendered to PNG here and piped to ffmpeg there, which gives a file GitHub
+// will play, with yuv420p for compatibility and +faststart so it starts
+// playing before it has finished downloading.
+async function exportMp4ViaServer(opts, source) {
+  const list = source.frames();
+  if (!list || !list.length) {
+    alert('There are no frames to record yet.');
+    return false;
+  }
+  const canvas = renderer.domElement;
+  const size = new THREE.Vector2();
+  renderer.getSize(size);
+  const oldAspect = camera.aspect;
+  const oldCellVisible = cell.visible;
+  cell.visible = true;
+  renderer.setSize(opts.width, opts.height, false);
+  camera.aspect = opts.width / opts.height;
+  camera.updateProjectionMatrix();
+  exporting = true;
+
+  let token = null;
+  try {
+    const st = await (await fetch('/api/encode/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fps: opts.fps, crf: opts.crf }),
+    })).json();
+    token = st.token;
+    if (!token) throw new Error(st.error || 'could not start the encoder');
+
+    for (let i = 0; i < list.length; i++) {
+      await source.show(i);
+      spinCamera(1.0 / opts.fps);      // one fixed step, as in the browser path
+      drawScene();
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      if (!blob) throw new Error('could not read the canvas');
+      const r = await fetch('/api/encode/frame?token=' + encodeURIComponent(token),
+                            { method: 'POST', body: blob });
+      if (!r.ok) throw new Error(await r.text());
+      if (opts.onProgress) opts.onProgress(i + 1, list.length);
+    }
+
+    const resp = await fetch('/api/encode/finish?token=' + encodeURIComponent(token));
+    if (!resp.ok) throw new Error(await resp.text());
+    token = null;
+    const video = await resp.blob();
+    const url = URL.createObjectURL(video);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ellipmd-' + list.length + 'frames.mp4';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    return video.size;
+  } catch (e) {
+    if (token) {
+      try { await fetch('/api/encode/abort?token=' + encodeURIComponent(token),
+                        { method: 'POST' }); } catch (e2) { }
+    }
+    alert('mp4 export failed: ' + (e && e.message ? e.message : e));
+    return false;
+  } finally {
+    exporting = false;
+    renderer.setSize(size.x, size.y, false);
+    camera.aspect = oldAspect;
+    camera.updateProjectionMatrix();
+    cell.visible = oldCellVisible;
+    if (typeof userMovedCamera !== 'undefined' && !userMovedCamera) homeCamera();
+  }
+}
 
 function pickVideoMime() {
   if (typeof MediaRecorder === 'undefined') return null;
@@ -485,25 +568,46 @@ function initVideoExport(btnId, resId, source) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   const res = resId ? document.getElementById(resId) : null;
-  const fmt = videoFormatLabel();
-  btn.textContent = 'record ' + fmt;
-  btn.title = fmt === 'unavailable'
-    ? 'this browser cannot record video'
-    : 'record the 3D view (without the interface) to a ' + fmt
-      + ' file, with the box drawn and the camera turning';
-  btn.disabled = (fmt === 'unavailable');
+  let idle = 'record';
+
+  function refresh() {
+    if (serverEncode) {
+      btn.textContent = idle;
+      btn.title = 'record the 3D view (without the interface) to an H.264 MP4 '
+                + 'via ffmpeg -- the format GitHub plays inline';
+      btn.disabled = false;
+    } else {
+      const fmt = videoFormatLabel();
+      btn.textContent = fmt === 'unavailable' ? 'no video' : 'record ' + fmt;
+      btn.title = fmt === 'unavailable'
+        ? 'this browser cannot record video and the page has no server-side encoder'
+        : 'record the 3D view (without the interface) to a ' + fmt
+          + ' file.  GitHub plays MP4 inline; WebM it will not.';
+      btn.disabled = (fmt === 'unavailable');
+    }
+  }
+  refresh();
+  initVideoExport.refresh = refresh;
+
   btn.addEventListener('click', async () => {
     let w = 1280, h = 720;
     if (res && res.value) { const p = res.value.split('x'); w = +p[0]; h = +p[1]; }
-    const label = btn.textContent;
     btn.disabled = true;
-    await exportVideo({
-      width: w, height: h, fps: 30, onProgress: (i, n) => {
-        btn.textContent = Math.round(100 * i / n) + '%';
-      },
-    }, source);
-    btn.textContent = label;
-    btn.disabled = false;
+    const progress = (i, n) => { btn.textContent = Math.round(100 * i / n) + '%'; };
+    let size = 0;
+    if (serverEncode) {
+      size = await exportMp4ViaServer({ width: w, height: h, fps: 30, crf: 23,
+                                        onProgress: progress }, source);
+    } else {
+      const ok = await exportVideo({ width: w, height: h, fps: 30,
+                                     onProgress: progress }, source);
+      size = ok ? 1 : 0;
+    }
+    refresh();
+    if (size) {
+      btn.textContent = size > 1 ? (size / 1e6).toFixed(1) + ' MB' : idle;
+      setTimeout(refresh, 4000);
+    }
   });
 }
 

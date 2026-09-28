@@ -108,27 +108,62 @@ trajectory through once and downloads a video file.
   canvas, and the panels, buttons and sliders are separate DOM elements, so
   they cannot appear in the file.
 * **The simulation box and the camera spin are always included**, whatever the
-  view toggles happen to be set to — a video is a rendered artefact, not a live
-  view, and both are part of the render.
+  view toggles happen to be set to -- a video is a rendered artefact, not a
+  live view, and both are part of the render.
 * **The camera turns one fixed step per frame** while recording.  The on-screen
   spin advances with wall-clock time, which would give a different angle per
   frame depending on how long each frame took to render.
-* Recording uses the browser's own `MediaRecorder` against a stream from the
-  canvas, so **nothing is uploaded anywhere**.  MP4 is preferred; where the
-  browser cannot produce it — Chrome has historically offered only WebM — the
-  file is written as WebM and named `.webm` rather than being called an mp4 it
-  is not.  The button says which format you will get.  Safari records MP4
-  directly.
 
-For a ray-traced mp4 instead of a screen recording, OVITO can do it offline:
+#### For GitHub: use `make live`
+
+GitHub plays **H.264 in an MP4 container** inline and nothing else, and a
+browser's `MediaRecorder` will not necessarily give that -- Chrome offers WebM,
+which GitHub will not play in a README.  So when the page is served by
+`tools/live_viewer.py` and `ffmpeg` is on `PATH`, the record button renders each
+frame to a PNG in the browser and pipes it to ffmpeg on the server, which
+produces a file that works:
+
+```
+make live          # then press "record"
+```
+
+The encoder is invoked as
+
+```
+ffmpeg -f image2pipe -framerate 30 -i - -c:v libx264 -preset slow -crf 23 \
+       -pix_fmt yuv420p -movflags +faststart out.mp4
+```
+
+`yuv420p` because anything else will not play in most players, and
+`+faststart` to put the index at the front so it starts playing before it has
+finished downloading.  The button shows the resulting size when it is done.
+
+**Sizing.**  GitHub's web uploader takes files up to 10 MB, warns above 50 MB
+and refuses above 100 MB -- and a large binary in git history is permanent.  For
+a README, aim under 10 MB.  The lever is the resolution and the length: 540p or
+720p keeps a full filling animation in single-digit megabytes at CRF 23, and
+1080p does not.  If it comes out too big, record at 540p rather than shortening
+the run.
+
+To embed it, drag the file into the README editor on GitHub; it writes the
+`<video>` or link markup for you.  A raw link to a `.mp4` in the repository
+also works, but GitHub only serves it as a download rather than playing it
+inline.
+
+#### Without a server
+
+The standalone `web_viewer.py` page has no server, so its button falls back to
+the browser's own recorder.  On Safari that produces MP4; on Chrome, WebM --
+the button says which before you press it, rather than naming a file `.mp4`
+when it is not.
+
+For a ray-traced mp4 instead of a screen recording, OVITO can do it offline and
+uses the same ffmpeg:
 
 ```sh
 make ovito
 .deps/venv/bin/python tools/ovito_reader.py 'out0*' outend --anim --out movie.mp4 --fps 30
 ```
-
-`ovito_reader.py` also takes `--quality` and `--outlines`.  It needs ffmpeg,
-which OVITO will find if it is on `PATH`.
 
 ### Random colours
 
