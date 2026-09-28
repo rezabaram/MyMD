@@ -44,6 +44,7 @@ class CSys{
 	,maxNParticle(maxnparticle)
 	,epsFreeze(1.0e-12)
 	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
+	,rainAccum(0), rainBlockedTime(0), rainFullWarned(false)
 	,outEnergy("log_energy")
 	{
 	TRY
@@ -53,6 +54,9 @@ class CSys{
 
 	void particles_on_grid();
 	void add_particle_layer(double z);
+	/// 'method rain': try to release one particle at a random point across the
+	/// top of the box.  Returns false if that point is already occupied.
+	bool rain_one();
 
 	void initialize(const CConfig &c);
 	void solve();
@@ -64,7 +68,6 @@ class CSys{
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
 	inline bool interact(CParticle *p1, BoxContainer *p2);
-	vec center_of_mass()const;
 
 	int read_packing(string infilename, const vec &shift=vec(), double scale=1);
 	int read_packing2(string infilename, const vec &shift=vec(), double scale=1);
@@ -106,6 +109,13 @@ class CSys{
 	ifstream inputRadii;
 	double maxRadii;
 	vec top_v;
+	/// 'method rain' state: fractional particles owed by the release rate, and
+	/// whether the "box is full" message has been said.
+	double rainAccum;
+	/// how long the release has been blocked, to tell "nothing fits any more"
+	/// from "something happens to be falling past the release height"
+	double rainBlockedTime;
+	bool rainFullWarned;
 
 	ofstream outEnergy;
 	};
@@ -114,21 +124,6 @@ CSys::~CSys(){
 	// Deliberately no TRY/CATCH here.  A destructor is implicitly noexcept
 	// since C++11, so the RETHROW in the CATCH block would call std::terminate
 	// rather than propagate -- and there is nothing in this body to throw.
-	}
-
-vec CSys::center_of_mass()const{
-TRY
-	vec cm(0,0,0);
-	double M=0;
-	ParticleContainer::const_iterator it;
-	for(it=particles.begin(); it!=particles.end(); ++it){
-		
-		M+=(*it)->get_mass();
-		cm+=(*it)->get_mass()*(*it)->x(0);
-		}
-		cm/=M;
-	return cm;
-CATCH
 	}
 
 double TruncGaussRand(double r, double dr=0.0){
@@ -294,7 +289,7 @@ TRY
 			add(p);
 			}
 		}
-	else if(simul_method=="deposition"){
+	else if(simul_method=="deposition" or simul_method=="rain"){
 		if( particleType=="gen1" or particleType=="gen2"
 					   or particleType=="gen3" or particleType=="gen4"){
 			string fileRadii=config.get_param<string>("radii");
@@ -434,7 +429,6 @@ TRY
 	//FIXME make it dimensionless
 
 	//reset forces
-	vec cm=center_of_mass();
 	ParticleContainer::iterator it1, it2, ittemp;
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
 		(*it1)->reset_forces(G*((*it1)->get_mass())-fluiddampping*G.abs()*(*it1)->get_mass()*(*it1)->x(1));//gravity plus damping (coef of dumping is ad hoc)
@@ -489,6 +483,49 @@ TRY
                        if(it==particles.end())break;
                        }
                }
+       if(config.get_param<string>("method")=="rain" and !rainFullWarned)
+               {
+               // Release on a schedule rather than in layers.  rainAccum
+               // carries the fraction of a particle owed from one step to the
+               // next, so the rate need not be a whole number per step.
+               //
+               // rainRate is a ceiling, not a promise.  A particle starts from
+               // rest, so one released now has only fallen 1/2 g t^2 by the
+               // time the next is due: at 20/s that is 12 mm, far less than a
+               // particle, so consecutive releases land inside each other and
+               // jam into a column under the lid.  When a spawn point is
+               // blocked the release simply waits, and the rate the simulation
+               // achieves settles at whatever the fall time allows.
+               rainAccum+=dt*config.get_param<double>("rainRate");
+               if(rainAccum>4.0) rainAccum=4.0;   // no burst after a stall
+
+               int released=0;
+               while(rainAccum>=1.0 and particles.size()<maxNParticle
+                                 and released<4){
+                       bool placed=false;
+                       for(int attempt=0; attempt<64 and !placed; ++attempt)
+                               placed=rain_one();
+                       if(!placed) break;   // blocked for now; retry next step
+                       rainAccum-=1.0;
+                       ++released;
+                       }
+
+               if(released>0) rainBlockedTime=0.0;
+               else if(particles.size()>0){
+                       // Nothing placed for a whole simulated second, with
+                       // particles already in the box: the pile has reached the
+                       // lid.  A fixed number of failed attempts would be
+                       // wrong here -- one particle falling past the release
+                       // height blocks most of the spawn area for as long as it
+                       // takes to clear, which is most of a second.
+                       rainBlockedTime+=dt;
+                       if(rainBlockedTime>1.0){
+                               rainFullWarned=true;
+                               WARNING("rain: box is full; released "
+                                       <<particles.size()<<" particles");
+                               }
+                       }
+               }
        if(config.get_param<string>("method")=="deposition"
                        and maxh < walls.corner(2)+walls.L(2) ) 
                {
@@ -500,11 +537,6 @@ TRY
                // first; ask for more particles than the box holds and the run
                // died with "Point out of grid".  The jitter added inside
                // add_particle_layer is accounted for here.
-               //
-               // The gate above uses a literal 1. as the box height, left over
-               // from a 1x1x1 box; it should be walls.L(2), but changing it
-               // alters how many particles get placed, so it is left for
-               // ROADMAP.md (Phase 4).
                double z= maxh+1.02*maxRadii;
                double jitter=config.get_param<double>("particleSize")/5.0;
                if(z + jitter < walls.corner(2)+walls.L(2)) {
@@ -747,6 +779,63 @@ void CSys::read_radii(vector<vec> &radii){
 		}
 }
 
+
+bool CSys::rain_one(){
+TRY
+	// Same shape sampling as deposition, but one particle at a time and at a
+	// random point rather than on a grid.
+	const vec abc=radii.at(rgen.rand(radii.size()));
+	const double rr=tmax(abc(0), tmax(abc(1), abc(2)));
+
+	// The centre has to stay inside the grid for CCellList::which(), and the
+	// particle should appear right at the top, so the highest valid centre is
+	// one radius below the lid.
+	const double lo0=walls.corner(0)+rr, hi0=walls.corner(0)+walls.L(0)-rr;
+	const double lo1=walls.corner(1)+rr, hi1=walls.corner(1)+walls.L(1)-rr;
+	const double z  =walls.corner(2)+walls.L(2)-rr;
+	ERROR(hi0<lo0 or hi1<lo1 or z<walls.corner(2)+rr,
+	      "rain: a particle of radius "+stringify(rr)
+	      +" does not fit in a box of "+stringify(walls.L(0))+" x "
+	      +stringify(walls.L(1))+" x "+stringify(walls.L(2)));
+
+	vec x(lo0+(hi0-lo0)*rgen(), lo1+(hi1-lo1)*rgen(), z);
+
+	Quaternion q=randomQuaternion();
+
+	// Is the point free?  Broad phase on the circumscribed spheres, then the
+	// exact ellipsoid test.
+	//
+	// The broad phase alone is not enough here, and that is the whole reason
+	// for the second stage: the circumscribed radius of these spheroids is
+	// about 1.4x their equivalent-sphere radius, so a single particle falling
+	// past the top of a 1x1 box blocks most of it and the rain stalls after a
+	// handful of particles.
+	CEllipsoid E;
+	bool have_E=false;
+	ShapeContact ovs;
+	ParticleContainer::iterator it1;
+	for(it1=particles.begin(); it1!=particles.end(); ++it1){
+		const double need=rr+(*it1)->shape->radius;
+		if(((*it1)->x(0)-x).abs2()>=need*need) continue;
+		if(!have_E){ E=CEllipsoid(x, abc(0), abc(1), abc(2), q); have_E=true; }
+		if(doOverlap(ovs, E, *static_cast<CEllipsoid*>((*it1)->shape)))
+			return false;
+		}
+	if(!have_E) E=CEllipsoid(x, abc(0), abc(1), abc(2), q);
+
+	CParticle *p=new CParticle(E);
+	// Released, not thrown: CFreedom::init() already zeroed the linear
+	// velocity, so the particle starts falling from rest.  The spin is what
+	// stops the packing being a stack of identically aligned particles.
+	const double spin=config.get_param<double>("rainSpin");
+	p->w(1)(0)=spin*(1-2*rgen());
+	p->w(1)(1)=spin*(1-2*rgen());
+	p->w(1)(2)=spin*(1-2*rgen());
+	add(p);
+	return true;
+CATCH
+	return false;
+	}
 
 void CSys::add_particle_layer(double z){ 
 	double size=config.get_param<double>("particleSize");

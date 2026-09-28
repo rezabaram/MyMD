@@ -88,6 +88,13 @@ class CConfig : public CBaseConfig{
 
 	       add_param<double>("stiffness", 5.0e+02); 
 	       add_param<double>("damping", 5); 
+	       // 'method rain': particles are released one at a time from the top
+	       // of the box at zero linear velocity, with a small random spin.
+	       // rainRate is a ceiling in particles per unit of simulated time; the
+	       // rate actually achieved is limited by how fast a particle released
+	       // from rest clears the release height, about sqrt(4*particleSize/g).
+	       add_param<double>("rainRate", 4.0);
+	       add_param<double>("rainSpin", 2.0);
 	       add_param<double>("fluiddampping", 0.05); 
 	       add_param<double>("friction", 0.2); 
 	       add_param<double>("static_friction", 0); 

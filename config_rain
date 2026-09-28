@@ -1,0 +1,40 @@
+# "Rain": particles are released one at a time from the top of a solid box,
+# at zero linear velocity and with a small random spin, and are released until
+# the box is full.  This is the filling sequence used for the repository's
+# animation.
+#
+#   make run CONFIG=config_rain
+#
+# Big particles and a small box, so that a full sequence runs in a few minutes
+# and the whole fill is visible.  Once the look is right, shrink particleSize
+# (and raise nParticle) for the final render; see docs/VISUALIZATION.md.
+
+boxsize		1 1 1.2
+boxcorner	0 0 0
+density		1
+Gravity		0   0   -10
+
+outDt		0.04
+timeStep	0.0001
+maxTime		12.0
+
+particleSize	0.12
+particleSizeWidth 0.02
+nParticle	400
+
+stiffness	5e+02
+damping		5e+0
+friction	2.0e-1
+cohesion	0.0
+
+output		out
+method		rain
+boundary	solid
+
+eta		1.4
+zeta		1.4
+
+# release rate, particles per unit of simulated time, and the per-axis
+# standard deviation of the random initial spin in rad/s
+rainRate	8.0
+rainSpin	2.0
