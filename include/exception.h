@@ -46,7 +46,7 @@ class CException
 #define RETHROW(e)  throw CException((std::string)" \n\tfrom "+e.where(), __FILE__, __PRETTY_FUNCTION__, __LINE__);
 #define TRY try{
 #define CATCH  }\
-	catch(CException e){ \
+	catch(CException &e){ \
 		RETHROW(e);\
 		}\
 	catch(...){\

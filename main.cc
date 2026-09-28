@@ -37,7 +37,7 @@ int main(int pi, char **params){
 	Run();
 	//Shutdown();
 	return 0;
-	} catch(CException e)
+	} catch(CException &e)
 	{
 	e.Report();
 	return 1;

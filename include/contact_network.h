@@ -46,8 +46,9 @@ class TNode : public vector<TContact<T> >{
 
 	Matrix &normal_fabric_tensor()
 	{
-		bool calculated=false;
-		if(calculated) return branch_fabric_M;
+		// The cache guard that used to be here read `bool calculated=false;`
+		// -- a local, so always false -- and returned branch_fabric_M rather
+		// than normal_fabric_M anyway.  There is no cache, so say so.
 		typename TNode<T>::iterator it;
 		for(int i=0; i<3; i++)
 			for(int j=0; j<3; j++)
@@ -57,7 +58,6 @@ class TNode : public vector<TContact<T> >{
 			for(int j=0; j<3; j++)
 				for(it=this->begin(); it!=this->end(); it++)
 					normal_fabric_M(i,j)+=(*it).n(i)*(*it).n(j);
-		calculated=true;
 		return normal_fabric_M;
 	}
 

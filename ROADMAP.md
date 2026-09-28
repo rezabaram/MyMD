@@ -234,7 +234,7 @@ can silently mislead a result.
       incremented.
 - [ ] **Default parameters are unusable** — `particleSize=1` in a `1×1×2` box
       puts every particle outside the grid. Ship a `config` or fail loudly.
-- [ ] **The deposition gate uses a literal `1.` as the box height**
+- [x] **The deposition gate used a literal `1.` as the box height**
       (`maxh < 1 + 2*maxRadii`), a leftover from a 1×1×1 box.  It should be
       `walls.L(2)`, but changing it changes how many particles get placed, so it
       needs a deliberate decision rather than a drive-by fix.
@@ -243,18 +243,15 @@ can silently mislead a result.
       The config-file names do not mean what the README says.
 - [ ] **The snapshot format carries no velocities**, so `method restart` starts
       from rest.  Needs a format change (extra columns) or a separate state file.
-- [ ] `CParticle::addforce` overwrites `avgforces` with the *last* contact
-      force rather than accumulating, and uses a `static prev` that is shared
-      across all particles — so "average force" is neither averaged nor
-      per-particle.  Its only consumer is an `if(0)` block in `forward()`, so
-      the honest fix is probably deletion.
-- [ ] `TNode::normal_fabric_tensor()` returns `branch_fabric_M` from its dead
-      early return, and `bool calculated=false` is a local so the cache never
-      works.
-- [ ] `CPolynom<order,T>::operator()` uses function-local `static` accumulators
-      — not reentrant, and wrong if anything nests.
-- [ ] `CException` is thrown and caught **by value** everywhere, slicing the
-      type and making the `catch(...)` fallbacks load-bearing.
+- [x] `CParticle::addforce` overwrote `avgforces` with the *last* contact force
+      rather than accumulating, and used a `static prev` shared across all
+      particles.  `avgtorque` was never used at all.  Deleted.
+- [x] `TNode::normal_fabric_tensor()` returned `branch_fabric_M` from a dead
+      early return, and its cache flag was a local.  Dead guard removed.
+- [x] Function-local `static` scratch in `polynom.h` and `particle.h` replaced
+      with locals -- they were not reentrant, and sharing them is what blocks
+      parallelising the force loop.
+- [x] `CException` was caught **by value** at all eight sites, slicing the type.
 
 **Acceptance:** each fix is a self-contained commit with a note in the
 CHANGELOG, and `make check` still passes (except where the fix deliberately

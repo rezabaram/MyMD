@@ -111,7 +111,7 @@ class CPolynom{
 
 template<int order, typename T>
 inline T CPolynom<order, T>::operator() (T x)const{
-	static double xx, result;
+	double xx, result;
 	result=0;
 	xx=1.0;
 	
@@ -124,7 +124,7 @@ inline T CPolynom<order, T>::operator() (T x)const{
 
 template<int order, typename T>
 inline complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
-	static complex<double> xx, result;
+	complex<double> xx, result;
 	result=0;
 	xx=1.0;
 	
@@ -176,8 +176,8 @@ CQuadratic::CQuadratic(double _a, double _b, double _c)
 inline
 bool CQuadratic::solve(){//returning the number of real roots;
 	if(solved)return true;
-	static double delta;
-	static double a, b, c;
+	double delta;
+	double a, b, c;
 	a=coefs.at(0);
 	b=coefs.at(1);
 	c=coefs.at(2);
@@ -232,8 +232,8 @@ CCubic::CCubic(double _a, double _b, double _c, double _d)
 inline
 bool CCubic::solve(){//returning the number of real roots;
 	if(solved)return true;
-	static double p, q, D;
-	static double a, b, c, d;
+	double p, q, D;
+	double a, b, c, d;
 	a=coefs.at(0);
 	b=coefs.at(1);
 	c=coefs.at(2);
@@ -308,7 +308,7 @@ bool CQuartic::solve(){//returning the number of real roots;
 	//double ap2=ap*ap;
 	//double ap3=ap2*ap;
 	//double ap4=ap2*ap2;
-	static double a, b, c, d, e;
+	double a, b, c, d, e;
 	a=coefs.at(0);
 	b=coefs.at(1)/a;
 	c=coefs.at(2)/a;

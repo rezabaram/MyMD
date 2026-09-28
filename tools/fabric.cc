@@ -46,7 +46,7 @@ int main(int n_params, char **params){
 		//Shutdown();
 		return 0;
 	} 
-	catch(CException e)
+	catch(CException &e)
 	{
 	e.Report();
 	return 1;

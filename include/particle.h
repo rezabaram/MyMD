@@ -112,11 +112,7 @@ class CParticle : public PhysObject
 	double top()const{return shape->top();}
 
 	void addforce(const vec force){
-		static vec prev(0.0);
 		*forces+=force;
-		avgforces=(force);
-		//avgforces=(prev+force)/2.0;
-		prev=force;
 		};
 
 	void addtorque(const vec torque){
@@ -145,8 +141,8 @@ class CParticle : public PhysObject
 	long id;
 	vec test;
 	//Quaternion q;//orientation
-	vec *forces, avgforces;
-	vec *torques, avgtorque;
+	vec *forces;
+	vec *torques;
 	CVerletList<PhysObject> vlist, vlistold;
 	vector< CNode3D<CParticle> *> grid_nodes;
 
@@ -217,8 +213,11 @@ TRY
 	x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
 
 	//rotational degree
-	static vec wp;
-	static Quaternion dq(0,0,0,0);
+	// These were function-local statics.  Nothing about them needs to
+	// outlive the call, and sharing them across particles is what stops the
+	// force loop being parallelised.
+	vec wp;
+	Quaternion dq(0,0,0,0);
 
 	w(1) += w(2)*(dt*5.0*c) - w0(2)*(dt*c);
 	wp=shape->q.toBody(w(1));//FIXME make sure which should be used
@@ -250,7 +249,7 @@ void CParticle::calVel(double dt){
 	x(1)+= x(2)*(dt*2*c);
 	
 	w0(2)=w(2);
-	static vec wp, wwp, torquep;
+	vec wp, wwp, torquep;
 	torquep=shape->q.toBody(*torques);
 	ERROR(torquep.abs2()>1e+30, "Torques too large"+stringify(torquep)+stringify(mass));
 

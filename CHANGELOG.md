@@ -7,6 +7,23 @@ point; the entries below cover the port and modernisation work.
 
 ### Fixed
 
+- **`CParticle::`** carried an `avgforces` member that `addforce` overwrote
+  with the last contact force (rather than accumulating), using a `static vec
+  prev` shared by every particle; `avgtorque` was declared and never used.  The
+  only reader was an `if(0)` block.  Removed.
+- **`TNode::normal_fabric_tensor()`'s cache guard was dead and wrong**: it
+  tested a local `bool calculated=false` and returned `branch_fabric_M` rather
+  than `normal_fabric_M`.  There is no cache; the dead guard is gone.
+- **`CException` was caught by value** at all eight call sites, slicing the
+  type.  Now caught by reference.
+- **The deposition layer gate used a literal `1.` as the box height**, left
+  over from a 1x1x1 box.  It is now the box top from the geometry.  Same
+  behaviour for a 1x1x1.2 box, correct for anything else.
+- **Function-local `static` scratch variables** in `polynom.h` (five in the
+  quadratic/cubic/quartic solvers) and `particle.h` (the rotational integrator)
+  are now locals.  Nothing about them needed to outlive the call, and sharing
+  them is what stood in the way of ever parallelising the force loop.
+
 - **Heap buffer overflow in `DisBetaDistribution`.**  `bins` was allocated with
   `nbins` slots but every loop in the constructor indexed `0..nbins` inclusive,
   so the last write and read were one `double` past the end of the array.  This

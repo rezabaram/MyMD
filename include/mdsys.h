@@ -443,7 +443,8 @@ TRY
                        if(it==particles.end())break;
                        }
                }
-       if(config.get_param<string>("method")=="deposition" and maxh< 1.+2*maxRadii ) 
+       if(config.get_param<string>("method")=="deposition"
+                       and maxh < walls.corner(2)+walls.L(2) ) 
                {
                // Only seed a layer whose particles will land inside the grid:
                // CCellList::which() rejects a particle whose centre is out of
@@ -547,11 +548,6 @@ TRY
 		if(vtemp>maxv) 
 			maxv=vtemp;
 
-		if(0)if((*it)->x(1).abs()< epsFreeze  && (*it)->avgforces.abs()< epsFreeze ) {
-			//(*it)->frozen=true;
-			(*it)->material.color="0.5 0.5 0.5";
-			(*it)->x(1)=0.0;
-			}
 		rEnergy+=(*it)->rEnergy();
 		pEnergy+=(*it)->pEnergy(G);
 		kEnergy+=(*it)->kEnergy();
@@ -596,7 +592,7 @@ void CSys::solve(){
 			}
 		//adapt(dt);
 		}
-	}catch(CException e){
+	}catch(CException &e){
 		ERROR(1,"Some error in the solver at t= "+ stringify(t)+"\n\tfrom "+e.where());
 		}
 	catch(...){

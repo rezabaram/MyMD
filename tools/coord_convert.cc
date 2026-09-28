@@ -23,7 +23,7 @@ int main(int n_params, char **params){
 		ERROR(params[1][0]!='-' or (params[1][1]!='r' and params[1][1]!='p'), "Usage: convert [-r/-p] input-file");
 
 	return 0;
-	} catch(CException e)
+	} catch(CException &e)
 	{
 	e.Report();
 	return 1;
