@@ -159,9 +159,9 @@ picture from the README alone.
 
 ---
 
-## Phase 3 — Modernise the build and toolchain  — **mostly DONE**
+## Phase 3 — Modernise the build and toolchain  — **DONE**
 
-- [ ] **CMake** alongside (or replacing) the hand-written Makefiles:
+- [x] **CMake** alongside the hand-written Makefiles:
       `cmake -B build && cmake --build build`. This is what makes the project
       installable and IDE-friendly, and it makes the GSL/Eigen dependency
       explicit via `find_package`.
@@ -179,11 +179,14 @@ picture from the README alone.
       -- see CHANGELOG.  Replacing the remaining `static` scratch buffers is
       still Phase 5, and that is what stands between this and a thread-safe
       build.
-- [ ] **CI** (GitHub Actions): build + `make check` on Linux and macOS. This is
-      most of what "presentable" means in practice.
+- [x] **CI** (`.github/workflows/ci.yml`): four jobs -- CMake on Linux and
+      macOS, the Makefile path on both, sanitizers on macOS, and
+      warnings-as-errors with both GCC and clang.  All four rehearsed locally.
 
-**Acceptance:** a clean checkout builds on a machine with no prior setup beyond
-a compiler, CMake and GSL/Eigen.
+**Acceptance met:** a clean checkout builds with either CMake or the Makefile
+on Linux and macOS, with zero warnings under `-Wall -Wextra -Werror`, passing
+`make check` and clean under ASan and UBSan.  Replacing the remaining `static`
+scratch buffers (Phase 5) is what stands between this and a threaded build.
 
 *Verified so far, without CMake:* `git archive HEAD` into an empty directory,
 then `make ellipmd`, `make tools`, `make check` and the Python tooling all
