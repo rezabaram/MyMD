@@ -6,7 +6,7 @@ run: ellipmd
 	time bin/run.sh $(CONFIG)
 
 ellipmd:	*.cc include/*.h 
-	$(CC)  main.cc  $(FLAGS) $(DEBUGFLAGS) -o ellipmd $(LDFLAGS)
+	$(CC)  main.cc  $(FLAGS) $(WARNFLAGS) $(OPTFLAGS) -o ellipmd $(LDFLAGS)
 
 # Physics regression check -- run this before and after any change to the
 # solver.  See bench/check_physics.py and ROADMAP.md (Phase 0).

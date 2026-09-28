@@ -142,52 +142,26 @@ TRY
 	if(fabs(eigenvals.at(3).imag() ) < epsilon){
 		ERROR(eigenvals.at(2).imag()>epsilon,"one eigenvalue complex one not.");
 
-		// eigenvec 3 is inside E1, and 2 inside E2
+		// A real fourth eigenvalue means the pair admits a separating axis, so
+		// there is no contact.
+		//
+		// The code that used to be here went on to build the ray between the
+		// two poles, intersect it with both ellipsoids, and store x1, x2, x01,
+		// x02 and a separating plane in `ovs`.  All of it was discarded: the
+		// caller sets has_sep_plane from this return value and skips the
+		// contact block entirely when it is true, and in the other branch it
+		// overwrites x1/x2 from a different construction.  So two quadratic
+		// solves, four homogeneous-vector writes, two matrix-vector products
+		// and a plane per non-overlapping candidate pair were pure waste --
+		// and the bounding-sphere test that gates this call is deliberately
+		// loose, so this is the common case.
+		//
+		// Dropping it also removes two ERROR() calls on a path whose result
+		// was thrown away, where a complex root would have aborted the whole
+		// run over a quantity nobody read.
 		if(E1(eigenvecs.at(3))>0 or E2(eigenvecs.at(2))>0){
 			WARNING("error in calculation of poles.");
-			return false;
 			}
-
-		//line through two poles (from E1 to E2)
-		CRay<HomVec> ray(eigenvecs.at(3).project4d(),eigenvecs.at(2).project4d());
-		//CRay<HomVec> ray(HomVec(E1.Xc,1),HomVec(E2.Xc,1));
-		
-		CQuadratic q1(intersect(ray, E1));
-		CQuadratic q2(intersect(ray, E2));
-		//the roots are sorted ascending
-		ERROR(fabs(q1.root(0).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
-		ERROR(fabs(q2.root(1).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
-
-		HomVec X1= ray(q1.root(1).real());//on the surface of E1
-		HomVec X2= ray(q2.root(0).real());//on the surface of E2
-
-		ovs.x1=X1;
-		ovs.x2=X2;
-		ovs.x01=E1.toBody(X1);
-		ovs.x02=E2.toBody(X2);
-
-		//calculating the separating plane
-
-		vec n1=HomVec(E1.ellip_mat*X1).project();
-		vec n2=HomVec(E2.ellip_mat*X2).project();
-		HomVec mp=(X1+X2)*.5;
-		double alpha=-(mp.project()-X1.project())*n1 /( (mp.project()-X2.project())*n2);
-		ovs.plane=CPlane(mp.project(), n1+alpha*n2);
-
-		//cerr<< ovs.plane.n*(E2.Xc-E1.Xc).normalize() <<endl;
-		//cerr<< (X2.project()-X1.project()).normalize()*(E2.Xc-E1.Xc).normalize() <<endl;
-		//cerr <<endl;
-
-		//FIXME there are some problems with calculation of separation plane. there for
-		//it is deactivated for now
-		/*
-		bool hit=(E1.doesHit(ovs.plane) or E2.doesHit(ovs.plane));
-		if(hit){
-			WARNING("The separation plane hits the ellipsoids: E1(plane.x)="<< E1(ovs.plane.Xc) <<"\t E2(plane.x)="<< E2(ovs.plane.Xc) );
-			return false;
-			}
-		*/
-
 		return false ;
 		}
 	return true;

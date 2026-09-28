@@ -242,6 +242,20 @@ class CEllipsoid: public GeomObjectBase
 	CATCH
 		}
 
+	/// Orientation and position in one go, rebuilding the six matrices once
+	/// instead of once per setter.  CParticle::calPos used to call rotateTo()
+	/// and then moveto(); both end in update_tranlation_mat(), so the first of
+	/// the two rebuilds was thrown away every step.
+	void setPose(const Quaternion &_q, const vec &v){
+	TRY
+		ERROR(_q.abs2()<1e-10, "Quaternion cannot be zero.");
+		Xc=v;
+		quaternionToMatrix(_q, rotat_mat);
+		q=_q;
+		update_tranlation_mat();
+	CATCH
+		}
+
 	void rotateTo(const Quaternion &_q) {
 	TRY
 		ERROR(q.abs2()<1e-10, "Quaternion cannot be zero.");

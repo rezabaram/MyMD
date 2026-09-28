@@ -234,9 +234,9 @@ TRY
 	
 	
 	ERROR(shape->q.abs2()<1e-10, "Cannot normalize q (quaternion): "+stringify(shape->q)+stringify(w(2)));
-	shape->rotateTo(shape->q);
-	ERROR(shape->q.abs2()<1e-10, "Cannot normalize q (quaternion): "+stringify(shape->q));
-	shape->moveto(x(0));
+	// orientation and position together: for an ellipsoid this rebuilds its
+	// matrices once instead of once per setter (see GeomObjectBase::setPose)
+	shape->setPose(shape->q, x(0));
 CATCH
 	}
 

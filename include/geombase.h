@@ -25,6 +25,14 @@ class GeomObjectBase
 		//Xc0=q.rotate(Xc0);
 		};
 	virtual void rotateTo(const Quaternion &q){}
+	/// Set orientation and position together.  Shapes whose pose costs more
+	/// than the sum of its parts should override this: CParticle::calPos used
+	/// to call rotateTo() and then moveto(), which for an ellipsoid rebuilt
+	/// all six of its matrices twice per step when only the second mattered.
+	virtual void setPose(const Quaternion &_q, const vec &v){
+		rotateTo(_q);
+		moveto(v);
+		}
 	virtual double vol()const=0;//{WARNING("This function should not be called");}
 	virtual double I(vec n)=0;//{WARNING("This function should not be called");}
 
