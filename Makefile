@@ -30,7 +30,7 @@ asan: main.cc
 
 # Same, but checking the reference cases automatically.
 asan-check: asan
-	@for c in deposition stillinger elastic_bounce; do \
+	@for c in $$(ls bench/reference); do \
 		d=$$(mktemp -d); \
 		cp bench/reference/$$c/* $$d/ 2>/dev/null; \
 		( cd $$d && UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=0 \
