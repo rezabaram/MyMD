@@ -26,7 +26,7 @@ radius 0.06 filling a 1&times;1&times;1.2 box over 14.5 s of simulated time.
 
 [![the settled packing, last frame](docs/media/deposition.png)](docs/media/deposition.mp4)
 
-That is the last frame, rendered with OVITO.  Clicking it plays the whole
+That is the last frame, saved from the viewer itself.  Clicking it plays the whole
 fill -- 728 frames, 24 s, 2.6 MB, H.264 MP4 -- or use the
 [direct link](docs/media/deposition.mp4) if the player below does not appear.
 
