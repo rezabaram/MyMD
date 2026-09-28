@@ -41,7 +41,7 @@ compiled-in defaults.
 | | |
 |---|---|
 | compiler | any C++17 compiler.  GCC and clang are both verified in CI — the code used to need GCC specifically, because of `<tr1/random>` and a dynamic exception specification, but that is gone. |
-| GSL | for the 4×4 eigensolver used in ellipsoid contact detection.  `make gsl` builds it into `.deps/`; `brew install gsl` or `libgsl-dev` works too and is picked up automatically. |
+| GSL | only the `fabric` analysis tool still uses it, for a 4×4 non-symmetric eigensolver.  The solver itself does not: its contact test is a quartic root solve.  `make gsl` builds it into `.deps/`; `brew install gsl` or `libgsl-dev` works too and is picked up automatically. |
 | Python 3 | for the analysis, viewer and test tooling.  Standard library only, no numpy needed. |
 | CMake ≥ 3.16 | optional — only for the CMake build. |
 

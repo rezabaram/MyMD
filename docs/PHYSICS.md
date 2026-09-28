@@ -85,13 +85,19 @@ gives the *pole* direction along which they interpenetrate.
 
 ```
 doOverlap(ovs, E1, E2):
-    M = −(!E1.ellip_mat) · E2.ellip_mat          // 4x4, one inverse + a multiply
-    eigens(M, eval, evec)                        // GSL non-symmetric eigensolver
-    if |Im(eval[3])| < eps:                      // real -> a separating axis exists
-        ... check both poles are inside ...
-        return false                             // no contact
-    return true
+    M = −(!E1.ellip_mat) · E2.ellip_mat     // 4x4, one inverse + a multiply
+    roots = solve_quartic(characteristic_polynomial(M))
+    for r in roots:
+        if |Im(r)| > eps: return true       // a complex root -> they interpenetrate
+    return false                            // all real -> a separating axis exists
 ```
+
+The eigenvalue test is a *quartic root solve*, not an eigensolver.  The two agree
+exactly -- a build that ran both on the real matrices of a full deposition run
+reported zero disagreements over 420,000 candidate pairs -- and the quartic is
+much cheaper, which is what let GSL leave the contact path entirely (Phase 6b).
+`characteristicPolynom()` and `CQuartic::solve()` were already in the repository;
+the author had left the call commented out.
 
 then, for a genuine contact, `intersect()` casts the ray between the two poles
 and intersects it with each ellipsoid, and `findMin()` refines the contact points
@@ -99,15 +105,18 @@ by up to 500 iterations of a λ fixed point:
 
 ```
 λ  = |(x−Xc₁)·E2·(x−Xc₂)|
-x ← (!(Em2 + λ·Em1)) · (Em2·Xc₂ + λ·Em1·Xc₁)
+x ← (Em2 + λ·Em1)⁻¹ · (Em2·Xc₂ + λ·Em1·Xc₁)
 ```
 
-converged when the point moves less than 1e-13 and λ less than 1e-10.
+converged when the point moves less than 1e-13 and λ less than 1e-10.  Written in
+caller-owned scratch, because as written above the loop built about five matrix
+temporaries per iteration -- and it runs up to 500 times, twice per contact.  That
+single change halved the runtime; see [`BENCHMARK.md`](BENCHMARK.md).
 
-This is where the runtime goes: it is ~18% GSL eigensolve and ~11% geometry per
-the profile in [`ARCHITECTURE.md`](ARCHITECTURE.md), paid for *every candidate
-pair* before any cheap rejection test.  A bounding-sphere test first is the
-obvious optimisation; see `ROADMAP.md` Phase 6.
+This is paid for *every candidate pair* before any cheap rejection test, which is
+the cost of the method.  A conservative inscribed-sphere rejection test was
+implemented and measured, and it fires on 0.09% of pairs -- the shape is too
+elongated for its inscribed sphere to be useful; see `BENCHMARK.md`.
 
 ## Integrator
 
