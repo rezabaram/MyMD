@@ -120,17 +120,17 @@ class CEllipsoid: public GeomObjectBase
 	~CEllipsoid(){}
 	HomVec toWorld(const HomVec &point)const
 		{
-		return (!(rotat_mat*trans_mat))*point;
+		return inv_rt_mat*point;   // cached by update_tranlation_mat()
 		}
 
 	HomVec toBody(const HomVec &point)const
 		{
-		return (rotat_mat*trans_mat)*point;
+		return rt_mat*point;       // cached by update_tranlation_mat()
 		}
 	void fixToBody(const HomVec &point)
 		{
 		P=point;
-		P0=(rotat_mat*trans_mat)*point;
+		P0=rt_mat*point;
 		}
 
 	// const, to override GeomObjectBase::clone() const.  Without it this was a
@@ -237,17 +237,23 @@ class CEllipsoid: public GeomObjectBase
 		trans_mat(2,3)=-Xc(2);
 		trans_mat(3,3)=1;
 		// Allocation-free: the obvious
-		//     tempmat = rotat_mat * trans_mat;
-		//     ellip_mat = (~tempmat) * scale_mat * tempmat;
-		// builds four matrixT temporaries, and each one is five heap
-		// allocations (a row-pointer array plus one array per row).  This runs
-		// once per particle per step and was the hottest line in the program.
-		// Same arithmetic, same accumulation order, caller-owned scratch.
-		static Matrix tempmat(4,4), transposed(4,4), scaled(4,4);
-		matmul(tempmat, rotat_mat, trans_mat);      // R*T
-		transpose_into(transposed, tempmat);        // ~(R*T)
+		//     rt_mat = rotat_mat * trans_mat;
+		//     ellip_mat = (~rt_mat) * scale_mat * rt_mat;
+		// builds matrixT temporaries, and each one is five heap allocations
+		// (a row-pointer array plus one array per row).
+		//
+		// rt_mat is a member rather than scratch because toWorld() and
+		// toBody() need it: they used to write `(rotat_mat*trans_mat)` as an
+		// expression, and `!(rotat_mat*trans_mat)`, rebuilding a per-pose
+		// constant on every contact -- six matrix allocations per contact in
+		// updatecontact() alone, which was the largest remaining source of
+		// allocation in the program after the wall path was fixed.
+		static Matrix transposed(4,4), scaled(4,4);
+		matmul(rt_mat, rotat_mat, trans_mat);       // R*T
+		transpose_into(transposed, rt_mat);         // ~(R*T)
 		matmul(scaled, transposed, scale_mat);      // ~(R*T)*S
-		matmul(ellip_mat, scaled, tempmat);         // ~(R*T)*S*(R*T)
+		matmul(ellip_mat, scaled, rt_mat);          // ~(R*T)*S*(R*T)
+		invert_into(inv_rt_mat, rt_mat);            // !(R*T)
 
 		//P=HomVec(0.1,0.1,0.1,1);
 		//P=(!(rotat_mat*trans_mat))*P0;
@@ -478,6 +484,9 @@ class CEllipsoid: public GeomObjectBase
 	vec    inv_scale_vec;
 
 	Matrix ellip_mat;
+	/// R*T and its inverse, cached by update_tranlation_mat(); these are what
+	/// toWorld() and toBody() apply, and they are constant for a given pose.
+	Matrix rt_mat, inv_rt_mat;
 	Matrix inert_mat;
 
 	double a,b,c;

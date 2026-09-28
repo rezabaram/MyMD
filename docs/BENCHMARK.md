@@ -175,6 +175,8 @@ moved.
 | + `det4`, and parentheses in `gradient` | 22.33 s | 8.120 | -5.5% |
 | + drop the map-based contact cache | 22.93 s | 8.341 | **-25.7%** |
 | + collapse the wall-face quadratic form | 17.35 s | 6.309 | -7.4% |
+| + `findMin` over plain 3x3 arrays | 15.95 s | 5.800 | -15.6% |
+| + cache the pose transform `R*T` | 12.35 s | 4.491 | -9.4% |
 
 **The C++17 migration is performance-neutral** — B2 55.76 s before, 55.22 s
 after, both within the noise floor — which is what you would expect, since it
@@ -317,7 +319,27 @@ original `findMin` rewrite.
 
 `findMin` was checked too, on the suspicion that it was iterating too long.  It
 is not: 2.4 million calls over one B2 run, averaging **14.8 iterations**, worst
-68, none unconverged.
+68, none unconverged.  Its loop was nevertheless worth rewriting -- not for the
+iteration count but because every iteration drove the checked element accessor
+-- and that is -15.6%.  I had guessed 20-35% for it, which is worth recording as
+an overestimate.
+
+Counting allocations was needed twice more, and both times the answer was not
+where reasoning pointed:
+
+  * after the wall fix, 12.6M allocations remained, and a probe splitting
+    `calForces` put **11225423 of them in the pair loop** and 1371991 in the
+    walls;
+  * a further probe inside the contact block split that into
+    `updatecontact=2400000  intersect=0  findMin=0  setcontact=800000` over
+    400000 contacts -- six matrix allocations per contact in the first, two in
+    the last, and none at all in the two the profile had been blaming.
+
+Both came from `toWorld()`/`toBody()`, which wrote `(rotat_mat*trans_mat)` as an
+expression and `!(rotat_mat*trans_mat)` -- rebuilding a per-pose constant, and
+its inverse, on every contact.  Caching them once per pose update is -9.4%.
+The lesson repeats: the profile names a symbol, not a call site, and the
+counter names the call site.
 
 ## What did not work
 
