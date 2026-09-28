@@ -11,7 +11,7 @@
 #include"vec.h"
 #include"quaternion.h"
 
-typedef enum {tsphere, tplane, tbox, tcomposite, tellipsoid, tcylinder} GType;
+typedef enum {tsphere, tplane, tbox, tellipsoid} GType;
 
 class CPlane;//forward declaration
 class GeomObjectBase

@@ -23,8 +23,6 @@ class CInteraction{
 	static void overlaps(ShapeContact* ovs, CEllipsoid   *p1, const CPlane   *plane);
 	static void overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CBox        *b );
 	static void overlaps(ShapeContact* ovs, CEllipsoid  *p1, CEllipsoid  *p2);
-	static void overlaps(ShapeContact* ovs, const CComposite  *p1, const CComposite  *p2);
-	static void overlaps(ShapeContact* ovs, const CComposite  *p1, const CBox        *b );
 
 	static void append(ShapeContact&v, ShapeContact&v2);
 
@@ -53,10 +51,6 @@ void CInteraction::overlaps(ShapeContact* ovs, GeomObjectBase *p1, GeomObjectBas
 			overlaps(ovs, static_cast<const CSphere *>(p1), static_cast<const CSphere *>(p2));
 		else if(p1->type==tsphere && p2->type==tbox)
 			overlaps(ovs, static_cast<const CSphere *>(p1), static_cast<const CBox *>(p2));
-		else if(p1->type==tcomposite && p2->type==tcomposite)
-			overlaps(ovs, static_cast<const CComposite *>(p1), static_cast<const CComposite *>(p2));
-		else if(p1->type==tcomposite && p2->type==tbox)//FIXME
-			overlaps(ovs, static_cast<const CComposite *>(p1), static_cast<const CBox *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tbox)//FIXME
 			overlaps(ovs, static_cast<CEllipsoid *>(p1), static_cast<const CBox *>(p2));
 		else if(p1->type==tellipsoid&& p2->type==tellipsoid)//FIXME
@@ -83,39 +77,6 @@ void CInteraction::overlaps(ShapeContact* ovs, const CSphere  *p1, const CBox *b
 	}
 
 
-
-inline
-void CInteraction::overlaps(ShapeContact* ovs, const CComposite  *p1, const CComposite  * p2){
-TRY
-
-	ERROR(p1==p2, "A particle is checked against itself for overlapping.")
-	if((p1->Xc-p2->Xc).abs() > p1->radius+p2->radius)return;
-
-	for(indexType i=0; i< (p1->elems.size()); ++i){
-		for(indexType j=0; j< (p2->elems.size()); ++j){
-			overlaps(ovs, p1->elems.at(i), p2->elems.at(j));
-			}
-		}
-CATCH
-	}
-
-inline
-void CInteraction::overlaps(ShapeContact* ovs, const CComposite  *p1, const CBox  * b){
-	static double d;
-	bool need_to_check=false;
-	for(indexType i=0; i<b->nFaces; ++i){
-		d=(b->face[i]->normal_from_point(p1->Xc,0.0)).abs2() - p1->radius*p1->radius;
-		if(d<0){
-			need_to_check=true;
-			break;
-			}
-		}
-//	if(!need_to_check)return;
-
-	for(indexType i=0; i<p1->elems.size(); ++i){
-		overlaps(ovs, p1->elems.at(i), b);
-		}
-	}
 
 inline
 void CInteraction::overlaps(ShapeContact* ovs, CEllipsoid  *p1, const CPlane *plane){

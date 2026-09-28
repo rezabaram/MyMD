@@ -1,21 +1,23 @@
 The structure of the code
 
-The main part of the MD is done in class CSys in mdsys.h. 
-Different components are separated in different header files 
+The main part of the MD is done in class CSys in mdsys.h.
+Different components are separated in different header files
 and are included (directly or indirectly) in mdsys.h:
 
 - exception.h: A class for producing informative exceptions (errors)
 - common.h: Some routines used in different places
-- config.h baseconfig.h: Configuration classes an input parameters definitions
-- vec.h: Vector template class with simple algebraic operatoins. 
-	 vec2d and vec3d are shorthands for 2 and 3 dimensional vectors (Resp.)
-- matrix.h: A borrowed simple matrix class used mainly for ellipsoid.h
+- config.h, baseconfig.h: Configuration classes and input parameter definitions
+- vec.h: Vector template class with simple algebraic operations.
+         vec2d and vec3d are shorthands for 2 and 3 dimensional vectors (resp.)
+- matrix.h: A borrowed simple matrix class, used mainly by ellipsoid.h
 - quaternion.h: A class for quaternion
-- geombase.h: Class CGeomBase is the class from which all shapes are derived.
-- sphere.h: Class for sphere 
+- geombase.h: Class GeomObjectBase is the class from which all shapes are derived
+- sphere.h: Class for sphere
 - ellipsoid.h: Class for ellipsoid
-- cylinder.h: Class for cylinder (not complete)
-- packing.h: A container for particles with more functionalities.
-- composite.h: Class for a particle composed of several spheres (maybe not fully working)
-- ray.h: Class for a line in 3D space which can intersect with other geometric shapes.
-- box.h: The class for system boundaries which can be periodic or solid
+- packing.h: A container for particles with more functionality
+- ray.h: Class for a line in 3D space which can intersect with other geometric shapes
+- box.h: The class for system boundaries, which can be periodic or solid
+
+See ../docs/ARCHITECTURE.md for the full picture and ../ROADMAP.md for the
+planned cleanups.  (cylinder.h and composite.h used to be listed here; both
+were unfinished and unbuildable and have been removed.)
