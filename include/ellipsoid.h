@@ -17,7 +17,7 @@
 #include"plane.h"
 
 class CEllipsoid;
-CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E);
+void intersect (const CRay<HomVec> &ray, const CEllipsoid &E, CQuadratic &q);
 ////
 
 using namespace math;
@@ -502,14 +502,17 @@ std::ostream & operator<< (std::ostream &out, const CEllipsoid &E){
 		};
 
 ////FIXME added interaction between classes. this is not so good. make a better struture
-CQuadratic intersect (const CRay<HomVec> &ray, const CEllipsoid &E){
-	double a=ray.n*E.ellip_mat*ray.n;
-	double b=ray(0)*E.ellip_mat*ray.n+ray.n*E.ellip_mat*ray(0);
-	double c=ray(0)*E.ellip_mat*ray(0);
-	return CQuadratic(a, b, c);
+// Into caller storage: this used to return a CQuadratic by value, and the
+// constructor heap-allocates its coefficient vector, so every ray/ellipsoid
+// test cost two allocations.  In a settled packing that was ~16% of the run.
+void intersect (const CRay<HomVec> &ray, const CEllipsoid &E, CQuadratic &q){
+	q.set_coefs(ray.n*E.ellip_mat*ray.n,
+	            ray(0)*E.ellip_mat*ray.n+ray.n*E.ellip_mat*ray(0),
+	            ray(0)*E.ellip_mat*ray(0));
 }
 bool intersect (size_t i, HomVec &X, const CRay<HomVec> &ray, const CEllipsoid &E){
-	CQuadratic q=intersect(ray, E);
+	static CQuadratic q;
+	intersect(ray, E, q);
 	if(q.root(0).imag()>0.0000001) return false;
 	X=ray(q.root(i).real());
 	return true;

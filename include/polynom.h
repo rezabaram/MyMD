@@ -169,9 +169,25 @@ class CQuadratic: public CPolynom<2, double> {
 		:CPolynom<2,double>(_coefs)
 		{}
 	CQuadratic(double _a, double _b, double _c);
+	/// A placeholder with a valid leading coefficient, for reuse with
+	/// set_coefs().  Solving it before set_coefs() would be meaningless.
+	CQuadratic():CPolynom<2,double>(1.0){}
 
 	double max_root();
 	bool solve();
+
+	/// Refill in place.  Constructing a CQuadratic runs CPolynom's
+	/// constructor, which push_backs into a fresh vector -- two heap
+	/// allocations -- and intersect() builds one of these per ray/ellipsoid
+	/// test, twice per contact, for every contact every step.
+	void set_coefs(double _a, double _b, double _c){
+		ERROR(fabs(_a)<epsilon, "The leading coefficient cannot be zero");
+		coefs[0]=_a;
+		coefs[1]=_b;
+		coefs[2]=_c;
+		roots.clear();
+		solved=false;
+		}
 	private:
 	};
 

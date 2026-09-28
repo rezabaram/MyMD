@@ -1,0 +1,34 @@
+# benchmark B5 : 400 particles, deposited and then left to settle
+#
+# B1-B4 all stop at 0.275 s of simulated time, which is before the packing
+# settles.  Measured against them, the contact solver looks cheap; in a settled
+# pile it is the whole cost.  A 2500-particle settled packing runs at about
+# 34 ms/step against B2's 4 ms/step -- 8.5x -- so B1-B4 systematically
+# under-report anything that speeds up contact detection.
+#
+# This case is the same phenomenon at a size that can still be iterated on:
+# contact-dominated, but a run takes about half a minute rather than seven.
+boxsize		1 1 1.2
+boxcorner	0 0 0
+density		1
+Gravity		0   0   -10
+
+outDt		0.05
+timeStep	0.0001
+maxTime		1.2
+
+particleSize	0.06
+particleSizeWidth 0.05
+nParticle	400
+
+stiffness	5e+02
+damping		5e+0
+friction	2.0e-1
+cohesion	0.0
+
+output		out
+method		deposition
+boundary	solid
+eta		1.4
+zeta		1.4
+relaxation	0

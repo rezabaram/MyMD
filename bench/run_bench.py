@@ -41,6 +41,8 @@ RUNS = [
     ("B2", "2500 particles, dt=1e-4", 2750, 2500),
     ("B3", "250 particles, dt=1e-5", 27500, 250),
     ("B4", "2500 particles, dt=1e-5", 27500, 2500),
+    # the only case that reaches a settled packing -- see bench/configs/B5
+    ("B5", "400 particles, settled", 12000, 400),
 ]
 
 

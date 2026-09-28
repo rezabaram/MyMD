@@ -67,8 +67,9 @@ TRY
 	//if(g1*g2<0)g*=-1;
 
 	CRay<HomVec> ray(mp, mp+g);
-	CQuadratic q1(intersect(ray, E1));
-	CQuadratic q2(intersect(ray, E2));
+	static CQuadratic q1, q2;
+	intersect(ray, E1, q1);
+	intersect(ray, E2, q2);
 
 	ERROR(fabs(q1.root(0).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");
 	ERROR(fabs(q2.root(1).imag()) > epsilon, "the intersection of line with ellipsoid is complex.");

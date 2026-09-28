@@ -131,9 +131,37 @@ class CCellList
 		int i=(int)(floor(xp(0)/dx));
 		int j=(int)(floor(xp(1)/dy));
 		int k=(int)(floor(xp(2)/dz));
-		if(!periodic_x) ERROR(i<0 or i>=nx, "Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): "+stringify(i,2)+" " +stringify(j,2)+" "+stringify(k,2));
-		if(!periodic_y) ERROR(j<0 or j>=ny, "Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): "+stringify(i,2)+" " +stringify(j,2)+" "+stringify(k,2));
-		if(!periodic_z) ERROR(k<0 or k>=nz, "Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): "+stringify(i,2)+" " +stringify(j,2)+" "+stringify(k,2));
+		// A solid wall is a soft contact away from being rigid: the repulsive
+		// force only acts once the surfaces overlap, so a fast enough impact
+		// pushes the particle's *centre* through the wall and out of the
+		// grid.  That is a legitimate state, and aborting on it killed runs --
+		// and made any snapshot containing such a particle impossible to
+		// restart.  A particle within one cell of the boundary is clamped to
+		// the edge cell, which is where the neighbour search would look for it
+		// anyway.  Anything further out means the simulation has actually gone
+		// wrong, and still aborts.
+		#define MYMD_OUT_OF_GRID \
+			"Point out of grid: (x,y,z): "+stringify(x,5)+"   (i,j,k): " \
+			+stringify(i,2)+" "+stringify(j,2)+" "+stringify(k,2)
+		if(!periodic_x){
+			if(i<0 or i>=nx){
+				ERROR(i<-1 or i>nx, MYMD_OUT_OF_GRID);
+				i=(i<0)?0:nx-1;
+				}
+			}
+		if(!periodic_y){
+			if(j<0 or j>=ny){
+				ERROR(j<-1 or j>ny, MYMD_OUT_OF_GRID);
+				j=(j<0)?0:ny-1;
+				}
+			}
+		if(!periodic_z){
+			if(k<0 or k>=nz){
+				ERROR(k<-1 or k>nz, MYMD_OUT_OF_GRID);
+				k=(k<0)?0:nz-1;
+				}
+			}
+		#undef MYMD_OUT_OF_GRID
 		vec shift(0,0,0);
 		bool is_shifted=false;
 		CCell<TParticle> *cell=boundary_mask(i,j, k, shift, is_shifted);
