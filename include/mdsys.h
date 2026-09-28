@@ -167,8 +167,16 @@ TRY
 		for(it1=particles.begin(); it1!=particles.end(); ++it1){
 			(*it1)->set_material(particle_material);
 			}
-		
-		celllist.build(particles);
+		// NOTE: deliberately no celllist.build() here.  The grid is not sized
+		// until celllist.setup() below, so building now ran CCellList::clear()
+		// and which() against uninitialised nx/ny/nz and dx/dy/dz -- the first
+		// added particle reported "(i,j,k): 2147483647 2147483647 2147483647".
+		// The cell list is rebuilt from scratch in calForces() on every step
+		// anyway, so an empty one here is fine.
+		//
+		// Also note: this restores positions, orientations and shapes only.
+		// The snapshot format does not carry velocities, so a restarted run
+		// begins from rest.  See ROADMAP.md (Phase 4).
 		}
 	else if(simul_method=="Stillinger"){
 
