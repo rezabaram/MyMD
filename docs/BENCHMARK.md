@@ -173,6 +173,8 @@ moved.
 | + quartic root solve replaces the eigensolver | 48.99 s | 17.813 | -16% |
 | + allocation-free `findMin` | 25.00 s | 9.089 | **-49%** |
 | + `det4`, and parentheses in `gradient` | 22.33 s | 8.120 | -5.5% |
+| + drop the map-based contact cache | 22.93 s | 8.341 | **-25.7%** |
+| + collapse the wall-face quadratic form | 17.35 s | 6.309 | -7.4% |
 
 **The C++17 migration is performance-neutral** — B2 55.76 s before, 55.22 s
 after, both within the noise floor — which is what you would expect, since it
@@ -184,10 +186,15 @@ preceding sweep, before the last two steps, which were ~1% each):
 
 | run | before | after | delta | speedup |
 |---|---|---|---|---|
-| B1 | 5.43 s | 1.38 s | **-74.6%** | 3.9x |
-| B2 | 78.58 s | 21.10 s | **-73.1%** | 3.7x |
-| B3 | 58.52 s | 13.37 s | **-77.2%** | 4.4x |
+| B1 | 5.43 s | 1.22 s | **-77.5%** | 4.5x |
+| B2 | 78.58 s | 16.99 s | **-78.4%** | 4.6x |
+| B3 | 58.52 s | 11.90 s | **-79.7%** | 4.9x |
 | B4 | 782.82 s | 247.21 s | **-68.4%** | 3.2x |
+
+Reported deltas from here on come from interleaved A/B runs -- build both
+versions, run them alternately, take medians -- because a single run of this
+benchmark varies by more than the effect being measured.  This matters: an
+early baseline for B2 read 27.5 s purely because another process was running.
 
 The whole sweep now takes under five minutes rather than sixteen, which is why
 `--fast` (skip B4) matters less than it did.
@@ -273,6 +280,44 @@ What that showed:
     arithmetic that is ~2% of the runtime: not worth chasing.  The remaining
     large win is the matrix type itself, whose `operator()` bounds-checks and
     reference-count-checks every element access; see ROADMAP Phase 5.
+
+## Two algorithmic fixes, found by counting
+
+With the arithmetic helpers in place the obvious next question was where the
+remaining time went, and profiling kept blaming `matrix<double>::~matrix()` at
+~19%.  Two guesses about the source were wrong, so -- as before -- the useful
+move was to count rather than reason.  A `-DCOUNT_MATRIX_ALLOCS` build reported
+**16.7 million** matrix allocations in one B2 run, about 6090 per step, and a
+phase probe inside `calForces` located them:
+
+```
+ALLOCF walls=88   build=0  interact=2   (n=169)
+ALLOCF walls=140  build=0  interact=0   (n=338)
+ALLOCF walls=168  build=0  interact=0   (n=507)
+```
+
+Everything was in the wall contacts, and none of it in the pair loop.  The
+cause was `alpha = plane.n * inv() * plane.n` in `doesHit()` and
+`point_to_plane()`: `inv()` was written as a matrix expression, so each call
+built three temporaries -- fifteen heap allocations -- and every particle tests
+up to six faces every step.  The middle matrix is diagonal and `v * ~R` is the
+same as `R * v`, so the quadratic form collapses to a weighted sum and no
+matrix is built at all.  -7.4%.
+
+The other fix was not found by profiling at all but by reading the innermost
+loop.  `Test::interact` opened with
+
+    ShapeContact &overlaps = p1->vlist[p2];
+
+and `vlist` was a `std::map` keyed by pointer -- a red-black tree walk, with an
+insertion whenever a pair was seen for the first time, on every candidate pair,
+every step, and nothing ever read the entry back.  Replacing it with reusable
+scratch is -25.7%, the largest single win of the whole exercise after the
+original `findMin` rewrite.
+
+`findMin` was checked too, on the suspicion that it was iterating too long.  It
+is not: 2.4 million calls over one B2 run, averaging **14.8 iterations**, worst
+68, none unconverged.
 
 ## What did not work
 
