@@ -726,7 +726,9 @@ void CSys::interactions(){
 
 inline bool CSys::interact(CParticle *p1, BoxContainer *p2){
 TRY
-	ShapeContact &overlaps=p1->vlist[p2];
+	// see the note in interaction_force.h: this used to index CParticle::vlist
+	// by the walls pointer
+	static ShapeContact overlaps;
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, (GeomObjectBase*)p2);
 

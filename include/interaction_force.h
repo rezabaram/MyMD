@@ -8,6 +8,9 @@
 #ifndef INTERACTION_FORCE_H
 #define INTERACTION_FORCE_H 
 #include"particle.h"
+#include"interaction.h"
+#include"multicontact.h"
+#include"particlecontact.h"
 
 class Test{
 	public:
@@ -29,8 +32,14 @@ class Test{
 TRY
 	//CParticle *p1=particles.at(i);
 	//CParticle *p2=particles.at(j);
-	ShapeContact &overlaps=p1->vlist[p2];
-	//ShapeContact overlaps;
+	// Reusable scratch, not CParticle::vlist[p2].
+	//
+	// vlist was a std::map<particle*, ParticleContactHolder> indexed here, on
+	// every candidate pair, every step -- an O(log n) tree walk with a node
+	// allocation whenever a pair was seen for the first time, and nothing ever
+	// read the entry back.  The map was pure overhead in the innermost loop,
+	// and it grew without bound.  See ROADMAP.md.
+	static ShapeContact overlaps;
 
 	overlaps.clear();
 	CInteraction::overlaps(&overlaps, p1->shape, p2->shape);

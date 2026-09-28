@@ -20,7 +20,6 @@
 #include"common.h"
 #include"dfreedom.h"
 #include"shapes.h"
-#include"verlet.h"
 #include"grid.h"
 #include"phys_object.h"
 #include"material.h"
@@ -40,7 +39,7 @@ class CParticle : public PhysObject
 	template<class T>
 	explicit CParticle(const T &_shape, bool _shadow=false)
 	:shape(new T(_shape)), id(-1),  
-	vlist(this),vlistold(this),
+
 	pos(shape->Xc),
 	is_shadow(_shadow),
 	cell(NULL),expired(false){
@@ -154,7 +153,7 @@ class CParticle : public PhysObject
 	//Quaternion q;//orientation
 	vec *forces;
 	vec *torques;
-	CVerletList<PhysObject> vlist, vlistold;
+
 	vector< CNode3D<CParticle> *> grid_nodes;
 
 	//to hold neighbours on the grid
