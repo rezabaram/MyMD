@@ -18,6 +18,21 @@ combination of axes.
    and settle into a packing               until the target density
 ```
 
+## Deposition
+
+Particles are released from rest at the top of the box and settle into a
+packing.  2500 spheroids, 24 seconds, rendered with `make live` and recorded
+from the browser:
+
+<video src="docs/media/deposition.mp4" width="720" controls loop muted playsinline>
+  <a href="docs/media/deposition.mp4">deposition.mp4</a> — 24 s, 2.6 MB, H.264 MP4
+</video>
+
+If the player does not appear, GitHub is not rendering the tag for a
+repository-relative file: [open the video](docs/media/deposition.mp4) directly,
+or drag the file into the README editor on github.com, which uploads it and
+inserts a link GitHub always plays inline.
+
 ---
 
 ## Quick start
