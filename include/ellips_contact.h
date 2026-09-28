@@ -131,7 +131,17 @@ TRY
 			}
 		}
 	
-	Matrix M=(-(!E1.ellip_mat)*E2.ellip_mat);
+	// M = -(E1^-1 . E2), the matrix pencil whose eigenvalues decide whether the
+	// two ellipsoids admit a separating axis.  Written with caller-owned
+	// scratch: `!E1.ellip_mat` takes its argument by value and then inverts in
+	// place, so it clones a 4x4 (five heap allocations) on every candidate
+	// pair, and both multiplies allocate as well.
+	static Matrix M(4,4), Minv(4,4);
+	invert_into(Minv, E1.ellip_mat);
+	matmul(M, Minv, E2.ellip_mat);
+	for(int i=0;i<4;++i)
+		for(int j=0;j<4;++j)
+			M(i,j)=-M(i,j);
 	//CQuartic q=characteristicPolynom(M);
 
 	vector<complex<double> > eigenvals;

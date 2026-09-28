@@ -687,6 +687,50 @@ inline void transpose_into(matrix<double>& out, const matrix<double>& a)
          out(i, j) = tmp[i][j];
 }
 
+// Gauss-Jordan inverse into caller storage.  matrixT::Inv() is not usable
+// directly on a matrix you want to keep: it inverts *this in place (hence
+// operator! taking its argument by value and cloning).  doOverlap only needs
+// the inverse of a matrix it must not destroy, so it uses this instead --
+// and it does not allocate.
+inline void invert_into(matrix<double>& out, const matrix<double>& a)
+{
+   const size_t n = a.RowNo();
+   assert(n == a.ColNo() && n <= 8);
+   double m[8][16];
+   for (size_t i = 0; i < n; ++i)
+   {
+      for (size_t j = 0; j < n; ++j)
+         m[i][j] = a(i, j);
+      for (size_t j = 0; j < n; ++j)
+         m[i][n + j] = (i == j) ? 1.0 : 0.0;
+   }
+   for (size_t k = 0; k < n; ++k)
+   {
+      size_t piv = k;
+      for (size_t i = k + 1; i < n; ++i)
+         if (fabs(m[i][k]) > fabs(m[piv][k])) piv = i;
+      if (piv != k)
+         for (size_t j = 0; j < 2 * n; ++j)
+         {
+            const double t = m[k][j]; m[k][j] = m[piv][j]; m[piv][j] = t;
+         }
+      const double d = m[k][k];
+      if (d == 0.0)
+         REPORT_ERROR("matrix inversion: singular matrix");
+      for (size_t j = 0; j < 2 * n; ++j) m[k][j] /= d;
+      for (size_t i = 0; i < n; ++i)
+      {
+         if (i == k) continue;
+         const double f = m[i][k];
+         if (f == 0.0) continue;
+         for (size_t j = 0; j < 2 * n; ++j) m[i][j] -= f * m[k][j];
+      }
+   }
+   for (size_t i = 0; i < n; ++i)
+      for (size_t j = 0; j < n; ++j)
+         out(i, j) = m[i][n + j];
+}
+
 // binary scalar division operator
 MAT_TEMPLATE inline matrixT
 operator / (const matrixT& m, const T& no) _NO_THROW
