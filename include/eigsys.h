@@ -10,7 +10,7 @@
 #include"exception.h"
 #include"matrix.h"
 #include"polynom.h"
-#include"eigen.h"
+#include "gsl_eigen.h"
 
 class CEigSys{
 	public:

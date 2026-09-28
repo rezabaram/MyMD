@@ -175,7 +175,9 @@ ostream &operator <<(ostream &out, const CParticle &p){
 	return out;
 	}
 
-double friction=1;
+// (a global `double friction` used to sit here.  Nothing read it: the friction
+// coefficient that matters is CMaterial::friction, reached through
+// particle.material.)
 
 //using beeman method
 //

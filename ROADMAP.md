@@ -272,13 +272,15 @@ The goal is fewer concepts, and failures that are loud and early.
 - [ ] **Replace `include/matrix.h`** (see Phase 6) — it is 1153 lines of
       borrowed code with copy-on-write reference counting, used only for
       fixed-size 3×3 and 4×4 matrices.
-- [ ] **Rename `include/eigen.h`** — it is a GSL eigensolver wrapper, and
-      collides conceptually with the Eigen library.
-- [ ] **Kill the global mutable state**: globals `config`, `rgen`, `eng`,
-      `particle_material`, `G`, `friction`, and the `static` scratch buffers in
-      `Test::interact`, `CSys::interact`, `eigens`, `polynom` and `CParticle`.
-      None of it is thread-safe, some of it is shared across particles in ways
-      that are outright wrong.
+- [x] **Renamed `include/eigen.h` to `gsl_eigen.h`** — it is a GSL eigensolver
+      wrapper, and the old name collided with the Eigen library.
+- [~] **Kill the global mutable state.**  Three dead globals are gone (`gout`,
+      a global `friction`, and a global `vec G` that was shadowed by `CSys::G`
+      and therefore invisible as well as unused), and the `static` scratch
+      buffers in `polynom.h` and `CParticle` are now locals.  Still global and
+      still needed: `config`, `rgen`, `eng`, `eng0`, `particle_material`, and
+      the scratch in `Test::interact` / `CSys::interact` / `eigens`.  Those
+      need the config and RNG threaded through `CSys` rather than reached for.
 - [ ] **Configuration**: a typed schema with validation and a `--print-config`
       that echoes the effective parameters into the run directory, so a result
       can be traced to the exact inputs that produced it.

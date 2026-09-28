@@ -42,13 +42,9 @@ typedef matrix<double> Matrix;
 #define FROMTIME double CLOCKSTART=clock(); cerr<<"Time in function "<<__FUNCTION__<<": ";
 #define TOTIME cerr<<(clock()-CLOCKSTART)/CLOCKS_PER_SEC<<endl;
 
-ofstream *gout=NULL;
-
-
-//typedef vec3d<double> vec;
-
-double aG[]={0.0, 0, -2.0};
-vec G(aG);
+// (an `ofstream *gout` and a global `vec G` used to sit here; neither was ever
+// read anywhere.  CSys has its own G, which shadowed the global inside the
+// solver, so the global was invisible as well as unused.)
 
 template<class T>
 const T& mymax(const T &a, const T &b){

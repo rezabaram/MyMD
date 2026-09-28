@@ -92,6 +92,13 @@ point; the entries below cover the port and modernisation work.
 
 ### Removed
 
+- Three dead globals: `gout` (an `ofstream*` nothing ever wrote through), a
+  global `double friction` (nothing read it — the coefficient that matters is
+  `CMaterial::friction`), and a global `vec G` that `CSys::G` shadowed inside
+  the solver, making it invisible as well as unused.
+- `include/eigen.h` renamed to `include/gsl_eigen.h`.  It is a wrapper around
+  GSL's eigensolver, and the old name collided with the Eigen library.
+
 - The raster3d and POV-Ray pipeline (`bin/coord2pov`, `bin/coord2pr3d`,
   `bin/genFrames.sh`, `bin/encodejpg.sh` and the `animate`/`movie`/`pov`
   Makefile targets), superseded by the tooling in `docs/VISUALIZATION.md`.
