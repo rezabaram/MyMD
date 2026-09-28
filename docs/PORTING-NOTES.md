@@ -1,5 +1,16 @@
 # macOS build notes
 
+> **Historical document.**  These are the notes from porting the original
+> research code to macOS in 2026, and they describe the state *at that time*:
+> `-std=gnu++98`, `CC=g++-14`, no CMake, and GSL required for contact detection.
+> All of that has since changed -- the code is C++17, builds with GCC or clang
+> under both a Makefile and CMake, and the contact test is a quartic root solve
+> that does not use GSL at all.  Kept because the *why* behind each porting
+> decision is still the useful part, and because some of them (the `push_back`
+> in a dependent base, the `size_dist.h` fall-off-the-end bugs) are the kind of
+> thing worth recognising again.  See `CHANGELOG.md` for the current state.
+
+
 Status: **builds and runs** on macOS 14 (arm64) with Homebrew GCC 14.
 
 For replacing the old POV-Ray / raster3d visualisation pipeline, see

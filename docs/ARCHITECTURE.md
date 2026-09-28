@@ -126,7 +126,7 @@ solve (see [`PHYSICS.md`](PHYSICS.md)), which took GSL off the hot path.  What
 dominates now is that `matrix<double>::operator()` bounds-checks and
 reference-count-checks *every element access*, and there are sixteen of them per
 4×4 multiply.  Replacing the type with a fixed-size stack array is the largest
-remaining optimisation and is deliberately left as future work --.  See
+remaining optimisation and is deliberately left as future work.  See
 [`BENCHMARK.md`](BENCHMARK.md) for the log and `ROADMAP.md` Phase 5.
 
 `CEllipsoid` holds six `matrix<double>` members and rebuilds three of them from
