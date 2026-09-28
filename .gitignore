@@ -3,3 +3,32 @@
 *.swp
 *.dat
 *.eps
+.deps/
+ellipmd
+log
+log_energy
+
+# generated visualisation pages (see VISUALIZATION.md, BENCHMARK.md)
+trajectory.html
+orientation_sample.html
+viz/
+bench/runs/
+
+__pycache__/
+*.pyc
+
+# binaries produced by 'make tools' (see tools/Makefile)
+/tools/coord_convert
+/tools/coord2xdr
+/tools/correlation
+/tools/compact
+/tools/periodic2full
+/tools/packing_density
+/tools/fabric
+/bin/coord_convert
+/bin/coord2xdr
+/bin/correlation
+/bin/compact
+/bin/periodic2full
+/bin/packing_density
+/bin/fabric
