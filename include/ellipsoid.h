@@ -106,6 +106,9 @@ class CEllipsoid: public GeomObjectBase
 		
 	CEllipsoid():GeomObjectBase(vec(0,0,0),tellipsoid, Quaternion(1,0,0,0)), a(1), b(1), c(1){
 		identifier=14;
+		// Without this the matrices are 0x0 until parse() or setup() runs, so
+		// inv() on a default-constructed ellipsoid was out of range.
+		setup();
 		}
 
 	CEllipsoid(const vec &v,double _a, double _b, double _c, const Quaternion &_q=Quaternion(1,0,0,0)):GeomObjectBase(v,tellipsoid, _q), a(_a), b(_b), c(_c)
@@ -222,7 +225,7 @@ class CEllipsoid: public GeomObjectBase
 		}
 
 	Matrix inv()const{
-		return (~rotat_mat*inv_scale_mat*rotat_mat); 
+		return (~rotat_mat*inv_scale_mat*rotat_mat);
 		}
 
 	void update_tranlation_mat() {
@@ -243,6 +246,7 @@ class CEllipsoid: public GeomObjectBase
 		transpose_into(transposed, tempmat);        // ~(R*T)
 		matmul(scaled, transposed, scale_mat);      // ~(R*T)*S
 		matmul(ellip_mat, scaled, tempmat);         // ~(R*T)*S*(R*T)
+
 		//P=HomVec(0.1,0.1,0.1,1);
 		//P=(!(rotat_mat*trans_mat))*P0;
 	CATCH
@@ -458,6 +462,7 @@ class CEllipsoid: public GeomObjectBase
 	vec    inv_scale_vec;
 
 	Matrix ellip_mat;
+	Matrix inv_rot_scale_mat;   ///< cached result of inv(), see update_tranlation_mat
 	Matrix inert_mat;
 
 	double a,b,c;

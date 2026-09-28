@@ -170,20 +170,26 @@ moved.
 | + allocation-free pose matrices | 54.37 s | 19.771 | -31% |
 | + allocation-free matrix inverse | 52.06 s | 18.929 | -34% |
 | + GSL workspace reuse | ~52 s | ~18.9 | no measurable change |
+| + quartic root solve replaces the eigensolver | 48.99 s | 17.813 | -16% |
+| + allocation-free `findMin` | 25.00 s | 9.089 | **-49%** |
 
 **The C++17 migration is performance-neutral** — B2 55.76 s before, 55.22 s
 after, both within the noise floor — which is what you would expect, since it
 changed an RNG engine and an exception specification rather than anything on
 the hot path.
 
-Full re-baseline after the optimisation work (`bench/results.json`):
+Final baseline (`bench/results.json`; B1-B3 are medians of two runs, B4 is from
+the last full sweep before the final two steps, which were ~1% each):
 
-| run | before | after | delta |
-|---|---|---|---|
-| B1 | 5.43 s | 3.69 s | **-32.0%** |
-| B2 | 78.58 s | 55.76 s | **-29.0%** |
-| B3 | 58.52 s | 37.66 s | **-35.6%** |
-| B4 | 782.82 s | 557.27 s | **-28.8%** |
+| run | before | after | delta | speedup |
+|---|---|---|---|---|
+| B1 | 5.43 s | 1.51 s | **-72.2%** | 3.6x |
+| B2 | 78.58 s | 22.33 s | **-71.6%** | 3.5x |
+| B3 | 58.52 s | 14.50 s | **-75.2%** | 4.0x |
+| B4 | 782.82 s | 242.82 s | **-69.0%** | 3.2x |
+
+The whole sweep now takes under five minutes rather than sixteen, which is why
+`--fast` (skip B4) matters less than it did.
 
 ## What worked
 
@@ -212,6 +218,26 @@ caller skips the contact block entirely in that case, so every write was dead.
 That is the *common* path, because the bounding-sphere test that gates the call
 is deliberately loose.
 
+## The last two steps
+
+With the eigensolver gone the profile went from 29% GSL to **78%
+`matrix<double>`**, almost all of it the destructor and `clone()` -- which meant
+expression temporaries, not arithmetic.  `findMin`'s fixed-point iteration was
+where they were:
+
+```cpp
+xp = (!(Em2 + lambda*Em1)) * (Em2*Xc2 + lambda*Em1*Xc1);
+```
+
+Five matrix objects per iteration -- two scalar products, an add, and
+`operator!`, which takes its argument by value and then clones it so it can
+invert in place -- each five heap allocations, up to 500 iterations, twice per
+contact.  Rewritten with `mat_add`/`mat_scale`/`invert_into` and caller-owned
+scratch, the loop now allocates nothing.  That one change halved the runtime.
+
+`CQuartic::solve()` also built a `CCubic` per call, allocating two vectors; it
+now reuses one.
+
 ## What did not work
 
 **`-march=native`.**  67.34 s with, 67.35 s without.  No effect on this
@@ -235,6 +261,19 @@ the kind of plausible optimisation that costs readability for nothing.
 
 **Reusing the GSL eigensolver workspace.**  Strictly fewer allocations, no
 measurable effect.  Kept, but not claimed as a win.
+
+**Caching `CEllipsoid::inv()`.**  `point_to_plane()` calls it once per wall face
+per particle per step and it built three matrix temporaries each time, so
+computing it once per pose update looked obviously right.  It is not: the wall
+test rejects a face by distance before ever asking for the inverse, so the cache
+cost three matrix multiplies per particle per step to save a handful of
+allocations a step.  Median of three B2 runs:
+
+    cached      23.23 s   (22.70, 23.23, 23.32)
+    not cached  22.84 s   (22.54, 22.84, 22.87)
+
+Reverted.  A 1.7% difference, but in the wrong direction, and the samples are
+tight enough to believe it.
 
 ## Where the time is now
 

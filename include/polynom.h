@@ -342,7 +342,12 @@ bool CQuartic::solve(){//returning the number of real roots;
 		}
 
 	// Y3 + (f/2)*Y2 + ((f2 -4*h)/16)*Y -g2/64 = 0
-	CCubic cube(1,(f/2),(f*f -4*h)/16, -g*g/64);
+	// Reused rather than constructed here: a CCubic allocates two vectors, and
+	// this runs once per candidate contact pair.
+	static CCubic cube(1,0,0,0);
+	static vector<double> cubecoefs(4);
+	cubecoefs[0]=1; cubecoefs[1]=(f/2); cubecoefs[2]=(f*f -4*h)/16; cubecoefs[3]=-g*g/64;
+	cube.set_coefs(cubecoefs);
 	
 	//choosing two non-zero roots
 	int i1=-1;

@@ -35,11 +35,12 @@ ROOT = os.path.dirname(HERE)
 ELF = os.path.join(ROOT, "ellipmd")
 SEED = "3"
 
+# name, label, steps, particles
 RUNS = [
-    ("B1", "250 particles, dt=1e-4", 2750),
-    ("B2", "2500 particles, dt=1e-4", 2750),
-    ("B3", "250 particles, dt=1e-5", 27500),
-    ("B4", "2500 particles, dt=1e-5", 27500),
+    ("B1", "250 particles, dt=1e-4", 2750, 250),
+    ("B2", "2500 particles, dt=1e-4", 2750, 2500),
+    ("B3", "250 particles, dt=1e-5", 27500, 250),
+    ("B4", "2500 particles, dt=1e-5", 27500, 2500),
 ]
 
 
@@ -113,12 +114,14 @@ def main(argv=None):
 
     selected = RUNS
     if args.fast:
-        longest = max(RUNS, key=lambda r: r[2])
+        # by estimated cost, not step count: B3 and B4 both run 27500 steps but
+        # B4 has ten times the particles and takes ten times as long
+        longest = max(RUNS, key=lambda r: r[2] * r[3])
         selected = [r for r in RUNS if r is not longest]
         print("--fast: skipping %s (%s, %d steps)" % (longest[0], longest[1],
                                                       longest[2]), flush=True)
 
-    for name, label, steps in selected:
+    for name, label, steps, _ in selected:
         if args.only and name not in args.only:
             continue
         cfg = os.path.join(HERE, "configs", name)
