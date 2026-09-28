@@ -1,3 +1,8 @@
+# A particle is fired at the x=0 wall at 400 m/s, fast enough to clear
+# the wall contact's range in about a dozen steps.  It must be removed
+# and the run must complete; before the fallback it died on
+# 'Point out of grid'.  See ROADMAP.md -- removing it is a fallback,
+# not the real fix.
 # perfectly elastic sphere dropped from z=0.8 onto the floor.
 # damping and friction are zero, so it must return to the same height.
 boxsize		1 1 1

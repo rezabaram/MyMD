@@ -273,19 +273,34 @@ changes a reference, which must be called out).
       sits in the middle of the box.  `which()` now tolerates a particle one
       cell outside a solid wall, which was masking the first symptom, but the
       displacement itself is unexplained.
-- [x] **A particle could escape through a solid wall entirely.**  Fixed.  The
-      wall contact has a finite range -- `CInteraction::overlaps(..., CPlane*)`
-      returns nothing once the centre is more than a radius past the plane, and
-      the plane test also rejects a centre beyond the plane -- so a particle
-      squeezed hard enough by its neighbours left and coasted away for ever
-      (one was found at `(-2.5, -1.9, -0.1)`), after which the run died on
-      "Point out of grid".  `forward()` now puts such a particle back inside
-      the wall, a quarter of a radius in, and drops its outward velocity so the
-      contact can act again.  The threshold is a full radius, so it never fires
-      on a real contact: penetrations are a per cent or so of the radius.
-      Covered by `bench/reference/wall_containment`, which fires a particle at
-      a wall at 400 m/s; with the rescue disabled it fails with "ellipmd exited
-      with 1", and it passes with it.
+- [~] **A particle could escape through a solid wall entirely.**  *Fallback in
+      place; the real fix is still open.*  A wall is a soft contact with a
+      finite range: `CInteraction::overlaps(..., CPlane*)` returns nothing once
+      the centre is more than a radius past the plane, and the plane test also
+      rejects a centre beyond the plane -- so a particle squeezed hard enough by
+      its neighbours leaves and coasts away for ever, and the run then dies on
+      "Point out of grid" (one was found at `(-2.5, -1.9, -0.1)`).
+
+      Two attempted fixes were tried and rejected before settling on the
+      fallback, and both are worth not repeating:
+
+        * *rescue it back inside* -- the correction has to move the particle
+          from wherever it got to, which can drop it inside a neighbour and
+          produce an overlap, and a torque, large enough to kill the run
+          (`Torques too large 1.15e+16`);
+        * *limit the penetration to half a radius* -- safe, but it quietly
+          turns the wall into something harder than the model says it is, and
+          the physics of every contact against it changes.
+
+      What happens now: a particle more than its radius past a solid face is
+      **deleted**, with a warning naming where it was and a running count.  The
+      rest of the packing is untouched and the run continues.
+
+      The real fix is to make the wall contact act on a particle that is past
+      the plane rather than only on one that is not, so there is no window to
+      escape through.  `wall_containment` is the regression test: three
+      particles that must survive, and one fired at 400 m/s that must not take
+      the run down with it.
 
 ## Phase 5 — Design and robustness
 

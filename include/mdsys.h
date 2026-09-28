@@ -390,8 +390,12 @@ double CSys::total_volume(){
 
 void CSys::remove(ParticleContainer &packing, ParticleContainer::iterator &it){
 TRY
-        delete (*it);
-       packing.erase(it);
+	delete (*it);
+	// list::erase returns the iterator that follows the erased one.  The
+	// comment here used to claim that "it" was updated as a side effect, which
+	// it was not -- erase took it by value -- so a caller that then did ++it
+	// was incrementing an invalidated iterator.
+	it=packing.erase(it);
 CATCH
         }
 
@@ -619,63 +623,73 @@ TRY
 	//bool allforwarded=false;
 	maxh=0;
 	
-	// Safety net against particles leaving through a solid wall.
+	// A particle that has left through a solid wall is deleted.
 	//
-	// A wall is a soft contact, and it has a finite range: the test below
-	// returns nothing once a particle's centre is more than its radius past
-	// the plane, so beyond that there is no force at all.  A particle squeezed
-	// hard enough by its neighbours therefore leaves and coasts away for ever
-	// -- one was found at (-2.5, -1.9, -0.1) in a settled packing.  The
-	// run then dies on "Point out of grid", and the state cannot be restarted.
+	// FALLBACK, not a fix.  A wall is a soft contact with a finite range: once
+	// a centre is more than a radius past the plane the contact test finds
+	// nothing, and the plane test rejects a centre beyond the plane, so a
+	// particle squeezed hard enough by its neighbours leaves and coasts away
+	// for ever -- one was found at (-2.5, -1.9, -0.1), and the run then died
+	// on "Point out of grid".
 	//
-	// This puts the centre back inside the wall, where the contact can act, and
-	// removes the outward velocity.  The threshold is the full
-	// radius, so it never fires on a normal contact: real penetrations are a
-	// per cent or so of the radius, while escaping means being past 100% of
-	// it.  If it fires often, the packing is being driven harder than the
-	// contact stiffness can hold, which is worth knowing.
+	// Holding it back was tried first and is worse: a rescue has to move the
+	// particle all the way from wherever it got to, which can drop it inside a
+	// neighbour and produce an overlap, and a torque, large enough to kill the
+	// run.  Clipping the penetration to half a radius avoided that but quietly
+	// turns the wall into something harder than the model says it is.
+	//
+	// Deleting it leaves the rest of the packing untouched and says so in the
+	// log, which is honest about what is happening while the real cause is
+	// still open.  See ROADMAP.md: the wall contact should be made to act on a
+	// particle that is past the plane rather than only on one that is not.
 	const bool per[3]={walls.btype=="periodic_x" or walls.btype=="periodic_xy"
 	                   or walls.btype=="periodic_xyz",
 	                   walls.btype=="periodic_xy" or walls.btype=="periodic_xyz",
 	                   walls.btype=="periodic_xyz"};
 
-	for(it=particles.begin(); it!=particles.end(); ++it){
-		if(!(*it)->frozen) 
+	for(it=particles.begin(); it!=particles.end(); ){
+		if(!(*it)->frozen)
 			(*it)->calPos(dt);
 
+		if((*it)->expired){
+			remove(particles, it);
+			continue;                     // remove() leaves it on the next one
+			}
+
+		bool escaped=false;
 		{
 		const double r=(*it)->shape->radius;
 		for(int a=0; a<3; ++a){
 			if(per[a])continue;
 			const double lo=walls.corner(a), hi=lo+walls.L(a);
 			const double p=(*it)->x(0)(a);
-			double target=p;
-			// Put it back *inside* the box.  Setting it down just outside
-			// would leave it stuck: the plane test also rejects a particle
-			// whose centre is beyond the plane, so no force would act and it
-			// would sit there for the rest of the run.  A quarter of a radius
-			// in gives a firm contact to push against.
-			if(p < lo-r)      target=lo+0.25*r;  // out through the low face
-			else if(p > hi+r) target=hi-0.25*r;  // out through the high face
-			if(target!=p){
-				vec d(0.0);
-				d(a)=target-p;
-				(*it)->shift(d);
-				double &v=(*it)->x(1)(a);
-				if((p<lo and v<0.0) or (p>hi and v>0.0))v=0.0;
-				static long rescued=0;
-				if(++rescued==1)
-					WARNING("a particle left the box through a solid wall and was "
-					        "put back; the contact stiffness may be too low for how "
-					        "hard this packing is being driven");
-				}
+			if(p<lo-r or p>hi+r){ escaped=true; break; }
 			}
 		}
+		if(escaped){
+			static long lost=0, reported=0;
+			++lost;
+			++reported;
+			if(reported<=5){
+				WARNING("a particle left the box through a solid wall at "
+				        <<(*it)->x(0)<<" and has been removed; "
+				        <<lost<<" lost so far.  The wall contact stops acting "
+				        "once a particle is more than its radius past the "
+				        "plane; this is a fallback for that -- see ROADMAP.md");
+				}
+			else if(reported==6){
+				WARNING("further particles leaving the box will be removed "
+				        "without a message each time");
+				}
+			remove(particles, it);
+			continue;
+			}
 
 		if((*it)->top()>maxh) {
 				maxh=(*it)->top();
 				top_v=(*it)->x(1);
 				}
+		++it;
 		//if(!it->frozen) it->x.gear_predict<4>(dt);
 		}
 
