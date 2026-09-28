@@ -23,8 +23,6 @@ extern CConfig config;
 #include<tr1/random>
 std::tr1::ranlux64_base_01 eng;
 
-//#define WITH_VERLET
-
 extern MTRand rgen;
 
 typedef CPacking<CParticle> ParticleContainer;
@@ -37,11 +35,6 @@ class CSys{
 	CSys(unsigned long maxnparticle=100000000):t(0), outDt(0.01) 
 	,maxr(0), maxh(0), maxv(0), G(vec(0.0))
 	,maxNParticle(maxnparticle)
-	#ifdef WITH_VERLET
-	verlet((&particles))
-	#else 
-	#endif
-
 	,epsFreeze(1.0e-12), outEnergy("log_energy")
 	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
 	,walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary"))
@@ -93,16 +86,9 @@ class CSys{
 
 	CPlane *sp;
 	double minr, maxr, maxh, maxv;
-	#ifdef WITH_VERLET
-	double verlet_factor;
-	#endif
-	//bool verlet_need_update;
 	vec G;
 	const unsigned maxNParticle;
 	double fluiddampping;
-	#ifdef WITH_VERLET
-	CVerletManager<CParticle> verlet;
-	#endif
 	double Energy, rEnergy, pEnergy, kEnergy;
  	private:
 	bool do_read_radii, softwalls, spherize_on;
@@ -300,12 +286,7 @@ TRY
 	else{
 		ERROR(1, "Unknown method: "+simul_method);
 		}
-	#ifdef WITH_VERLET
-	verlet.set_distance(particles.maxr*config.get_param<double>("verletfactor"));
-	verlet.update();
-	#else
 	celllist.setup(2.0*maxRadii);
-	#endif
 
 	 //add_particle_layer(1.02*maxRadii);
 
@@ -352,15 +333,8 @@ TRY
 	particles.back()->id=particles.TotalParticlesN;
 	 ++(particles.TotalParticlesN);
 
-	#ifdef WITH_VERLET
-	if(verlet.add_particle(p)){}
-	#else
 	celllist.add(p);
-	#endif
 
-	//setup_verlet(particles.back());
-	//assert(grid);
-	//grid->add(p);
 	return true;
 CATCH
 	}
@@ -370,9 +344,6 @@ TRY
 //FROMTIME
 	//FIXME make it dimensionless
 
-	#ifdef WITH_VERLET
-	CVerletList<CParticle>::iterator neigh;
-	#endif
 	//reset forces
 	vec cm=center_of_mass();
 	ParticleContainer::iterator it1, it2, ittemp;
@@ -382,39 +353,13 @@ TRY
 		}
 
 	//interactions
-	#ifdef WITH_VERLET
-	verlet.update();
-	#endif
 	for(it1=particles.begin(); it1!=particles.end(); ++it1){
-
-		#ifdef WITH_VERLET
-		ERROR(!(*it1)->vlist.set,"the verlet list was not constructed properly");
-
-		assert(*it1==(*it1)->vlist.self_p);
-		for(neigh=(*it1)->vlist.begin(); neigh!=(*it1)->vlist.end(); ++neigh){
-			if(Test::interact(*it1,(*neigh).first)){
-				//this to calculate contact duration
-				if(!neigh->second.in_contact){
-					neigh->second.in_contact=true;
-					neigh->second.col_time=t;
-					}
-				}
-			else{
-				if(neigh->second.in_contact){
-					neigh->second.in_contact=false;
-					//cerr<< (t-neigh->second.col_time)/dt <<endl;
-					}
-				}
-			}
-		#endif
 
 		//the walls
 		if(interact(*it1, &walls)){  }
 		}
-	#ifndef WITH_VERLET
 	celllist.build(particles);
 	celllist.interact();
-	#endif
 //TOTIME
 CATCH
 };

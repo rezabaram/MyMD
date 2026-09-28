@@ -15,6 +15,15 @@
 #include"packing.h"
 
 using namespace std;
+
+// Despite the name, and the file it lives in, this is NOT a Verlet list.  It is
+// the per-particle contact cache: CParticle::vlist maps a neighbour particle to
+// the contact data computed for that pair this step, which lets Test::interact
+// hand the overlap geometry back and forth.  The actual Verlet neighbour list
+// this file was written for (CVerletManager) was never compiled and has been
+// removed -- see ROADMAP.md.
+//
+// TODO(design): rename to ContactCache and move out of verlet.h.
 template<class particleT>
 //class CVerletList: public list<particleT*> 
 class CVerletList: public map<particleT*, ParticleContactHolder<particleT> > 
@@ -40,99 +49,4 @@ class CVerletList: public map<particleT*, ParticleContactHolder<particleT> >
  	private:
 	};
 
-template<class particleT>
-class CVerletManager{
-	public:
-	CVerletManager(CPacking<particleT> *p):need_update (true), packing(p){}
-
-	bool add_particle(particleT *p){
-		setup(p);
-		return true;
-		}
-	void setup(particleT *p);
-	void print(ostream &out);
-	void update();
-	void build();
-
-	void set_distance(double d){
-		distance=d;
-		min_distance=distance/5;
-		max_distance=distance*5;
-		}
-
-	double distance, min_distance, max_distance;
-	bool need_update;
-	private:
-	CPacking<particleT> *packing;
-	};
-
-template<class particleT>
-void CVerletManager<particleT>::print(ostream &out){
-	typename CPacking<particleT>::iterator it;
-	typename CVerletList<particleT >::iterator neigh;
-	for(it=packing->begin(); it!=packing->end(); ++it){
-		out<< (*it)->id <<": ";
-		for(neigh=(*it)->vlist.begin(); neigh!=(*it)->vlist.end(); ++neigh ){
-			out<< (*neigh).first->id <<" ";
-			}
-			out<< endl;
-		}
-	}
-//construct the verlet list of all particles
-template<class particleT>
-void CVerletManager<particleT>::update(){
-	distance*=0.99;
-	if(distance<min_distance)distance=min_distance;
-
-	typename CPacking<particleT>::iterator it;
-	for(it=packing->begin(); it!=packing->end(); ++it){
-		if(need_update==false and ((*it)->x(0)-(*it)->vlist.x).abs() > distance/2.0-epsilon) need_update=true;
-		}
-
-	if(!need_update) return;
-
-	for(it=packing->begin(); it!=packing->end(); it++){
-		(*it)->vlistold=(*it)->vlist;
-		(*it)->vlist.clear();
-		setup(*it);
-		}
-
-	distance*=1.5;
-	if(distance>max_distance)distance=max_distance;
-
-	need_update=false;
-	//cerr<< "Verlet updated at: "<<t <<"\t verlet distance: "<<verlet_distance<<endl;
-	}
-
-template<class particleT>
-void CVerletManager<particleT>::build(){
-TRY
-	typename CPacking<particleT>::iterator it;
-	for(it=packing->begin(); it!=packing->end(); it++){ //checking particles before in the list
-		setup(*it);
-		}
-CATCH
-	}
-
-//construct the verlet list of one particle 
-template<class particleT>
-void CVerletManager<particleT>::setup(particleT *p){
-TRY
-	typename CPacking<particleT>::iterator it;
-	typename CVerletList<particleT>::iterator v_it_old;
-	for(it=packing->begin(); (*it)!=p; it++){ //checking particles before in the list
-	//for(it=particles.begin(); it!=particles.end(); it++){ //checking particles before in the list
-		if(p->min_distance(*it) < distance){
-			v_it_old=p->vlistold.find(*it);
-			if(v_it_old!= p->vlistold.end())//this is to keep the information of the contact from the previous steps
-				p->vlist.insert(p->vlist.begin(), *v_it_old);
-				else
-				p->vlist.add((*it));
-				}
-		}
-		assert((*it)->id == p->id);
-	p->vlist.x=p->x(0);//save the position at which the list has been updated
-	p->vlist.set=true;
-CATCH
-	}
 #endif /* VERLET_H */
