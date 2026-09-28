@@ -159,24 +159,26 @@ picture from the README alone.
 
 ---
 
-## Phase 3 — Modernise the build and toolchain
+## Phase 3 — Modernise the build and toolchain  — **mostly DONE**
 
 - [ ] **CMake** alongside (or replacing) the hand-written Makefiles:
       `cmake -B build && cmake --build build`. This is what makes the project
       installable and IDE-friendly, and it makes the GSL/Eigen dependency
       explicit via `find_package`.
-- [ ] **C++17** (drop `-std=gnu++98`). This is unlocked by Phase 4's matrix
-      replacement: the only things pinning us to C++98 are the vendored
-      `matrix.h` exception specs and `<tr1/random>`.
-- [ ] Replace `<tr1/random>` with `<random>`; `ranlux64_base_01` →
+- [x] **C++17** (drop `-std=gnu++98`).  The blockers were the vendored
+      `matrix.h` exception specification and `<tr1/random>`; both are gone and
+      **clang now builds the code**, which is what unlocked the sanitizers.
+- [x] Replace `<tr1/random>` with `<random>`; `ranlux64_base_01` →
       `ranlux48_base` (note: changes the RNG stream, so it must be done with
       Phase 0 in place, and the reference outputs regenerated deliberately).
-- [ ] Compiler flags: `-O3 -march=native` for release, `-Wall -Wextra
+- [x] Compiler flags: `-O3 -march=native` for release, `-Wall -Wextra
       -Wpedantic` for development, and fix the 24 existing warnings
       (`-Wreorder`, `-Wunused*`, `-Wuninitialized`, `-Wdelete-non-virtual-dtor`).
-- [ ] AddressSanitizer / UBSan build target — cheap, and this code has
-      reference-counted matrices and static scratch buffers that are exactly
-      the kind of thing it catches.
+- [x] AddressSanitizer / UBSan build target (`make asan`, `make asan-check`).
+      It found a heap-buffer-overflow and an invalid downcast on its first run
+      -- see CHANGELOG.  Replacing the remaining `static` scratch buffers is
+      still Phase 5, and that is what stands between this and a thread-safe
+      build.
 - [ ] **CI** (GitHub Actions): build + `make check` on Linux and macOS. This is
       most of what "presentable" means in practice.
 
@@ -205,14 +207,16 @@ can silently mislead a result.
       `zeta0`/`zetaW`, then computes `zeta = eta0 * TruncGaussRand(1, etaW)`.
       The two shape parameters are therefore not independent and `zetaWidth`
       does nothing. Any published result using unequal `eta`/`zeta` is suspect.
-- [ ] **`CSizeDistribution` destructor is inverted** (`if(!p_dist) delete
-      p_dist;`) and there is no deep copy, so it leaks and cannot simply be
-      flipped. Fix properly with a virtual `clone()` and a real copy
-      constructor.
-- [ ] **`CBaseConfig::get_param<T>` does an unchecked `static_cast`.** Asking
-      for `int` where the parameter was registered as `unsigned int` is UB that
-      currently happens to work. Store a type tag and check it, or at least
-      `dynamic_cast` in a debug build.
+- [x] **`CBaseConfig::get_param<T>` did an unchecked `static_cast`.** Asking
+      for `int` where the parameter was registered as `unsigned int` was UB
+      that happened to work.  Now a checked `dynamic_cast`; UBSan flagged it.
+- [x] **`DisBetaDistribution` wrote one `double` past the end of its `bins`
+      array** on every construction, and leaked it.  Found by ASan.
+- [x] **`CSizeDistribution` ownership** -- inverted destructor, no deep copy,
+      and a base class with no virtual destructor.  Fixed as one problem.
+- [x] **`CUniformDist` was built from uninitialised members.**
+- [x] **`CSys::~CSys` used TRY/CATCH**, which rethrows; a destructor is
+      implicitly `noexcept`, so that would have called `std::terminate`.
 - [x] **First line of `log_energy` was uninitialised garbage** — energies are
       accumulated at the end of `forward()`, so on the first snapshot they had
       never been computed.  Added `CSys::computeEnergies()`.
