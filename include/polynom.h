@@ -111,7 +111,7 @@ class CPolynom{
 
 template<int order, typename T>
 inline T CPolynom<order, T>::operator() (T x)const{
-	static double xx, term, result;
+	static double xx, result;
 	result=0;
 	xx=1.0;
 	
@@ -124,7 +124,7 @@ inline T CPolynom<order, T>::operator() (T x)const{
 
 template<int order, typename T>
 inline complex<double> CPolynom<order, T>::operator()(complex<double> x)const{
-	static complex<double> xx, term, result;
+	static complex<double> xx, result;
 	result=0;
 	xx=1.0;
 	

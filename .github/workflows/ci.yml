@@ -1,0 +1,138 @@
+name: CI
+
+# Three ways the project can be built, all of which have to keep working:
+#   - CMake, which is what a new user is pointed at
+#   - the original hand-written Makefile, which is still what `make check`,
+#     `make bench` and `make asan` assume
+#   - a sanitizer build, because the last two bugs in this repository were
+#     found by AddressSanitizer and UBSan rather than by any test
+#
+# The physics regression harness (bench/check_physics.py) is the part that
+# matters: it compares against committed reference snapshots, so it also
+# catches the reference data going missing -- which happened once already, when
+# the repository's own '*out*' ignore rule swallowed it.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  cmake:
+    name: CMake (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libgsl-dev python3
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja gsl
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  makefile:
+    name: Makefile (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl-dev python3
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install gsl
+
+      # On Linux this exercises the system-GSL path; on macOS, Homebrew's.
+      - name: Build
+        run: make ellipmd
+
+      - name: Build the analysis tools
+        run: make tools
+
+      - name: Physics regression check
+        run: make check
+
+  sanitizers:
+    name: Sanitizers
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # clang, not GCC: Homebrew GCC ships no sanitizer runtime, which is also
+      # why the C++17 migration mattered -- clang could not build this code at
+      # all while it used <tr1/random> and dynamic exception specifications.
+      - name: Install dependencies
+        run: brew install cmake ninja gsl
+
+      - name: Configure
+        run: |
+          cmake -B build-asan -G Ninja \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DMYMD_SANITIZE=address,undefined
+
+      - name: Build
+        run: cmake --build build-asan
+
+      - name: Test under ASan and UBSan
+        run: ctest --test-dir build-asan --output-on-failure
+
+  warnings:
+    name: Warnings are errors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libgsl-dev
+
+      # Both compilers are checked because they disagree, and the difference
+      # has caught real bugs: clang found clone() not being const (so it did
+      # not override the base and cloning through a base pointer would have hit
+      # the stub) and two hidden-virtual-overload cases, none of which GCC
+      # mentioned.
+      #
+      # -Wno-unused-parameter is deliberate rather than an oversight: the shape
+      # hierarchy derives from GeomObjectBase, so every override has to carry
+      # the base signature even where a shape ignores part of it -- CPlane and
+      # CSphere do not rotate, for instance.  Naming the unused parameters is
+      # more readable than omitting them.
+      - name: Build with GCC, warnings as errors
+        run: |
+          cmake -B build-gcc -G Ninja \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror -Wno-unused-parameter"
+          cmake --build build-gcc
+
+      - name: Build with clang, warnings as errors
+        run: |
+          cmake -B build-clang -G Ninja \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror -Wno-unused-parameter"
+          cmake --build build-clang

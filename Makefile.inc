@@ -19,10 +19,25 @@ DIRS=tools
 # repository root, works both for 'make' here and 'make -C tools'
 ROOT:=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
+# GSL discovery, in order of preference:
+#   1. a copy built by 'make gsl' into .deps/gsl
+#   2. a Homebrew installation (Apple silicon, then Intel)
+#   3. whatever the compiler finds by default -- which is what a Linux
+#      distribution package (libgsl-dev, gsl-devel) relies on.
+# Note that case 3 passes no -I and no -L at all; the old fallback hard-coded
+# /opt/homebrew, which made the Makefile build fail anywhere but macOS.
 GSL_PREFIX?=$(ROOT)/.deps/gsl
 ifeq ($(wildcard $(GSL_PREFIX)/include/gsl),)
-  GSL_INC?=-I/opt/homebrew/include
-  GSL_LIB?=-L/opt/homebrew/lib
+  ifneq ($(wildcard /opt/homebrew/include/gsl),)
+    GSL_INC?=-I/opt/homebrew/include
+    GSL_LIB?=-L/opt/homebrew/lib
+  else ifneq ($(wildcard /usr/local/include/gsl),)
+    GSL_INC?=-I/usr/local/include
+    GSL_LIB?=-L/usr/local/lib
+  else
+    GSL_INC?=
+    GSL_LIB?=
+  endif
 else
   GSL_INC=-I$(GSL_PREFIX)/include
   GSL_LIB=-L$(GSL_PREFIX)/lib

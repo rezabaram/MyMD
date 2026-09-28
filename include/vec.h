@@ -18,7 +18,10 @@ typedef size_t indexType;
 #define check_index
 
 #ifdef check_index
-#define CHECK_INDEX(i, D) ERROR((i<0 or i>= D), "Index out of range");
+// The index type is size_t (see indexType in vec.h), so an `i < 0` test is
+// always false and GCC's -Wtype-limits flags it at every use.  Dropped; the
+// trailing semicolon went with it so the macro is no longer a statement.
+#define CHECK_INDEX(i, D) ERROR((i >= D), "Index out of range")
 #endif 
 
 using namespace std;

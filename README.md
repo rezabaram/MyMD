@@ -39,11 +39,24 @@ the compiled-in defaults, which are not a working configuration — always pass
 
 | | |
 |---|---|
-| compiler | **GCC 14** (Homebrew `g++-14` on macOS).  The code is C++98-era and uses `<tr1/random>` and dynamic exception specifications, which libc++/C++17 removed.  See [`docs/PORTING-NOTES.md`](docs/PORTING-NOTES.md). |
-| GSL | for the 4×4 eigensolver used in ellipsoid contact detection.  `make gsl` builds it into `.deps/`; `brew install gsl` works too and is picked up automatically. |
+| compiler | any C++17 compiler.  GCC and clang are both verified in CI — the code used to need GCC specifically, because of `<tr1/random>` and a dynamic exception specification, but that is gone. |
+| GSL | for the 4×4 eigensolver used in ellipsoid contact detection.  `make gsl` builds it into `.deps/`; `brew install gsl` or `libgsl-dev` works too and is picked up automatically. |
 | Python 3 | for the analysis, viewer and test tooling.  Standard library only, no numpy needed. |
+| CMake ≥ 3.16 | optional — only for the CMake build. |
 
-Nothing else: no CMake yet, no exotic dependencies, no raster3d or POV-Ray.
+Nothing else: no exotic dependencies, no raster3d or POV-Ray.
+
+### CMake
+
+```sh
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build --output-on-failure     # the physics regression check
+cmake -B build-asan -DMYMD_SANITIZE=address,undefined   # optional
+```
+
+The Makefile is still the primary path — `make check`, `make bench` and
+`make asan` assume it — but both are exercised in CI.
 
 ## Configuration
 

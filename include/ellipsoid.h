@@ -130,7 +130,11 @@ class CEllipsoid: public GeomObjectBase
 		P0=(rotat_mat*trans_mat)*point;
 		}
 
-	virtual GeomObjectBase *clone(){
+	// const, to override GeomObjectBase::clone() const.  Without it this was a
+	// separate function that merely hid the base's, so cloning through a
+	// GeomObjectBase* would have called the base stub -- which warns and
+	// returns NULL.  (Nothing calls clone() today, so it was latent.)
+	virtual GeomObjectBase *clone() const {
 		return new CEllipsoid(*this);
 		}
 
@@ -345,7 +349,7 @@ class CEllipsoid: public GeomObjectBase
 		}
 
 
-	virtual const void print_coord_sys(ostream &out){
+	virtual void print_coord_sys(ostream &out){
 		vec3d n1, n2, n3;
 		if(a>=b and b>=c){
 			n1=q.toWorld(vec3d(1,0,0));

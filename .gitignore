@@ -10,6 +10,12 @@ ellipmd-asan
 log
 log_energy
 
+# CMake build trees
+/build/
+/build-*/
+CMakeCache.txt
+CMakeFiles/
+
 # generated visualisation pages (see VISUALIZATION.md, BENCHMARK.md)
 trajectory.html
 orientation_sample.html

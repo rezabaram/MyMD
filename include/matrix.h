@@ -1199,8 +1199,9 @@ matrixT::IsLowerTriangular ()const _NO_THROW
 MAT_TEMPLATE void
 matrixT::swapRow(const size_t& row1, const size_t& row2) _THROW_MATRIX_ERROR
 {
-    if (row1 >= _m->Row || row2 >= _m->Row
-    or row1 < 0 || row2 < 0)
+    // row1/row2 are size_t, so the `or row1 < 0 || row2 < 0` that used to be
+    // here was always false.
+    if (row1 >= _m->Row || row2 >= _m->Row)
 	REPORT_ERROR("Indeces out of bound!");
 
     for (size_t j=0; j < _m->Col; j++){

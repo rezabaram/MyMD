@@ -240,12 +240,18 @@ def regenerate(case, workdir):
 
 
 def main(argv=None):
+    global ELF
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--case", action="append", default=None,
                     help="check only this case (repeatable)")
     ap.add_argument("--regenerate", action="store_true",
                     help="rewrite the expected outputs instead of checking")
+    ap.add_argument("--elf", default=ELF,
+                    help="path to the ellipmd binary (default: the repo root, "
+                         "which is where the Makefile puts it; CMake passes "
+                         "$<TARGET_FILE:ellipmd> here)")
     args = ap.parse_args(argv)
+    ELF = args.elf
 
     if not os.path.exists(ELF):
         print("error: %s not found -- run 'make ellipmd' first" % ELF,

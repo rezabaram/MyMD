@@ -25,6 +25,10 @@ class CConfig : public CBaseConfig{
                 }
 
 	void parse(string fname);
+	// CBaseConfig declares print(ostream&, out_type)const.  A differently
+	// shaped print() here would hide it rather than overload it, so
+	// config.print(cout) would not compile on a CConfig.  Re-expose it.
+	using CBaseConfig::print;
 	void print(string fname)const;
 
 	void parse(istream &inputFile) {
