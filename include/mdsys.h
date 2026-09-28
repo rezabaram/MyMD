@@ -53,6 +53,7 @@ class CSys{
 	void forward(double &dt);
 	void adapt(double &dt);
 	void calForces();
+	void computeEnergies();
 	void interactions();
 	inline bool interact(unsigned int i, unsigned int j)const; //force from p2 on p1
 	inline bool interact(CParticle *p1,CParticle *p2)const;
@@ -343,6 +344,16 @@ TRY
 CATCH
 	}
 
+void CSys::computeEnergies(){
+	rEnergy=0; pEnergy=0; kEnergy=0;
+	ParticleContainer::iterator it;
+	for(it=particles.begin(); it!=particles.end(); ++it){
+		rEnergy+=(*it)->rEnergy();
+		pEnergy+=(*it)->pEnergy(G);
+		kEnergy+=(*it)->kEnergy();
+		}
+	}
+
 void CSys::calForces(){
 TRY
 //FROMTIME
@@ -404,7 +415,34 @@ TRY
                }
        if(config.get_param<string>("method")=="deposition" and maxh< 1.+2*maxRadii ) 
                {
-               add_particle_layer(maxh+1.02*maxRadii);
+               // Only seed a layer whose particles will land inside the grid:
+               // CCellList::which() rejects a particle whose centre is out of
+               // bounds, and the old code called this unconditionally with a z
+               // that could exceed the lid once the pile reached the top.  That
+               // only went unnoticed because nParticle was usually exhausted
+               // first; ask for more particles than the box holds and the run
+               // died with "Point out of grid".  The jitter added inside
+               // add_particle_layer is accounted for here.
+               //
+               // The gate above uses a literal 1. as the box height, left over
+               // from a 1x1x1 box; it should be walls.L(2), but changing it
+               // alters how many particles get placed, so it is left for
+               // ROADMAP.md (Phase 4).
+               double z= maxh+1.02*maxRadii;
+               double jitter=config.get_param<double>("particleSize")/5.0;
+               if(z + jitter < walls.corner(2)+walls.L(2)) {
+                       add_particle_layer(z);
+                       }
+               else if(particles.size()<maxNParticle) {
+                       // warn once, not once per step, or a long run floods the log
+                       static bool warned=false;
+                       if(!warned){
+                               warned=true;
+                               WARNING("deposition: box is full, placed only "
+                                       <<particles.size()<<" of "<<maxNParticle
+                                       <<" particles requested");
+                               }
+                       }
                maxh=0;
                }
 
@@ -423,6 +461,11 @@ TRY
 			outstream<<out_name<<setw(5)<<setfill('0')<<outN;
 			output(outstream.str());
 			count=0;
+			// The energies are accumulated at the *end* of forward(), so on the
+			// very first snapshot they have never been computed and the old
+			// code wrote uninitialised doubles (~1e-314) as the t=0 line of
+			// log_energy.  Recompute them from the current state instead.
+			if(outN==0) computeEnergies();
 			outN++;
 			Energy=rEnergy+kEnergy+pEnergy;
 			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
@@ -515,7 +558,10 @@ void CSys::solve(){
 		t+=dt;
 		if(stop or (t>1 and kEnergy<1e-8) ){
 			output(out_name+"end");
-			cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 1e-8"<<endl;
+			if(stop)
+				cerr<<"Reached maxTime at t="<<t<<endl;
+			else
+				cerr<<"Relaxation criterion reached at time="<<t<<": KE= "<<kEnergy<< " < 1e-8"<<endl;
 			break;
 			}
 		//adapt(dt);
@@ -640,13 +686,11 @@ void CSys::add_particle_layer(double z){
 
 	double xtemp=0, ytemp=0;
 
-	static unsigned int nRadii=0;
 	for(int i=0;i<celllist.nx;i++){
 		for(int j=0;j<celllist.ny;j++){
 		if(particles.size()>=maxNParticle)break;
 		double a, b, c;
 		//spheroid(a, b, c, asphericity, asphericityWidth);
-		ERROR(nRadii>=radii.size(), "List of radii doesn't have enough entries");
 
 		int randn=rgen.rand(radii.size());
 		if(config.get_param<string> ("particleType") == "gen1") randn=1;
@@ -676,7 +720,15 @@ void CSys::add_particle_layer(double z){
 
 		x(0)=xtemp+size*rgen()/5;
 		x(1)=ytemp+size*rgen()/5; 
-		x(2)=z+size*rgen()/5; 
+		x(2)=z+size*rgen()/5;
+		// Safety net: the seeded centre must be inside the grid or
+		// CCellList::which() aborts the run.  See the gate in CSys::forward.
+		for(int k=0; k<3; ++k){
+			double lo=walls.corner(k)+1e-9;
+			double hi=walls.corner(k)+walls.L(k)-1e-9;
+			if(x(k)<lo)x(k)=lo;
+			if(x(k)>hi)x(k)=hi;
+			}
 		double alpha=rgen()*M_PI;
                 double beta=rgen()*M_PI;
                	double phi=rgen()*M_PI;
