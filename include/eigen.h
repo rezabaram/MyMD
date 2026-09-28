@@ -57,14 +57,16 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
 		}
 	//vector< complex >
 
+       // Workspace and outputs are allocated once and reused.  This is called
+       // for every candidate contact pair, and allocating and freeing them per
+       // call was three heap operations a pair.  The code is single-threaded
+       // and N is fixed, so function-local statics are safe here.
+       static gsl_vector_complex *eval = gsl_vector_complex_alloc (N);
+       static gsl_matrix_complex *evec = gsl_matrix_complex_alloc (N, N);
+       static gsl_eigen_nonsymmv_workspace * w = gsl_eigen_nonsymmv_alloc (N);
+
        gsl_matrix_view m = gsl_matrix_view_array (data, N, N);
-       gsl_vector_complex *eval = gsl_vector_complex_alloc (N);
-       gsl_matrix_complex *evec = gsl_matrix_complex_alloc (N, N);
-     
-       gsl_eigen_nonsymmv_workspace * w = gsl_eigen_nonsymmv_alloc (N);
        gsl_eigen_nonsymmv (&m.matrix, eval, evec, w);
-     
-       gsl_eigen_nonsymmv_free (w);
        //gsl_eigen_nonsymmv_sort (eval, evec, GSL_EIGEN_SORT_VAL_ASC);
 	
 ///     sorting the eigenvalues 
@@ -91,8 +93,6 @@ void eigens(Matrix &M, vector<complex<double> > &eigenvals, vector<HomVec > &eig
 			); 
            	}
      
-       gsl_vector_complex_free (eval);
-       gsl_matrix_complex_free (evec);
 	
      }
 //for 3x3 matrix
@@ -111,14 +111,16 @@ void eigens(const Matrix &M, vector<double> &eigenvals, vector<vec3d> &eigenvecs
 		}
 	//vector< complex >
 
+       // Workspace and outputs are allocated once and reused.  This is called
+       // for every candidate contact pair, and allocating and freeing them per
+       // call was three heap operations a pair.  The code is single-threaded
+       // and N is fixed, so function-local statics are safe here.
+       static gsl_vector_complex *eval = gsl_vector_complex_alloc (N);
+       static gsl_matrix_complex *evec = gsl_matrix_complex_alloc (N, N);
+       static gsl_eigen_nonsymmv_workspace * w = gsl_eigen_nonsymmv_alloc (N);
+
        gsl_matrix_view m = gsl_matrix_view_array (data, N, N);
-       gsl_vector_complex *eval = gsl_vector_complex_alloc (N);
-       gsl_matrix_complex *evec = gsl_matrix_complex_alloc (N, N);
-     
-       gsl_eigen_nonsymmv_workspace * w = gsl_eigen_nonsymmv_alloc (N);
        gsl_eigen_nonsymmv (&m.matrix, eval, evec, w);
-     
-       gsl_eigen_nonsymmv_free (w);
        //gsl_eigen_nonsymmv_sort (eval, evec, GSL_EIGEN_SORT_VAL_ASC);
 	
 ///     sorting the eigenvalues 
@@ -144,8 +146,6 @@ void eigens(const Matrix &M, vector<double> &eigenvals, vector<vec3d> &eigenvecs
 			); 
            	}
      
-       gsl_vector_complex_free (eval);
-       gsl_matrix_complex_free (evec);
 	
      }
 #endif /* EIGEN_H */

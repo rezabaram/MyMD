@@ -80,6 +80,11 @@ def main(argv=None):
                     help="run only this configuration (repeatable)")
     ap.add_argument("--workdir", default=os.path.join(HERE, "runs"),
                     help="where to put the per-run output directories")
+    ap.add_argument("--repeat", type=int, default=1, metavar="N",
+                    help="run each configuration N times and report the "
+                         "median.  A single run varies by up to ~20%% on a "
+                         "laptop, which is far more than most optimisations "
+                         "are worth, so use this before believing a delta.")
     args = ap.parse_args(argv)
 
     if not os.path.exists(ELF):
@@ -99,17 +104,27 @@ def main(argv=None):
         shutil.rmtree(d, ignore_errors=True)
         os.makedirs(d)
 
-        t0 = time.time()
-        with open(os.path.join(d, "stdout.log"), "w") as log:
-            rc = subprocess.call([ELF, SEED, cfg], cwd=d,
-                                 stdout=log, stderr=subprocess.STDOUT)
-        wall = time.time() - t0
+        repeat = max(1, args.repeat)
+        walls = []
+        rc = 1
+        for rep in range(repeat):
+            t0 = time.time()
+            with open(os.path.join(d, "stdout.log"), "w") as log:
+                rc = subprocess.call([ELF, SEED, cfg], cwd=d,
+                                     stdout=log, stderr=subprocess.STDOUT)
+            walls.append(time.time() - t0)
+            if rc != 0:
+                break
+        walls.sort()
+        wall = walls[len(walls) // 2]
 
         rec = {
             "name": name,
             "label": label,
             "steps": steps,
             "wall_s": round(wall, 2),
+            "wall_s_all": [round(w, 2) for w in walls],
+            "repeats": repeat,
             "cpu_s": internal_cpu(os.path.join(d, "stdout.log")),
             "ms_per_step": round(1000.0 * wall / steps, 3),
             "particles": particle_count(d),
@@ -119,10 +134,13 @@ def main(argv=None):
         with open(os.path.join(HERE, "results.json"), "w") as fh:
             json.dump(results, fh, indent=1)
 
+        spread = ""
+        if repeat > 1:
+            spread = "  (of %s)" % ", ".join("%.2f" % w for w in walls)
         print("%-3s %-26s steps=%-6d wall=%8.2f s  %7.3f ms/step  "
-              "cpu=%s  N=%d  rc=%d"
+              "cpu=%s  N=%d  rc=%d%s"
               % (name, label, steps, wall, rec["ms_per_step"],
-                 rec["cpu_s"], rec["particles"], rc), flush=True)
+                 rec["cpu_s"], rec["particles"], rc, spread), flush=True)
 
     print("total %.1f s" % (time.time() - t_start), flush=True)
     return 0
