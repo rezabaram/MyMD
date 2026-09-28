@@ -21,17 +21,21 @@ combination of axes.
 ## Deposition
 
 Particles are released from rest at the top of the box and settle into a
-packing.  2500 spheroids, 24 seconds, rendered with `make live` and recorded
-from the browser:
+packing.  This is `config_rain` driven from `make live`: 581 spheroids of
+radius 0.06 filling a 1&times;1&times;1.2 box over 14.5 s of simulated time.
 
-<video src="docs/media/deposition.mp4" width="720" controls loop muted playsinline>
-  <a href="docs/media/deposition.mp4">deposition.mp4</a> — 24 s, 2.6 MB, H.264 MP4
-</video>
+[![the settled packing, last frame](docs/media/deposition.png)](docs/media/deposition.mp4)
 
-If the player does not appear, GitHub is not rendering the tag for a
-repository-relative file: [open the video](docs/media/deposition.mp4) directly,
-or drag the file into the README editor on github.com, which uploads it and
-inserts a link GitHub always plays inline.
+That is the last frame, rendered with OVITO.  Clicking it plays the whole
+fill -- 728 frames, 24 s, 2.6 MB, H.264 MP4 -- or use the
+[direct link](docs/media/deposition.mp4) if the player below does not appear.
+
+Whether GitHub renders that `<video>` tag for a file inside the repository is
+not something this README can check for you, so it is spelled out rather than
+assumed.  If the player is missing, the link above still works, and dropping
+the file into GitHub's own README editor puts it inline.
+
+<video src="docs/media/deposition.mp4" width="720" controls loop muted playsinline></video>
 
 ---
 
