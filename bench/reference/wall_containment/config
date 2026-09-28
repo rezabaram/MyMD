@@ -1,0 +1,20 @@
+# perfectly elastic sphere dropped from z=0.8 onto the floor.
+# damping and friction are zero, so it must return to the same height.
+boxsize		1 1 1
+density		1
+Gravity		0   0   -10
+outDt		0.002
+timeStep	0.0001
+maxTime		0.5
+particleSize	0.1
+nParticle	1
+stiffness	1e+04
+damping		0
+friction	0
+fluiddampping	0
+output		out
+method		restart
+input		fired.snapshot
+boundary	solid
+eta		1
+zeta		1

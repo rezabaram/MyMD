@@ -619,9 +619,58 @@ TRY
 	//bool allforwarded=false;
 	maxh=0;
 	
+	// Safety net against particles leaving through a solid wall.
+	//
+	// A wall is a soft contact, and it has a finite range: the test below
+	// returns nothing once a particle's centre is more than its radius past
+	// the plane, so beyond that there is no force at all.  A particle squeezed
+	// hard enough by its neighbours therefore leaves and coasts away for ever
+	// -- one was found at (-2.5, -1.9, -0.1) in a settled packing.  The
+	// run then dies on "Point out of grid", and the state cannot be restarted.
+	//
+	// This puts the centre back inside the wall, where the contact can act, and
+	// removes the outward velocity.  The threshold is the full
+	// radius, so it never fires on a normal contact: real penetrations are a
+	// per cent or so of the radius, while escaping means being past 100% of
+	// it.  If it fires often, the packing is being driven harder than the
+	// contact stiffness can hold, which is worth knowing.
+	const bool per[3]={walls.btype=="periodic_x" or walls.btype=="periodic_xy"
+	                   or walls.btype=="periodic_xyz",
+	                   walls.btype=="periodic_xy" or walls.btype=="periodic_xyz",
+	                   walls.btype=="periodic_xyz"};
+
 	for(it=particles.begin(); it!=particles.end(); ++it){
 		if(!(*it)->frozen) 
 			(*it)->calPos(dt);
+
+		{
+		const double r=(*it)->shape->radius;
+		for(int a=0; a<3; ++a){
+			if(per[a])continue;
+			const double lo=walls.corner(a), hi=lo+walls.L(a);
+			const double p=(*it)->x(0)(a);
+			double target=p;
+			// Put it back *inside* the box.  Setting it down just outside
+			// would leave it stuck: the plane test also rejects a particle
+			// whose centre is beyond the plane, so no force would act and it
+			// would sit there for the rest of the run.  A quarter of a radius
+			// in gives a firm contact to push against.
+			if(p < lo-r)      target=lo+0.25*r;  // out through the low face
+			else if(p > hi+r) target=hi-0.25*r;  // out through the high face
+			if(target!=p){
+				vec d(0.0);
+				d(a)=target-p;
+				(*it)->shift(d);
+				double &v=(*it)->x(1)(a);
+				if((p<lo and v<0.0) or (p>hi and v>0.0))v=0.0;
+				static long rescued=0;
+				if(++rescued==1)
+					WARNING("a particle left the box through a solid wall and was "
+					        "put back; the contact stiffness may be too low for how "
+					        "hard this packing is being driven");
+				}
+			}
+		}
 
 		if((*it)->top()>maxh) {
 				maxh=(*it)->top();

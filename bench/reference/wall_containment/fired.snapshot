@@ -1,0 +1,8 @@
+6   0 0 0   1 0 0   1 1 0
+6   0 0 0   0 0 1   0 1 1
+6   1 1 1   1 1 2   1 2 2
+6   1 1 1   1 1 2   2 1 2
+6   1 1 1   2 1 1   2 2 1
+# a particle in the middle of the box, fired at the x=0 wall hard enough to
+# leave the contact range in about a dozen steps
+14   0.5 0.5 0.5   0.1 0.1 0.1   1 0 0 0   -400 0 0   0 0 0

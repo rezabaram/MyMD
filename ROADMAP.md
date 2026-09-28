@@ -273,13 +273,19 @@ changes a reference, which must be called out).
       sits in the middle of the box.  `which()` now tolerates a particle one
       cell outside a solid wall, which was masking the first symptom, but the
       displacement itself is unexplained.
-- [ ] **A particle can escape through a solid wall entirely.**  A settled dense
-      packing left one particle at x = -0.158, about seven radii outside, where
-      it stayed.  `CInteraction::overlaps(..., CPlane*)` returns early once
-      `|plane(Xc)| > radius`, so a centre that far out feels no wall force at
-      all.  This needs a real fix -- clamp the penetration, or make the wall
-      contact independent of the centre being near the plane -- not a wider
-      tolerance.
+- [x] **A particle could escape through a solid wall entirely.**  Fixed.  The
+      wall contact has a finite range -- `CInteraction::overlaps(..., CPlane*)`
+      returns nothing once the centre is more than a radius past the plane, and
+      the plane test also rejects a centre beyond the plane -- so a particle
+      squeezed hard enough by its neighbours left and coasted away for ever
+      (one was found at `(-2.5, -1.9, -0.1)`), after which the run died on
+      "Point out of grid".  `forward()` now puts such a particle back inside
+      the wall, a quarter of a radius in, and drops its outward velocity so the
+      contact can act again.  The threshold is a full radius, so it never fires
+      on a real contact: penetrations are a per cent or so of the radius.
+      Covered by `bench/reference/wall_containment`, which fires a particle at
+      a wall at 400 m/s; with the rescue disabled it fails with "ellipmd exited
+      with 1", and it passes with it.
 
 ## Phase 5 — Design and robustness
 
