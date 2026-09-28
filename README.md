@@ -264,13 +264,13 @@ appropriate citation.
 
 ## License
 
-There is no `LICENSE` file yet.  Every source file carries the author's notice:
+MIT -- see [`LICENSE`](LICENSE).
 
-> Do whatever you want with this code.  You can even replace my name with
-> yours.  But you may not change the copyright itself.
-
-Adding an explicit `LICENSE` file is on the roadmap; until then, treat the
-above as the terms.
+Copyright (c) 2012-2026 Reza Baram.  Use it, change it, ship it; keep the
+copyright notice.  The source files carry the author's own note as well,
+including "the author cannot guarantee the correctness nor the intended
+functionality", which is worth taking seriously for research code: this is
+published because it is useful, not because it is certified.
 
 ## Contact
 
