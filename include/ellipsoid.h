@@ -227,9 +227,18 @@ class CEllipsoid: public GeomObjectBase
 		trans_mat(1,3)=-Xc(1);
 		trans_mat(2,3)=-Xc(2);
 		trans_mat(3,3)=1;
-		static Matrix tempmat;
-		tempmat=rotat_mat*trans_mat;
-		ellip_mat=(~tempmat)*scale_mat*tempmat;
+		// Allocation-free: the obvious
+		//     tempmat = rotat_mat * trans_mat;
+		//     ellip_mat = (~tempmat) * scale_mat * tempmat;
+		// builds four matrixT temporaries, and each one is five heap
+		// allocations (a row-pointer array plus one array per row).  This runs
+		// once per particle per step and was the hottest line in the program.
+		// Same arithmetic, same accumulation order, caller-owned scratch.
+		static Matrix tempmat(4,4), transposed(4,4), scaled(4,4);
+		matmul(tempmat, rotat_mat, trans_mat);      // R*T
+		transpose_into(transposed, tempmat);        // ~(R*T)
+		matmul(scaled, transposed, scale_mat);      // ~(R*T)*S
+		matmul(ellip_mat, scaled, tempmat);         // ~(R*T)*S*(R*T)
 		//P=HomVec(0.1,0.1,0.1,1);
 		//P=(!(rotat_mat*trans_mat))*P0;
 	CATCH

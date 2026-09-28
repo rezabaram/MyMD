@@ -640,6 +640,53 @@ operator * (const matrixT& m1, const matrixT& m2) _THROW_MATRIX_ERROR
    return temp;
 }
 
+// ---------------------------------------------------------------------------
+// Allocation-free helpers for the hot path.
+//
+// Every operator above builds a temporary, and a matrixT owns a row-pointer
+// array plus one array per row -- five heap allocations for a 4x4.  The
+// ellipsoid contact code was spending about half its runtime in
+// matrixT's destructor, clone() and constructor as a result.  These do the
+// same arithmetic into caller-provided storage, accumulating in the same order
+// as operator*=, so the results are bit-identical and nothing is allocated.
+//
+// `out` may alias `a` or `b`: the product is formed in a local buffer first.
+// The buffers are sized for the 4x4 case this code actually uses.
+// ---------------------------------------------------------------------------
+
+inline void matmul(matrix<double>& out, const matrix<double>& a,
+                   const matrix<double>& b)
+{
+   assert(a.ColNo() == b.RowNo());
+   const size_t n = a.RowNo(), m = a.ColNo(), p = b.ColNo();
+   assert(n <= 8 && p <= 8);
+   double tmp[8][8];
+   for (size_t i = 0; i < n; ++i)
+      for (size_t j = 0; j < p; ++j)
+      {
+         double s = 0.0;
+         for (size_t k = 0; k < m; ++k)
+            s += a(i, k) * b(k, j);
+         tmp[i][j] = s;
+      }
+   for (size_t i = 0; i < n; ++i)
+      for (size_t j = 0; j < p; ++j)
+         out(i, j) = tmp[i][j];
+}
+
+inline void transpose_into(matrix<double>& out, const matrix<double>& a)
+{
+   const size_t n = a.RowNo(), m = a.ColNo();
+   assert(n <= 8 && m <= 8);
+   double tmp[8][8];
+   for (size_t i = 0; i < n; ++i)
+      for (size_t j = 0; j < m; ++j)
+         tmp[j][i] = a(i, j);
+   for (size_t i = 0; i < m; ++i)
+      for (size_t j = 0; j < n; ++j)
+         out(i, j) = tmp[i][j];
+}
+
 // binary scalar division operator
 MAT_TEMPLATE inline matrixT
 operator / (const matrixT& m, const T& no) _NO_THROW
