@@ -479,7 +479,8 @@ async function exportMp4ViaServer(opts, source) {
       if (opts.onProgress) opts.onProgress(i + 1, list.length);
     }
 
-    const resp = await fetch('/api/encode/finish?token=' + encodeURIComponent(token));
+    const resp = await fetch('/api/encode/finish?token=' + encodeURIComponent(token),
+                             { method: 'POST' });
     if (!resp.ok) {
       throw new Error('HTTP ' + resp.status + ' from /api/encode/finish: '
                       + (await resp.text()));
