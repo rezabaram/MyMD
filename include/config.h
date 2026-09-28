@@ -68,14 +68,12 @@ class CConfig : public CBaseConfig{
 	       add_param<double>("outEnd", 1000.00);
 	       add_param<double>("outDt", 0.02);
 	       add_param<string>("output", "out");
-	       add_param<string>("outDensity", "density");
 
 	       add_param<double>("stiffness", 5.0e+02); 
 	       add_param<double>("damping", 5); 
 	       add_param<double>("fluiddampping", 0.05); 
 	       add_param<double>("friction", 0.2); 
 	       add_param<double>("static_friction", 0); 
-	       add_param<double>("friction_threshold", 0); 
 	       add_param<double>("cohesion", 0); 
 	       add_param<double>("density", 1.0); 
 	       add_param<double>("particleSize", 1); 
@@ -88,7 +86,6 @@ class CConfig : public CBaseConfig{
 	       add_param<unsigned int>("nParticle", 5); 
 	       add_param<string>("particleType", "general"); 
 	       add_param<string>("method", "deposition"); 
-	       add_param<double>("e", 0.5); 
 	       add_param<double>("zeta", 1.0); 
 	       add_param<double>("zetaWidth", 0.0); 
 	       add_param<double>("eta", 1.0); 
@@ -99,7 +96,6 @@ class CConfig : public CBaseConfig{
 
 	       add_param<string>("boundary", "solid"); 
 
-	       add_param<bool>("read_radii", false); 
 	       add_param<bool>("softwalls", false); 
 	       add_param<bool>("spherize_on", false); 
 	       add_param<string>("input", "input.dat"); 

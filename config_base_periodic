@@ -10,4 +10,3 @@ damping		5e+0
 friction	2.0e-1
 output		out	
 boundary        periodic_xy
-initialization	generate	

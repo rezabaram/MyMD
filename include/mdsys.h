@@ -156,6 +156,25 @@ TRY
 	particle_material.cohesion=paramsDouble("cohesion");
 	particle_material.density=paramsDouble("density");
 
+	// These two are read into the material but no force law ever consults
+	// them: Test::contactForce uses only stiffness, damping and friction.
+	// Say so rather than letting a config silently ask for physics the solver
+	// does not have.  (They are kept rather than deleted because both are
+	// meaningful model extensions -- see ROADMAP.md.)
+	{
+		struct { const char *name; const char *what; } unimpl[] = {
+			{"cohesion",        "particle cohesion"},
+			{"static_friction", "static friction"},
+		};
+		for(size_t i=0; i<sizeof(unimpl)/sizeof(unimpl[0]); ++i){
+			double given=config.get_param<double>(unimpl[i].name);
+			double def=config.get_param<double>(unimpl[i].name, CParamBase::Default);
+			if(given!=def)
+				WARNING(unimpl[i].what<<" is not implemented: '"<<unimpl[i].name
+					<<"' is accepted but has no effect on the simulation");
+			}
+	}
+
 
 	size_dist=config.get_param<CSizeDistribution>("SizeDistribution");
 	
