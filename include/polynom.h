@@ -79,6 +79,15 @@ class CPolynom{
 		out<<coefs.back()<<"]\n";
 		}
 
+	/// Replace the coefficients so the object can be solved again.  solve()
+	/// short-circuits on the `solved` flag, and the roots vector is appended
+	/// to rather than replaced, so both have to be cleared here.
+	void set_coefs(const vector<T> &c){
+		coefs=c;
+		roots.clear();
+		solved=false;
+		}
+
 	void print_roots(ostream &out=std::cerr){
 		if(!solved and !solve()){
 			WARNING("No root; Polynomial has not been solved. ")

@@ -92,6 +92,20 @@ Quaternion randomQuaternion(){
 }
 
 //obtaining the polynomial | B + lambda A | = 0
+CQuartic characteristicPolynom(const Matrix &AB);
+
+// The same coefficients, written into caller storage, so the contact test can
+// reuse one CQuartic instead of constructing (and heap-allocating) one per
+// candidate pair.
+void characteristic_polynomial(const Matrix &AB, vector<double> &out){
+	out.resize(5);
+	out[0]=1;
+	out[1]=-AB.Tr();
+	out[2]=-(AB(0,1)*AB(1,0)) + AB(0,0)*AB(1,1) - AB(0,2)*AB(2,0) - AB(1,2)*AB(2,1) + AB(0,0)*AB(2,2) + AB(1,1)*AB(2,2) - AB(0,3)*AB(3,0) - AB(1,3)*AB(3,1) - AB(2,3)*AB(3,2) + AB(0,0)*AB(3,3) + AB(1,1)*AB(3,3) + AB(2,2)*AB(3,3);
+	out[3]=AB(0,2)*AB(1,1)*AB(2,0) - AB(0,1)*AB(1,2)*AB(2,0) - AB(0,2)*AB(1,0)*AB(2,1) + AB(0,0)*AB(1,2)*AB(2,1) + AB(0,1)*AB(1,0)*AB(2,2) - AB(0,0)*AB(1,1)*AB(2,2) + AB(0,3)*AB(1,1)*AB(3,0) - AB(0,1)*AB(1,3)*AB(3,0) + AB(0,3)*AB(2,2)*AB(3,0) - AB(0,2)*AB(2,3)*AB(3,0) - AB(0,3)*AB(1,0)*AB(3,1) + AB(0,0)*AB(1,3)*AB(3,1) + AB(1,3)*AB(2,2)*AB(3,1) - AB(1,2)*AB(2,3)*AB(3,1) - AB(0,3)*AB(2,0)*AB(3,2) - AB(1,3)*AB(2,1)*AB(3,2) + AB(0,0)*AB(2,3)*AB(3,2) + AB(1,1)*AB(2,3)*AB(3,2) + AB(0,1)*AB(1,0)*AB(3,3) - AB(0,0)*AB(1,1)*AB(3,3) + AB(0,2)*AB(2,0)*AB(3,3) + AB(1,2)*AB(2,1)*AB(3,3) - AB(0,0)*AB(2,2)*AB(3,3) - AB(1,1)*AB(2,2)*AB(3,3);
+	out[4]=AB.Det();
+	}
+
 CQuartic characteristicPolynom(const Matrix &AB){
 
     	return CQuartic(

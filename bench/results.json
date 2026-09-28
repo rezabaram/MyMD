@@ -3,14 +3,9 @@
   "name": "B1",
   "label": "250 particles, dt=1e-4",
   "steps": 2750,
-  "wall_s": 3.55,
-  "wall_s_all": [
-   3.53,
-   3.55
-  ],
-  "repeats": 2,
-  "cpu_s": 3.46321,
-  "ms_per_step": 1.289,
+  "wall_s": 5.43,
+  "cpu_s": 5.29755,
+  "ms_per_step": 1.975,
   "particles": 250,
   "rc": 0
  },
@@ -18,14 +13,9 @@
   "name": "B2",
   "label": "2500 particles, dt=1e-4",
   "steps": 2750,
-  "wall_s": 58.31,
-  "wall_s_all": [
-   56.23,
-   58.31
-  ],
-  "repeats": 2,
-  "cpu_s": 57.3209,
-  "ms_per_step": 21.202,
+  "wall_s": 78.58,
+  "cpu_s": 76.948,
+  "ms_per_step": 28.573,
   "particles": 2500,
   "rc": 0
  },
@@ -33,14 +23,9 @@
   "name": "B3",
   "label": "250 particles, dt=1e-5",
   "steps": 27500,
-  "wall_s": 36.18,
-  "wall_s_all": [
-   36.05,
-   36.18
-  ],
-  "repeats": 2,
-  "cpu_s": 34.7625,
-  "ms_per_step": 1.315,
+  "wall_s": 58.52,
+  "cpu_s": 54.8173,
+  "ms_per_step": 2.128,
   "particles": 250,
   "rc": 0
  },
@@ -48,13 +33,9 @@
   "name": "B4",
   "label": "2500 particles, dt=1e-5",
   "steps": 27500,
-  "wall_s": 557.27,
-  "wall_s_all": [
-   557.27
-  ],
-  "repeats": 1,
-  "cpu_s": 535.117,
-  "ms_per_step": 20.264,
+  "wall_s": 782.82,
+  "cpu_s": 744.297,
+  "ms_per_step": 28.466,
   "particles": 2500,
   "rc": 0
  }
