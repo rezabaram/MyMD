@@ -362,6 +362,39 @@ function spinCamera(dt) {
 }
 
 
+
+// Switching the backing store to the export resolution while leaving the CSS
+// size alone stretches the on-screen image -- the canvas keeps its displayed
+// size and its contents are rescaled, which changes the apparent aspect ratio
+// for the whole of the recording.  Fit the canvas into its container at the
+// export aspect instead, letterboxed, and put it back afterwards.
+function fitCanvasForExport(width, height) {
+  const canvas = renderer.domElement;
+  const prev = { w: canvas.style.width, h: canvas.style.height,
+                 pos: canvas.style.position, left: canvas.style.left,
+                 top: canvas.style.top };
+  const host = view.getBoundingClientRect();
+  if (host.width > 0 && host.height > 0) {
+    const scale = Math.min(host.width / width, host.height / height);
+    canvas.style.position = 'absolute';
+    canvas.style.width = Math.round(width * scale) + 'px';
+    canvas.style.height = Math.round(height * scale) + 'px';
+    canvas.style.left = Math.round((host.width - width * scale) / 2) + 'px';
+    canvas.style.top = Math.round((host.height - height * scale) / 2) + 'px';
+  }
+  return prev;
+}
+
+function unfitCanvasAfterExport(prev) {
+  const canvas = renderer.domElement;
+  canvas.style.width = prev.w;
+  canvas.style.height = prev.h;
+  canvas.style.position = prev.pos;
+  canvas.style.left = prev.left;
+  canvas.style.top = prev.top;
+  resizeRenderer();            // backing store back to the window, and CSS with it
+}
+
 // ------------------------------------------------------------ video export
 //
 // Records the 3D canvas to a video file.  Only the canvas is captured, so none
@@ -404,17 +437,30 @@ async function exportMp4ViaServer(opts, source) {
   const oldCellVisible = cell.visible;
   cell.visible = true;
   renderer.setSize(opts.width, opts.height, false);
+  const prevLayout = fitCanvasForExport(opts.width, opts.height);
   camera.aspect = opts.width / opts.height;
   camera.updateProjectionMatrix();
   exporting = true;
 
   let token = null;
   try {
-    const st = await (await fetch('/api/encode/start', {
+    const r0 = await fetch('/api/encode/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fps: opts.fps, crf: opts.crf }),
-    })).json();
+    });
+    if (!r0.ok) {
+      throw new Error('the server has no encoder (HTTP ' + r0.status + ' from '
+        + '/api/encode/start).  If "make live" was started before the video '
+        + 'export was added, restart it.');
+    }
+    let st;
+    try {
+      st = await r0.json();
+    } catch (e) {
+      throw new Error('the server did not return JSON from /api/encode/start '
+        + '(HTTP ' + r0.status + ')');
+    }
     token = st.token;
     if (!token) throw new Error(st.error || 'could not start the encoder');
 
@@ -426,12 +472,18 @@ async function exportMp4ViaServer(opts, source) {
       if (!blob) throw new Error('could not read the canvas');
       const r = await fetch('/api/encode/frame?token=' + encodeURIComponent(token),
                             { method: 'POST', body: blob });
-      if (!r.ok) throw new Error(await r.text());
+      if (!r.ok) {
+        throw new Error('HTTP ' + r.status + ' from /api/encode/frame: '
+                        + (await r.text()));
+      }
       if (opts.onProgress) opts.onProgress(i + 1, list.length);
     }
 
     const resp = await fetch('/api/encode/finish?token=' + encodeURIComponent(token));
-    if (!resp.ok) throw new Error(await resp.text());
+    if (!resp.ok) {
+      throw new Error('HTTP ' + resp.status + ' from /api/encode/finish: '
+                      + (await resp.text()));
+    }
     token = null;
     const video = await resp.blob();
     const url = URL.createObjectURL(video);
@@ -452,7 +504,7 @@ async function exportMp4ViaServer(opts, source) {
     return false;
   } finally {
     exporting = false;
-    renderer.setSize(size.x, size.y, false);
+    unfitCanvasAfterExport(prevLayout);
     camera.aspect = oldAspect;
     camera.updateProjectionMatrix();
     cell.visible = oldCellVisible;
@@ -510,6 +562,7 @@ async function exportVideo(opts, source) {
   const oldCellVisible = cell.visible;
   cell.visible = true;
   renderer.setSize(opts.width, opts.height, false);
+  const prevLayout = fitCanvasForExport(opts.width, opts.height);
   camera.aspect = opts.width / opts.height;
   camera.updateProjectionMatrix();
 
@@ -543,7 +596,7 @@ async function exportVideo(opts, source) {
     exporting = false;
     rec.stop();
     await stopped;
-    renderer.setSize(size.x, size.y, false);
+    unfitCanvasAfterExport(prevLayout);
     camera.aspect = oldAspect;
     camera.updateProjectionMatrix();
     cell.visible = oldCellVisible;

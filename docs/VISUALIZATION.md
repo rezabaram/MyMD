@@ -113,6 +113,10 @@ trajectory through once and downloads a video file.
 * **The camera turns one fixed step per frame** while recording.  The on-screen
   spin advances with wall-clock time, which would give a different angle per
   frame depending on how long each frame took to render.
+* **The on-screen image keeps its shape.**  Recording switches the canvas to the
+  export resolution, so the canvas is letterboxed into the view area at that
+  aspect rather than being stretched to the window's -- otherwise the picture
+  visibly changes proportions for the whole recording.
 
 #### For GitHub: use `make live`
 
