@@ -120,6 +120,12 @@ class CConfig : public CBaseConfig{
 
 	       add_param<string>("boundary", "solid"); 
 
+	       // The original relaxation protocol: after t>2, gravity is weakened by
+	       // 10% and the time step lengthened by 8% once per output until
+	       // gravity reaches 1.  Kept as the default so existing configurations
+	       // behave as they always did; turn it off for a plain constant-gravity
+	       // run, which is what the rain animation uses.
+	       add_param<bool>("relaxation", true); 
 	       add_param<bool>("softwalls", false); 
 	       add_param<bool>("spherize_on", false); 
 	       add_param<string>("input", "input.dat"); 

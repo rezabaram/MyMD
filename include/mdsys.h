@@ -44,7 +44,8 @@ class CSys{
 	,maxNParticle(maxnparticle)
 	,epsFreeze(1.0e-12)
 	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
-	,rainAccum(0), rainBlockedTime(0), rainFullWarned(false)
+	,rainAccum(0), rainBlockedTime(0)
+	,relaxation(true), rainFullWarned(false)
 	,outEnergy("log_energy")
 	{
 	TRY
@@ -115,6 +116,8 @@ class CSys{
 	/// how long the release has been blocked, to tell "nothing fits any more"
 	/// from "something happens to be falling past the release height"
 	double rainBlockedTime;
+	/// the original gravity/dt relaxation ramp; off in config_rain
+	bool relaxation;
 	bool rainFullWarned;
 
 	ofstream outEnergy;
@@ -165,6 +168,7 @@ TRY
 	softwalls=config.get_param<bool>("softwalls");
 	spherize_on=config.get_param<bool>("spherize_on");
 	scaling=config.get_param<double>("scaling");
+	relaxation=config.get_param<bool>("relaxation");
 
 	double dr=config.get_param<double>("particleSizeWidth");
 	DisBetaDistribution ibeta_dist(3,3,dr);
@@ -556,20 +560,30 @@ TRY
                }
 
 
-	static int count=0, outN=0,outPutN=outDt/DT;
+	// Frame generation runs on a fixed number of *steps*, not on a span of
+	// simulated time.  outEvery is outDt/DT, computed once from the nominal
+	// time step, so the rate at which frames are written does not change when
+	// dt changes -- which it does if the relaxation ramp below is left on.
+	// That is what "the image rate is independent of the physical time axis"
+	// means here: how often a picture is taken is a property of the run, not of
+	// how far the clock has moved.
+	//
+	// The consequence is worth stating: if dt does change during a run, frames
+	// are no longer evenly spaced in simulated time.  Set 'relaxation 0' and dt
+	// stays put, and the two are the same thing.
+	static long stepCount=0, outN=0;
+	static const long outEvery=(long)(outDt/DT);
 	static ofstream out;
-
 
 	//this is for a messure of performance
 	static double starttime=clock();
-	if((10*count)%outPutN==0)
+	if(outEvery>0 and stepCount%(outEvery/10+1)==0)
 		cout<<(clock()-starttime)/CLOCKS_PER_SEC<< "   "<<t<<endl;
 
-	if(count%outPutN==0 and t>=outStart and t<=outEnd){
+	if(outEvery>0 and stepCount%outEvery==0 and t>=outStart and t<=outEnd){
 			stringstream outstream;
 			outstream<<out_name<<setw(5)<<setfill('0')<<outN;
 			output(outstream.str());
-			count=0;
 			// The energies are accumulated at the *end* of forward(), so on the
 			// very first snapshot they have never been computed and the old
 			// code wrote uninitialised doubles (~1e-314) as the t=0 line of
@@ -579,8 +593,12 @@ TRY
 			Energy=rEnergy+kEnergy+pEnergy;
 			outEnergy<<setprecision(14)<<t<<"  "<<Energy<<"  "<<kEnergy<<"  "<<pEnergy<<"  "<<rEnergy <<endl;
 			rEnergy=0; pEnergy=0; kEnergy=0; Energy=0;
-			//for relaxation
-			if(t>2 and G.abs()>1){
+			// The original relaxation protocol: once t>2, weaken gravity by
+			// 10% and lengthen the step by 8%, once per output, until gravity is
+			// down to 1.  It is a compression/relaxation device, and because it
+			// steps once per frame it makes the physics depend on outDt.  Set
+			// 'relaxation 0' for a run with constant gravity.
+			if(relaxation and t>2 and G.abs()>1){
 					G*=0.9;
 					dt*=1.08;	
 					cerr<<"t: "<<t<<" G: "<<G<<" dt: "<<dt<<endl;
@@ -617,6 +635,7 @@ TRY
 //	if(!allforwarded)foward(dt/2.0, 2);
 
 	Energy=0.0, rEnergy=0, pEnergy=0, kEnergy=0;
+	++stepCount;
 	double vtemp;
 	maxv=0;
 	for(it=particles.begin(); it!=particles.end(); ++it){
@@ -632,7 +651,6 @@ TRY
 		//cout<< it->x <<"  "<<it->size<< " cir"<<endl;
 		}
 	
-	count++;
 	if(out.is_open())out.close();
 CATCH
 	}
