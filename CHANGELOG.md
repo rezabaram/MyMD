@@ -116,6 +116,18 @@ point; the entries below cover the port and modernisation work.
 
 ### Added
 
+- **Snapshots carry velocities and a header.**  The `id 14` record gained six
+  fields (`vx vy vz wx wy wz`) and each file starts with
+  `# ellipmd <version>  t=<time>`.  Appended and prepended respectively, so a
+  reader that takes the first ten fields and skips non-`6`/`14` lines still
+  works on both old and new files.
+- **`method restart` now works.**  It restores the velocities, resumes the clock
+  from the header (it used to be handed the whole of `maxTime` again, so a
+  restart from `t=0.25` with `maxTime=0.3` ran six times too long) and primes the
+  accelerations.  Not bit-exact: Beeman needs `a_{n-1}`, which nothing stores.
+  Measured 8.3e-8 of divergence after one step, 3.9e-4 after 500 -- see
+  `docs/FORMAT.md`.
+
 - **A command line.**  `ellipmd --help`, `--version`, `-c/--config`,
   `-s/--seed`, `-D/--set KEY=VALUE` (repeatable), `-o/--output`,
   `--print-config`, `--save-config` and `--no-save-config`.  The original

@@ -243,8 +243,6 @@ can silently mislead a result.
 - [ ] **`README` documents the shape parameters wrongly.** It says
       `eta = a/b, xi = b/c`; the code computes `a/b = zeta` and `c/a = eta`.
       The config-file names do not mean what the README says.
-- [ ] **The snapshot format carries no velocities**, so `method restart` starts
-      from rest.  Needs a format change (extra columns) or a separate state file.
 - [x] `CParticle::addforce` overwrote `avgforces` with the *last* contact force
       rather than accumulating, and used a `static prev` shared across all
       particles.  `avgtorque` was never used at all.  Deleted.
@@ -292,10 +290,15 @@ The goal is fewer concepts, and failures that are loud and early.
       positional form still works, because `bin/run.sh` and the Makefile use it.
 - [x] **Provenance**: every run writes `config.used` — the effective
       parameters plus version, seed, source file and timestamp.
-- [ ] **Output**: configurable precision, and a self-describing header in each
-      snapshot so downstream tools do not have to re-derive the format.
-- [ ] **Restart that actually works** — currently `method restart` reloads
-      positions and orientations but not velocities.
+- [x] **Self-describing snapshots**: a header line with the version and the
+      simulated time, now that it is what a restart needs.
+- [ ] **Output**: the precision is still hard-coded at `setprecision(12)`; make
+      it configurable.
+- [x] **Restart that actually works.**  Snapshots now carry the velocities and
+      a header with the simulated time, so a restart resumes both the state and
+      the clock, and primes the accelerations.  It is not bit-exact -- Beeman
+      needs `a_{n-1}`, which nothing stores -- and `docs/FORMAT.md` has the
+      measurements: 8.3e-8 after one step, 3.9e-4 after 500.
 
 **Acceptance:** no globals in the physics path; a run is reproducible from
 `config` + seed alone; ASan/UBSan clean on a short run.

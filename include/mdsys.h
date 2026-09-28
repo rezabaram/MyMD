@@ -8,6 +8,7 @@
 #ifndef MDSYS_H
 #define MDSYS_H 
 #include "common.h"
+#include "version.h"
 #include"config.h"
 #include"celllist.h"
 #include"packing.h"
@@ -137,6 +138,24 @@ double TruncGaussRand(double r, double dr=0.0){
 	return x;
 	}
 
+// Reads the simulated time out of a snapshot header, for 'method restart'.
+// Returns 0 if there is no header, which is what snapshots written before the
+// header existed look like -- those restarts then run for maxTime as they
+// always did.
+static double snapshot_time(const string &path){
+	ifstream in(path.c_str());
+	string line;
+	while(getline(in,line)){
+		if(line.empty() || line[0]!='#') continue;
+		string::size_type p=line.find("t=");
+		if(p==string::npos) continue;
+		istringstream ss(line.substr(p+2));
+		double v;
+		if(ss>>v) return v;
+		}
+	return 0.0;
+	}
+
 CMaterial particle_material;
 void CSys::initialize(const CConfig &config){
 TRY
@@ -186,22 +205,45 @@ TRY
 	
 
 	if(simul_method=="restart"){
-		particles.parse(config.get_param<string>("input"));
+		const string restart_file=config.get_param<string>("input");
+		// Resume the clock as well as the state.  Without this a restarted run
+		// was given the whole of maxTime again rather than the remainder, which
+		// is why a restart from t=0.25 with maxTime=0.3 used to run six times
+		// too long.
+		t=snapshot_time(restart_file);
+		if(t>0)
+			cerr<<"Restarting from t="<<t<<endl;
+		particles.parse(restart_file);
 		maxRadii=particles.maxr;
 		ParticleContainer::iterator it1;
 		for(it1=particles.begin(); it1!=particles.end(); ++it1){
 			(*it1)->set_material(particle_material);
 			}
-		// NOTE: deliberately no celllist.build() here.  The grid is not sized
-		// until celllist.setup() below, so building now ran CCellList::clear()
-		// and which() against uninitialised nx/ny/nz and dx/dy/dz -- the first
-		// added particle reported "(i,j,k): 2147483647 2147483647 2147483647".
-		// The cell list is rebuilt from scratch in calForces() on every step
-		// anyway, so an empty one here is fine.
-		//
-		// Also note: this restores positions, orientations and shapes only.
-		// The snapshot format does not carry velocities, so a restarted run
-		// begins from rest.  See ROADMAP.md (Phase 4).
+		// Prime the accelerations.  Beeman advances the position from a_n and
+		// a_{n-1}, and while the snapshot now carries the velocities it does
+		// not carry the acceleration history.  Computing the forces once and
+		// using them for both gives a second-order first step instead of a
+		// zeroth-order one; without it a restart resumes the trajectory but
+		// with a visible one-step kick.
+		celllist.setup(2.0*maxRadii);
+		calForces();
+		for(it1=particles.begin(); it1!=particles.end(); ++it1){
+			(*it1)->x(2)=*(*it1)->forces/(*it1)->get_mass();
+			(*it1)->x0(2)=(*it1)->x(2);
+			// ...and the rotational one.  Priming only the translation left
+			// the first step with a zero angular acceleration, which is what
+			// the residual difference between a restarted run and a continuous
+			// one turned out to be.
+			(*it1)->calAngularAccel();
+			(*it1)->w0(2)=(*it1)->w(2);
+			}
+
+		// NOTE: deliberately no celllist.build() call anywhere here.  The grid
+		// is not sized until celllist.setup(), so building earlier ran
+		// CCellList::clear() and which() against uninitialised nx/ny/nz and
+		// dx/dy/dz -- the first added particle reported
+		// "(i,j,k): 2147483647 2147483647 2147483647".  calForces() rebuilds
+		// the list from scratch every step anyway.
 		}
 	else if(simul_method=="Stillinger"){
 
@@ -415,6 +457,10 @@ CATCH
 
 void CSys::output(ostream &out){
 TRY
+	// A header, so a snapshot says what wrote it and what time it is.  Readers
+	// that only know the 6 and 14 records skip it, and it is what lets a
+	// restarted run resume the clock instead of starting it at zero again.
+	out<<"# ellipmd "<<MYMD_VERSION<<"  t="<<setprecision(14)<<t<<endl;
 	walls.print(out);
 	ParticleContainer::iterator it;
 	for(it=particles.begin(); it!=particles.end(); ++it){

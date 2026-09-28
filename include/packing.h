@@ -254,7 +254,7 @@ void CPacking<T>::parse(istream &inputFile, bool periodic) {
 		CEllipsoid shape;
 		shape.parse(ss);
 		T *p=new T(shape);
-		//p->shape->parse(ss);
+		p->parse_state(ss);   // velocities, if this snapshot has them
 		this->push_back(p);
 		if(p->shape->radius>maxr)maxr=p->shape->radius;
 

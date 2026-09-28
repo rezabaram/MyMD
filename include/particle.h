@@ -122,8 +122,18 @@ class CParticle : public PhysObject
 	virtual void parse(std::istream &in){
 			shape->parse(in);
 			x(0)=shape->Xc;
+			parse_state(in);
 			//mass=material.density*4.0/3.0*M_PI*radius*radius*radius;
 			}
+
+	/// Read the velocity columns if the snapshot has them.  Snapshots written
+	/// before velocities were part of the format stop after the orientation, in
+	/// which case the particle keeps the zero velocities it was constructed
+	/// with and the run begins from rest, as it always used to.
+	void parse_state(std::istream &in){
+		vec v, omega;
+		if(in>>v>>omega){ x(1)=v; w(1)=omega; }
+		}
 
 	virtual void shift(const vec &v){
 		(*shape).shift(v);
@@ -131,6 +141,7 @@ class CParticle : public PhysObject
 		}
 	virtual void calPos(double dt);
 	virtual void calVel(double dt);
+	void calAngularAccel();
 	void get_grid_neighbours(set<CParticle *> &neigh)const;
 
 	void set_material(const CMaterial &m){material=m;}
@@ -171,7 +182,12 @@ void CParticle::get_grid_neighbours(set<CParticle *> &neigh)const{
 
 ostream &operator <<(ostream &out, const CParticle &p){
 	p.shape->print(out);
-	//out<<"  "<<p.x(1);
+	// Linear then angular velocity, appended after the shape fields.  The
+	// author left `//out<<"  "<<p.x(1);` here commented out; without it a
+	// snapshot is not a complete state and `method restart` had to begin from
+	// rest.  Appending rather than inserting keeps the first ten fields where
+	// they were, so a reader that only wants the geometry is unaffected.
+	out<<"  "<<p.x(1)<<"  "<<p.w(1);
 	return out;
 	}
 
@@ -241,6 +257,21 @@ TRY
 CATCH
 	}
 
+// Angular acceleration from the accumulated torque, via Euler's equations in
+// the body frame.  Factored out of calVel so that a restarted run can prime it
+// with exactly the expression the integrator uses rather than a copy of it.
+void CParticle::calAngularAccel(){
+	vec torquep=shape->q.toBody(*torques);
+	ERROR(torquep.abs2()>1e+30, "Torques too large"+stringify(torquep)+stringify(mass));
+
+	vec wp=shape->q.toBody(w(1));
+	vec wwp;
+	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
+	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;
+	wwp(2)=(torquep(2)+wp(0)*wp(1)*(Ixx-Iyy))/Izz;
+	w(2)=shape->q.toWorld(wwp);
+	}
+
 void CParticle::calVel(double dt){
 	static const double c=1./6.0;
 	x0(0)=x(0);
@@ -251,16 +282,7 @@ void CParticle::calVel(double dt){
 	x(1)+= x(2)*(dt*2*c);
 	
 	w0(2)=w(2);
-	vec wp, wwp, torquep;
-	torquep=shape->q.toBody(*torques);
-	ERROR(torquep.abs2()>1e+30, "Torques too large"+stringify(torquep)+stringify(mass));
-
-	wp=shape->q.toBody(w(1));
-	wwp(0)=(torquep(0)+wp(1)*wp(2)*(Iyy-Izz))/Ixx;
-	wwp(1)=(torquep(1)+wp(0)*wp(2)*(Izz-Ixx))/Iyy;
-	wwp(2)=(torquep(2)+wp(0)*wp(1)*(Ixx-Iyy))/Izz;
-	w(2)=shape->q.toWorld(wwp);
-
+	calAngularAccel();
 
 	w(1)+=w(2)*(dt*2*c);
 	}
