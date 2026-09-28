@@ -9,6 +9,7 @@ ellipmd-asan
 *.dSYM/
 log
 log_energy
+config.used
 
 # CMake build trees
 /build/

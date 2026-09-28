@@ -109,6 +109,16 @@ point; the entries below cover the port and modernisation work.
 
 ### Added
 
+- **A command line.**  `ellipmd --help`, `--version`, `-c/--config`,
+  `-s/--seed`, `-D/--set KEY=VALUE` (repeatable), `-o/--output`,
+  `--print-config`, `--save-config` and `--no-save-config`.  The original
+  positional form still works, since `bin/run.sh` and the Makefile use it.
+  `--set` is verified bit-identical to editing the config file.
+- **Provenance.**  Every run writes `config.used` next to its output: the
+  effective parameters (defaults included) under a header recording the
+  version, seed, source config file and timestamp.  A result can now be traced
+  back to the inputs that produced it.
+
 - `bench/check_physics.py` and `make check`: three physics regression cases with
   calibrated tolerances, plus invariants and a case-specific energy check.  The
   `elastic_bounce` case exists specifically to catch integrator errors, which a

@@ -24,6 +24,15 @@ class CConfig : public CBaseConfig{
                 define_parameters();
                 }
 
+	/// Set one parameter from its textual form, as it would appear in a config
+	/// file.  Used by the command line's --set KEY=VALUE, which is the point:
+	/// a parameter sweep should not have to write a config file per point.
+	void set(string name, string value){
+		validate_param(name);
+		istringstream ss(value);
+		params.find(name)->second->parse(ss);
+		}
+
 	void parse(string fname);
 	// CBaseConfig declares print(ostream&, out_type)const.  A differently
 	// shaped print() here would hide it rather than overload it, so

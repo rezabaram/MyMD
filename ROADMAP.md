@@ -285,8 +285,11 @@ The goal is fewer concepts, and failures that are loud and early.
 - [ ] **Errors**: throw by reference, one exception hierarchy, and stop using
       exceptions for control flow in the inner loop (the `TRY`/`CATCH` macros
       wrap almost every function).
-- [ ] **CLI**: replace the positional `ellipmd <seed> <config>` with proper
-      argument parsing, plus `--help` and `--version`.
+- [x] **CLI**: `--help`, `--version`, `--config`, `--seed`, `--set KEY=VALUE`
+      (repeatable), `--output`, `--print-config`, `--save-config`.  The
+      positional form still works, because `bin/run.sh` and the Makefile use it.
+- [x] **Provenance**: every run writes `config.used` — the effective
+      parameters plus version, seed, source file and timestamp.
 - [ ] **Output**: configurable precision, and a self-describing header in each
       snapshot so downstream tools do not have to re-derive the format.
 - [ ] **Restart that actually works** — currently `method restart` reloads

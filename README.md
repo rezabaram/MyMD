@@ -61,16 +61,28 @@ The Makefile is still the primary path — `make check`, `make bench` and
 
 ## Configuration
 
-A run is controlled by a flat `key value...` text file, passed as the second
-argument.  `#` starts a comment.  The first argument is a seed:
-
-```sh
-./ellipmd <seed> <config-file>
-```
-
+A run is controlled by a flat `key value...` text file.  `#` starts a comment.
 `config_quick` is the smallest working example; `config_deposition`,
 `config_stillinger`, `config_base` and `config_base_periodic` are the author's
 originals.
+
+```sh
+./ellipmd <seed> <config-file>          # the original form, still supported
+./ellipmd -c config_quick -s 3          # same thing with flags
+./ellipmd -c config_quick -D nParticle=500 -D maxTime=2 -o sweep01
+./ellipmd --print-config -c config_quick
+./ellipmd --help
+```
+
+`--set KEY=VALUE` overrides a parameter without editing a file, which is what
+you want for a sweep — `-D nParticle=60` gives bit-identical results to editing
+the file.  `--print-config` prints the parameters actually in force, defaults
+included.
+
+Every run writes `config.used` next to its output: the effective parameters plus
+a header recording the version, seed, source config file and timestamp, so a
+result can be traced back to the inputs that produced it.  `--no-save-config`
+turns it off.
 
 ### Box and boundaries
 
