@@ -91,11 +91,12 @@ CSS = r"""
 ERROR_BLOCK = r"""
 <div id="err">
   <div>
-    <p><b>Could not load three.js from the CDN.</b></p>
-    <p>This page needs network access the first time it is opened.
-       If you are offline, download <code>three.module.js</code> and the
-       <code>OrbitControls</code> addon, put them next to this file and edit
-       the import map below.</p>
+    <p><b>The viewer did not start.</b></p>
+    <p id="errmsg" class="dim"></p>
+    <p>Usually this means three.js could not be fetched from the CDN, which the
+       page needs the first time it is opened.  If you are offline, download
+       <code>three.module.js</code> and the <code>OrbitControls</code> addon,
+       put them next to this file and edit the import map.</p>
   </div>
 </div>
 """
@@ -112,11 +113,18 @@ def importmap(three_version=THREE_VERSION):
         "}\n"
         "</script>\n"
         '<script>\n'
-        "  addEventListener('error', (e) => {\n"
-        "    if (String(e.message || '').includes('three') ||\n"
-        "        String((e.filename || '')).includes('unpkg'))\n"
-        "      document.getElementById('err').style.display = 'grid';\n"
-        "  }, true);\n"
+        "  function showErr(msg) {\n"
+        "    const el = document.getElementById('err');\n"
+        "    if (!el) return;\n"
+        "    const m = document.getElementById('errmsg');\n"
+        "    if (m && msg) m.textContent = String(msg);\n"
+        "    el.style.display = 'grid';\n"
+        "  }\n"
+        "  addEventListener('error', (e) => showErr(e.message || e.error || ''), true);\n"
+        "  addEventListener('unhandledrejection', (e) => showErr(e.reason || ''));\n"
+        "  setTimeout(() => {\n"
+        "    if (!window.__mymd_started) showErr('the module did not finish loading');\n"
+        "  }, 4000);\n"
         "</script>\n" % (three_version, three_version)
     )
 
@@ -191,19 +199,40 @@ function recomputeBox() {
 recomputeBox();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 1000);
 camera.up.set(0, 0, 1);                       // gravity is along -z here
-function homeCamera() {
-  camera.position.copy(boxCentre).add(
-    new THREE.Vector3(1.15, -1.75, 1.0).normalize().multiplyScalar(diagonal * 0.95));
-  camera.near = diagonal / 500;
-  camera.far = diagonal * 40;
-  camera.updateProjectionMatrix();
-  controls.target.copy(boxCentre);
-}
-homeCamera();
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
+
+// Framing the camera touches controls.target, so it has to be defined after
+// controls -- calling it earlier is a temporal-dead-zone ReferenceError that
+// takes the whole module down, which shows up as a black canvas and a Start
+// button that does nothing.  It is called at the end of this file, once the
+// renderer has a real aspect ratio to fit against.
+//
+// The box is fitted by its bounding sphere.  The old code put the camera at
+// 0.95 * the box diagonal, which framed roughly the middle 60% of the box:
+// fitting the sphere needs radius / sin(fov/2), about 1.6x further out for
+// these proportions.  camera.fov is the *vertical* field of view, so a window
+// wider than it is tall is limited by height and a tall one by width.
+function fitDistance() {
+  const radius = Math.max(boxSize.length() * 0.5, 1e-6);
+  const vFov = camera.fov * Math.PI / 180;
+  const hFov = 2 * Math.atan(Math.tan(vFov / 2) * Math.max(camera.aspect, 1e-6));
+  return Math.max(radius / Math.sin(vFov / 2),
+                  radius / Math.sin(hFov / 2)) * 1.06;
+}
+
+function homeCamera() {
+  const dist = fitDistance();
+  camera.position.copy(boxCentre).add(
+    new THREE.Vector3(1.15, -1.75, 1.0).normalize().multiplyScalar(dist));
+  camera.near = Math.max(dist / 200, 1e-6);
+  camera.far = dist * 200;
+  camera.updateProjectionMatrix();
+  controls.target.copy(boxCentre);
+  controls.update();
+}
 
 scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x2a2c33, 1.6));
 const key = new THREE.DirectionalLight(0xffffff, 2.6);
@@ -332,8 +361,18 @@ function drawScene() {
   controls.update();
   renderer.render(scene, camera);
 }
-addEventListener('resize', resizeRenderer);
 resizeRenderer();
+homeCamera();
+
+// Re-fit when the window changes shape, but only until the user has orbited:
+// after that the camera is theirs and snapping it back would be rude.
+let userMovedCamera = false;
+controls.addEventListener('start', () => { userMovedCamera = true; });
+addEventListener('resize', () => {
+  resizeRenderer();
+  if (!userMovedCamera) homeCamera();
+});
+window.__mymd_started = true;
 """.replace("__BOX__", json.dumps(box)) \
    .replace("__RANGES__", json.dumps(ranges)) \
    .replace("__COLORMODE__", color_mode) \

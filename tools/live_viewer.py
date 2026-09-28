@@ -353,13 +353,21 @@ function updateStats(st) {
   if (p.nParticle) text += '     ' + st.n + ' / ' + p.nParticle + ' particles';
   barText.textContent = text;
 
+  // The parameters the server parsed out of the config that is actually
+  // running, so a change can be confirmed rather than assumed.
   const rows = [
     ['simulated time', fmt(st.t)],
-    ['particles', st.n],
+    ['particles', st.n + (p.nParticle ? ' / ' + p.nParticle : '')],
     ['frames', st.frames.length],
     ['wall time', st.elapsed ? fmt(st.elapsed) + ' s' : '\u2014'],
     ['seed', st.seed],
+    ['method', p.method || '\u2014'],
+    ['maxTime', fmt(p.maxTime)],
   ];
+  if (p.rainRate) rows.push(['rainRate', fmt(p.rainRate)]);
+  if (p.particleSize) rows.push(['particleSize', fmt(p.particleSize)]);
+  if (p.outDt) rows.push(['outDt', fmt(p.outDt)]);
+  if (p.stiffness) rows.push(['stiffness', fmt(p.stiffness)]);
   const last = st.energy && st.energy.length ? st.energy[st.energy.length - 1] : null;
   if (last) {
     rows.push(['total energy', fmt(last[1])]);
@@ -400,35 +408,74 @@ async function poll() {
   else if (grew && playing) await showFrame(frames.length - 1);
 }
 
+// The loop must never die.  One thrown error here used to stop polling for
+// good -- which froze the statistics, stopped new frames appearing and left
+// Start disabled, so it looked as though the config was being ignored and the
+// run could not be restarted.
 async function loop() {
   if (polling) return;
   polling = true;
   while (true) {
-    await poll();
+    try {
+      await poll();
+      serverError = null;
+    } catch (e) {
+      serverError = e && e.message ? e.message : String(e);
+      statusEl.textContent = 'page error: ' + serverError;
+      statusEl.className = 'idle';
+    }
     await new Promise(r => setTimeout(r, 800));
   }
 }
 
 // ----------------------------------------------------------------------- UI
+async function call(path, body) {
+  try {
+    const r = await fetch(path, {
+      method: 'POST',
+      body: body === undefined ? '' : JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!r.ok) throw new Error((await r.text()) || ('HTTP ' + r.status));
+    return await r.json();
+  } catch (e) {
+    // Never leave a button stuck: say what happened and let the next poll
+    // put the UI back in step with the server.
+    alert(path + ' failed: ' + (e && e.message ? e.message : e));
+    return null;
+  }
+}
+
 startBtn.addEventListener('click', async () => {
   startBtn.disabled = true;
-  cache.clear();
-  current = -1;
-  follow = true;
-  $('follow').checked = true;
-  const body = JSON.stringify({
-    config: configEl.value,
-    seed: parseInt(seedEl.value || '0', 10),
-  });
-  const r = await fetch('/api/run', { method: 'POST', body });
-  if (!r.ok) {
-    const t = await r.text();
-    alert('could not start: ' + t);
+  try {
+    cache.clear();
+    frames = [];
+    current = -1;
+    slider.max = 0;
+    $('follow').checked = true;
+    follow = true;
+    playing = false;
+    playBtn.textContent = '\u25B6';
+    await call('/api/run', {
+      config: configEl.value,
+      seed: parseInt(seedEl.value || '0', 10),
+    });
+  } finally {
+    startBtn.disabled = false;     // the poll re-disables it if a run started
   }
 });
 
-stopBtn.addEventListener('click', async () => {
-  await fetch('/api/stop', { method: 'POST' });
+stopBtn.addEventListener('click', () => call('/api/stop'));
+
+$('clear').addEventListener('click', async () => {
+  if (!confirm('Discard this run\'s output and start from an empty box?')) return;
+  cache.clear();
+  frames = [];
+  current = -1;
+  slider.max = 0;
+  await call('/api/clear');
+  await poll();
 });
 
 $('reload').addEventListener('click', async () => {
@@ -461,6 +508,7 @@ $('color').addEventListener('change', (e) => {
   if (current >= 0) showFrame(current);
 });
 $('box').addEventListener('change', (e) => { cell.visible = e.target.checked; });
+$('fit').addEventListener('click', () => { userMovedCamera = false; homeCamera(); });
 addEventListener('keydown', (e) => {
   if (e.code === 'Space') { e.preventDefault(); playBtn.click(); }
 });
@@ -566,6 +614,7 @@ PAGE_HEAD = r"""<!DOCTYPE html>
   </label>
   <label><input id="box" type="checkbox" checked> box</label>
   <label><input id="spin" type="checkbox"> spin</label>
+  <button id="fit" title="put the camera back to fit the box">fit</button>
 </div>
 
 <div id="side">
@@ -574,6 +623,9 @@ PAGE_HEAD = r"""<!DOCTYPE html>
     <div class="row">
       <button id="start">Start</button>
       <button id="stop" disabled>Stop</button>
+      <button id="clear" title="discard the output and start from an empty box">Clear</button>
+    </div>
+    <div class="row" style="margin-top:4px">
       <span id="status" class="idle">idle</span>
     </div>
     <div class="row" style="margin-top:6px">
@@ -671,6 +723,15 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"ok": True, "rundir": v.run.rundir})
         if path == "/api/stop":
             v.run.stop()
+            return self._json({"ok": True})
+        if path == "/api/clear":
+            v.run.stop()
+            v.cache.reset()
+            if os.path.isdir(v.run.rundir):
+                shutil.rmtree(v.run.rundir, ignore_errors=True)
+            v.run.config_text = ""
+            v.run.exit_code = None
+            v.run.started = None
             return self._json({"ok": True})
         return self._send(404, "not found")
 
