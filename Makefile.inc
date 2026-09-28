@@ -44,4 +44,19 @@ SHELL=bash
 ECHO=echo
 RM=rm
 MAKE=make
-DEBUGFLAGS=-Wall -O2
+
+# Optimisation flags.  This used to be called DEBUGFLAGS and set to '-Wall -O2',
+# which is neither debug nor particularly optimised.
+#
+# -O3 is the default.  -march=native is deliberately opt-in (NATIVE=1) because
+# it makes the binary non-portable: it is fine for a benchmark on your own
+# machine and wrong for anything you hand to somebody else.
+WARNFLAGS=-Wall
+OPTFLAGS?=-O3
+NATIVE?=0
+ifeq ($(NATIVE),1)
+  OPTFLAGS+=-march=native
+endif
+
+# kept so that an existing 'make DEBUGFLAGS=...' still works
+DEBUGFLAGS=$(WARNFLAGS) $(OPTFLAGS)
