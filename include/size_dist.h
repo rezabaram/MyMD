@@ -45,7 +45,7 @@ class CSizeDistribution
 		p_dist->print(out);
 		}
 	double get(){
-		p_dist->get();
+		return p_dist->get();
 		}
 
 	string get_name(){
@@ -79,9 +79,11 @@ class CMonoDist : public CBaseDistribution
 	};
 istream & operator>>(istream &in, CMonoDist &dist){
 	dist.parse(in);
+	return in;
 	}
 ostream & operator<< (ostream &out, const CMonoDist &dist){
 	dist.print(out);
+	return out;
 	}
 
 
@@ -114,9 +116,11 @@ class CUniformDist: public CBaseDistribution
 	};
 istream & operator>>(istream &in, CUniformDist &dist){
 	dist.parse(in);
+	return in;
 	}
 ostream & operator<< (ostream &out, const CUniformDist &dist){
 	dist.print(out);
+	return out;
 	}
 
 
@@ -155,14 +159,16 @@ class CReadDist: public CBaseDistribution
 
  	private:
 	tr1::uniform_int<int> unif;
-	vector<int> values;
+	vector<double> values;
 	string filename;
 	};
 istream & operator>>(istream &in, CReadDist &dist){
 	dist.parse(in);
+	return in;
 	}
 ostream & operator<< (ostream &out, const CReadDist &dist){
 	dist.print(out);
+	return out;
 	}
 
 
@@ -185,8 +191,10 @@ istream & operator>>(istream &in, CSizeDistribution &dist){
 	else{
 		ERROR(1,"distribution"+name+"not defined!");
 		}
+	return in;
 }
 ostream & operator<<(ostream &out, const CSizeDistribution &dist){
 	dist.print(out);
-	}
+	return out;
+}
 #endif /* SIZE_DIST_H */

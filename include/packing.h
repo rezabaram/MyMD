@@ -39,7 +39,7 @@ class CPacking : public list<T *>
 		}
 
 	void add( T *x){
-		push_back (x);
+		this->push_back (x);
 		};
 
 	void print(std::ostream& out, bool raster=false)const;

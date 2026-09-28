@@ -47,7 +47,7 @@ class CCell : public list<TParticle *>{
 		}
 
 	void add(TParticle *p){
-		push_back(p);
+		this->push_back(p);
 		}
 	template<typename T, typename U>
 	friend 
