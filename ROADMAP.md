@@ -259,6 +259,28 @@ changes a reference, which must be called out).
 
 ---
 
+## Open bugs found while benchmarking  (not yet fixed)
+
+- [ ] **`method restart` aborts in a solid box.**  Restarting from any snapshot
+      of a settled 2500-particle deposition run dies with `Point out of grid`
+      on the first force evaluation, at a position about one box length from
+      where any particle is in the file.  Ruled out so far: the snapshots are
+      fine (every particle inside the box, x range 0.013-0.987); the
+      periodic-image block in `CPacking::parse` is behind a flag that defaults
+      to false, so it does not run; the particle count after parsing is the
+      expected 2500.  Something therefore displaces a particle *after* parsing.
+      The single restart reference case passes only because its one particle
+      sits in the middle of the box.  `which()` now tolerates a particle one
+      cell outside a solid wall, which was masking the first symptom, but the
+      displacement itself is unexplained.
+- [ ] **A particle can escape through a solid wall entirely.**  A settled dense
+      packing left one particle at x = -0.158, about seven radii outside, where
+      it stayed.  `CInteraction::overlaps(..., CPlane*)` returns early once
+      `|plane(Xc)| > radius`, so a centre that far out feels no wall force at
+      all.  This needs a real fix -- clamp the penetration, or make the wall
+      contact independent of the centre being near the plane -- not a wider
+      tolerance.
+
 ## Phase 5 — Design and robustness
 
 The goal is fewer concepts, and failures that are loud and early.
