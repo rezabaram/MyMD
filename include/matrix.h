@@ -691,6 +691,22 @@ inline void transpose_into(matrix<double>& out, const matrix<double>& a)
          out(i, j) = tmp[i][j];
 }
 
+inline void mat_add(matrix<double>& out, const matrix<double>& a,
+                     const matrix<double>& b)
+{
+   assert(a.RowNo() == b.RowNo() && a.ColNo() == b.ColNo());
+   for (size_t i = 0; i < a.RowNo(); ++i)
+      for (size_t j = 0; j < a.ColNo(); ++j)
+         out(i, j) = a(i, j) + b(i, j);
+}
+
+inline void mat_scale(matrix<double>& out, const matrix<double>& a, double s)
+{
+   for (size_t i = 0; i < a.RowNo(); ++i)
+      for (size_t j = 0; j < a.ColNo(); ++j)
+         out(i, j) = a(i, j) * s;
+}
+
 // Gauss-Jordan inverse into caller storage.  matrixT::Inv() is not usable
 // directly on a matrix you want to keep: it inverts *this in place (hence
 // operator! taking its argument by value and cloning).  doOverlap only needs

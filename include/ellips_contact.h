@@ -170,6 +170,12 @@ TRY
 	double lambda, lambda0;
 	vec xp0, xp=x.project();
 	static Matrix Em1(3,3), Em2(3,3);
+	// Scratch for the fixed-point iteration below, which used to build
+	// `!(Em2 + lambda*Em1) * (Em2*Xc2 + lambda*Em1*Xc1)` out of expression
+	// temporaries: about five matrix objects per iteration, each five heap
+	// allocations, up to 500 iterations, twice per contact.  It was the last
+	// thing keeping matrix<double> at ~78% of the profile.
+	static Matrix scaled(3,3), sum(3,3), inv(3,3);
 	for(size_t i=0; i<3; i++){
 	for(size_t j=0; j<3; j++){
 		Em1(i,j)=E1.ellip_mat(i,j);
@@ -187,7 +193,10 @@ TRY
 		//using the fact that the gradients of the potentials of the 
 		//the ellipsoids are in opposite directions at the minimum
 		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
-		xp=(!(Em2+lambda*Em1))*(Em2*E2.Xc+lambda*Em1*E1.Xc);
+		mat_scale(scaled, Em1, lambda);   // scaled = lambda*Em1
+		mat_add(sum, Em2, scaled);        // sum    = Em2 + lambda*Em1
+		invert_into(inv, sum);            // inv    = sum^-1
+		xp = inv*(Em2*E2.Xc + scaled*E1.Xc);
 		converged= (xp-xp0).abs()<1e-13 and fabs(lambda0-lambda)<1e-10;
 		}
 	while(iter<nIter and !converged);
