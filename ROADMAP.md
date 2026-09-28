@@ -4,7 +4,7 @@ Goal: a state that is correct, documented, buildable by someone else in one
 command, and fast enough to be useful — without silently changing the physics.
 
 Everything below is grounded in the code as it stands. Numbers come from
-`BENCHMARK.md` / `bench/results.json` and from a `sample` profile of run B2
+`docs/BENCHMARK.md` / `bench/results.json` and from a `sample` profile of run B2
 (2500 particles).
 
 ---
@@ -99,7 +99,7 @@ Nothing here changes behaviour.
 
 **Superseded pipeline:**
 - [x] `bin/coord2pov`, `make pov` — the POV-Ray path, replaced by
-      `VISUALIZATION.md`.
+      `docs/VISUALIZATION.md`.
 - [x] `bin/coord2pr3d`, `bin/genFrames.sh`, `bin/encodejpg.sh`,
       `make animate` / `movie` — the raster3d path.
 
@@ -134,25 +134,25 @@ contains no functional change; the file count drops materially.
 
 ---
 
-## Phase 2 — Documentation a stranger can use
+## Phase 2 — Documentation a stranger can use  — **DONE**
 
-- [ ] **`README.md`** (replace the plain-text `README`). Sections: what the
+- [x] **`README.md`** (replace the plain-text `README`). Sections: what the
       problem is, one-paragraph physics summary, build in one command,
       dependencies, quick start, where things live, how to cite, license.
-- [ ] **`docs/ARCHITECTURE.md`** — the object graph (`CSys` → `BoxContainer` /
+- [x] **`docs/ARCHITECTURE.md`** — the object graph (`CSys` → `BoxContainer` /
       `CPacking<CParticle>` / `CCellList`), one translation unit and why,
       where each physics concept lives, the data flow of a timestep.
-- [ ] **`docs/FORMAT.md`** — the snapshot format as a specification: `id 6`
+- [x] **`docs/FORMAT.md`** — the snapshot format as a specification: `id 6`
       planes, `id 14` ellipsoids, quaternion convention (scalar-first — this
       genuinely bites downstream), what `log_energy` columns mean, and the
       "first line of `log_energy` is uninitialised" caveat until it is fixed.
-- [ ] **`docs/PHYSICS.md`** — the force law, the contact algorithm, the
+- [x] **`docs/PHYSICS.md`** — the force law, the contact algorithm, the
       integrator, and the assumptions (no static friction, no cohesion
       actually wired up, `zetaWidth` ignored for `particleType general`).
       Reference the original paper.
-- [ ] Fold `PORTING-NOTES.md` / `BENCHMARK.md` / `VISUALIZATION.md` into
+- [x] Fold `PORTING-NOTES.md` / `BENCHMARK.md` / `VISUALIZATION.md` into
       `docs/` (keeping the filenames) so the root stays clean.
-- [ ] A short `CHANGELOG.md`, since the roadmap is about tracking improvements.
+- [x] A short `CHANGELOG.md`, since the roadmap is about tracking improvements.
 
 **Acceptance:** someone who has never seen the repo can build it and produce a
 picture from the README alone.
@@ -187,9 +187,15 @@ a compiler, CMake and GSL/Eigen.
 
 ## Phase 4 — Bug fixes (correctness)  — **in progress**
 
-From `PORTING-NOTES.md`, plus what the port surfaced. Ordered by how much they
+From `docs/PORTING-NOTES.md`, plus what the port surfaced. Ordered by how much they
 can silently mislead a result.
 
+- [x] **The translational velocity corrector was wrong.**  The `a_{n+1}` term
+      had the wrong sign and the `a_{n-1}` term was missing, so translation was
+      first-order where rotation was second-order: 5% energy loss per elastic
+      bounce at dt=1e-4, converging only linearly.  Found by building an
+      energy-conservation test, and now guarded by
+      `bench/reference/elastic_bounce`.
 - [x] **`zeta` / `zetaWidth` are ignored for `particleType general`.** Reads
       `zeta0`/`zetaW`, then computes `zeta = eta0 * TruncGaussRand(1, etaW)`.
       The two shape parameters are therefore not independent and `zetaWidth`
