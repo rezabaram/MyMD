@@ -179,15 +179,15 @@ after, both within the noise floor — which is what you would expect, since it
 changed an RNG engine and an exception specification rather than anything on
 the hot path.
 
-Final baseline (`bench/results.json`; B1-B3 are medians of two runs, B4 is from
-the last full sweep before the final two steps, which were ~1% each):
+Final baseline (`bench/results.json`, all medians of two runs; B4 from the
+preceding sweep, before the last two steps, which were ~1% each):
 
 | run | before | after | delta | speedup |
 |---|---|---|---|---|
 | B1 | 5.43 s | 1.38 s | **-74.6%** | 3.9x |
 | B2 | 78.58 s | 21.10 s | **-73.1%** | 3.7x |
-| B3 | 58.52 s | 14.50 s | **-75.2%** | 4.0x |
-| B4 | 782.82 s | 242.82 s | **-69.0%** | 3.2x |
+| B3 | 58.52 s | 13.37 s | **-77.2%** | 4.4x |
+| B4 | 782.82 s | 247.21 s | **-68.4%** | 3.2x |
 
 The whole sweep now takes under five minutes rather than sixteen, which is why
 `--fast` (skip B4) matters less than it did.
