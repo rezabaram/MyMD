@@ -78,6 +78,10 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--only", action="append", default=None,
                     help="run only this configuration (repeatable)")
+    ap.add_argument("--fast", action="store_true",
+                    help="skip the longest configuration (B4, ~9 min of the "
+                         "~16 min total).  Use this while iterating; do a full "
+                         "sweep before recording a baseline.")
     ap.add_argument("--workdir", default=os.path.join(HERE, "runs"),
                     help="where to put the per-run output directories")
     ap.add_argument("--repeat", type=int, default=1, metavar="N",
@@ -96,7 +100,14 @@ def main(argv=None):
     results = []
     t_start = time.time()
 
-    for name, label, steps in RUNS:
+    selected = RUNS
+    if args.fast:
+        longest = max(RUNS, key=lambda r: r[2])
+        selected = [r for r in RUNS if r is not longest]
+        print("--fast: skipping %s (%s, %d steps)" % (longest[0], longest[1],
+                                                      longest[2]), flush=True)
+
+    for name, label, steps in selected:
         if args.only and name not in args.only:
             continue
         cfg = os.path.join(HERE, "configs", name)

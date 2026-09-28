@@ -27,7 +27,8 @@ class DisBetaDistribution
 		}
 	public:
 	template<typename T>
-	DisBetaDistribution(T a, T b, double width=0.5, int _nbins=100, int npool=10000){
+	DisBetaDistribution(T a, T b, double width=0.5, int _nbins=100, int npool=10000)
+		:bins(NULL), dx(0), min(1), max(1), nbins(_nbins){
 		ERROR(width>1, "The width of the distribution is larger than its median.");
 		if(width<=1e-10){
 			dx=0;
@@ -37,8 +38,12 @@ class DisBetaDistribution
 			}
 		min=1-width;
 		max=1+width;
-		nbins=_nbins;
-		bins=new double[nbins];
+		// nbins+1 sample points, because every loop below runs i = 0..nbins
+		// inclusive and dx = (max-min)/nbins puts the last one exactly at max.
+		// Allocating nbins slots therefore wrote one double past the end of the
+		// array -- a heap-buffer-overflow that AddressSanitizer reports on the
+		// first run, and that had been corrupting the heap for years.
+		bins=new double[nbins+1];
 		dx=(max-min)/double(nbins);
 		double sum=0;
 		for(int i=0; i<=nbins; i++){
@@ -57,6 +62,10 @@ class DisBetaDistribution
 			}
 		
 		}
+
+	// There was no destructor: `bins` was leaked on every construction, and
+	// the class is constructed per run.
+	~DisBetaDistribution(){ delete [] bins; }
 
 		double rnd(){
 			if(dx<1e-10)return min;

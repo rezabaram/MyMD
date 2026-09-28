@@ -7,6 +7,32 @@ point; the entries below cover the port and modernisation work.
 
 ### Fixed
 
+- **Heap buffer overflow in `DisBetaDistribution`.**  `bins` was allocated with
+  `nbins` slots but every loop in the constructor indexed `0..nbins` inclusive,
+  so the last write and read were one `double` past the end of the array.  This
+  ran on every initialisation of the general particle type; it is the first
+  thing AddressSanitizer reports.
+- **Invalid downcast in `CBaseConfig::get_param<T>`.**  An unchecked
+  `static_cast<CParam<T>*>` reinterpreted whatever was stored, so asking for
+  `int` where the parameter was registered as `unsigned int` relied on the two
+  layouts agreeing.  It is now a checked `dynamic_cast` that fails loudly.
+  UBSan flags the original; the Stillinger path was hitting it via
+  `get_param<int>("nParticle")`.
+- **`CSizeDistribution` had inverted ownership.**  The destructor was
+  `if(!p_dist) delete p_dist` (so it leaked), the compiler-generated copy shared
+  the pointer (so the obvious fix would have double-freed), and
+  `CBaseDistribution` had no virtual destructor (so deleting through the base
+  pointer was undefined behaviour).  Now: virtual destructor, a `clone()`
+  protocol, and real rule-of-three copy semantics.
+- **`CUniformDist` was constructed from uninitialised members.**  The
+  member-initialiser list built `unif(min, max)`, but members initialise in
+  *declaration* order and `unif` was declared first, so it was built from
+  garbage.  Harmless in practice only because `parse()` immediately reassigns it.
+- **Destructors could terminate the process.**  `CSys::~CSys` used the
+  TRY/CATCH macros, whose handler rethrows; a destructor is implicitly
+  `noexcept` since C++11, so any exception there calls `std::terminate` instead
+  of propagating.
+
 - **The translational velocity corrector in the Beeman integrator was wrong.**
   The `a_{n+1}` term had the wrong sign and the `a_{n−1}` term was missing, so
   translation was first-order accurate where rotation was second-order.  On a
@@ -78,6 +104,18 @@ point; the entries below cover the port and modernisation work.
 
 ### Changed
 
+- **C++17.**  `<tr1/random>` is gone (TR1's `ranlux64_base_01` becomes
+  `std::ranlux48_base`) and `matrix.h`'s dynamic exception specification is
+  removed, which together mean the code no longer needs GCC specifically --
+  **clang builds it now**, which is what made the sanitizer builds possible.
+  The engine swap changes the random *realisation*, not the distribution: over
+  2e6 draws the two engines give mean 0.499999/0.500084 and sd
+  0.288646/0.288765 against a theoretical 0.5/0.2887.  The `stillinger`
+  reference was regenerated accordingly and says so in its config.
+- **Zero compiler warnings.**  The remaining 24 (`-Wreorder`, `-Wunused*`,
+  `-Wsign-compare`, and 22 `register` keywords in the vendored Mersenne Twister)
+  are fixed.  Two of them were real bugs, listed above.
+- Added `make asan` and `make asan-check`.
 - Build ported to macOS/GCC 14.  `Makefile.inc` now detects GSL (bundled
   `.deps/gsl` first, then Homebrew), selects `g++-14`, builds as `-std=gnu++98`
   and separates compile flags from link libraries.  `make gsl` fetches and

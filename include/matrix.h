@@ -150,7 +150,11 @@ typedef int bool;
 #     include <stdexcep>
 #  endif
 #  define _NO_THROW               throw ()
-#  define _THROW_MATRIX_ERROR     throw (matrix_error)
+// Dynamic exception specifications were removed from the language in C++17.
+// The specification only ever named matrix_error, which is a plain class and
+// has no special handling anywhere, so dropping it changes nothing but makes
+// the header legal C++17.
+#  define _THROW_MATRIX_ERROR
 #endif
 
 //#ifndef __MINMAX_DEFINED

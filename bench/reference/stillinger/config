@@ -1,6 +1,15 @@
 # regression case 2: Stillinger lattice + periodic_xyz.  Exercises the
 # SizeDistribution parser, the periodic image shifts in the cell list and the
 # scaling compression path.
+#
+# NOTE: unlike the other two cases, this one is tied to the random number
+# implementation.  Stillinger placement offsets each particle by
+# 0.5*unif(eng)*dl and draws radii through a SizeDistribution, so the C++17
+# migration (std::ranlux48_base replacing TR1's ranlux64_base_01) changed the
+# realisation -- not the distribution: over 2e6 draws the two engines agree at
+# mean 0.499999/0.500084 and sd 0.288646/0.288765 against a theoretical
+# 0.5/0.2887.  If this case fails after an RNG change, check that before
+# suspecting the physics.
 boxsize		1 1 1
 density		1
 Gravity		0   0   0

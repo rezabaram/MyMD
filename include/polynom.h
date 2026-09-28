@@ -335,10 +335,6 @@ bool CQuartic::solve(){//returning the number of real roots;
 	// Y3 + (f/2)*Y2 + ((f2 -4*h)/16)*Y -g2/64 = 0
 	CCubic cube(1,(f/2),(f*f -4*h)/16, -g*g/64);
 	
-	complex<double> r1=cube.root(0);
-	complex<double> r2=cube.root(1);
-	complex<double> r3=cube.root(2);
-
 	//choosing two non-zero roots
 	int i1=-1;
 	complex<double> p, q;

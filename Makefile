@@ -13,6 +13,34 @@ ellipmd:	*.cc include/*.h
 check: ellipmd
 	python3 bench/check_physics.py
 
+# Sanitizer build.  Uses clang rather than the default compiler because the
+# Homebrew GCC on this machine ships no sanitizer runtime, and clang could not
+# build this code at all before the C++17 migration.
+#
+# This build found two real bugs on its first run: a heap-buffer-overflow in
+# DisBetaDistribution (bins was allocated with nbins slots but every loop
+# indexed 0..nbins inclusive) and an invalid downcast in
+# CBaseConfig::get_param<T>.  Run it after touching anything that manages
+# memory or does a cast.
+SAN_CC     ?= clang++
+SAN_FLAGS  ?= -std=c++17 -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer
+asan: main.cc
+	$(SAN_CC) main.cc $(FLAGS) -o ellipmd-asan $(LDFLAGS) $(SAN_FLAGS)
+	@echo "built ./ellipmd-asan -- run:  ./ellipmd-asan <seed> <config>"
+
+# Same, but checking the reference cases automatically.
+asan-check: asan
+	@for c in deposition stillinger elastic_bounce; do \
+		d=$$(mktemp -d); \
+		cp bench/reference/$$c/* $$d/ 2>/dev/null; \
+		( cd $$d && UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=0 \
+		  ASAN_OPTIONS=abort_on_error=0 \
+		  $(ROOT)/ellipmd-asan 1 config > out.log 2>&1 ); \
+		n=$$(grep -cE 'ERROR: AddressSanitizer|runtime error:' $$d/out.log); \
+		printf '  %-16s findings=%s\n' $$c $$n; \
+		rm -rf $$d; \
+	done
+
 # Timing benchmark.  Sequential on purpose; writes bench/results.json.
 #   make bench              # all four configurations (~16 min)
 #   make bench BENCH_ARGS="--only B2"    # ~80 s
@@ -23,7 +51,7 @@ bench: ellipmd
 
 update:
 	git pull origin master
-.PHONY: all run clean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench
+.PHONY: all run clean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench asan asan-check
 tools:
 	$(MAKE) -C tools
 

@@ -11,14 +11,28 @@
 #include<string>
 
 
-#include<tr1/random>
-std::tr1::ranlux64_base_01 eng0;
+#include<random>
+// TR1's ranlux64_base_01 was a floating-point subtract-with-carry engine that
+// C++11 dropped.  ranlux48_base is the standard's equivalent: same 48-word lag
+// and 5-word short lag.  NOTE this changes the random stream, so packings
+// drawn from a SizeDistribution differ from a pre-C++17 build -- the physics
+// is the same, the realisation is not.  See docs/PORTING-NOTES.md.
+std::ranlux48_base eng0;
 
 
 class CBaseDistribution
 	{
 	public:
 	CBaseDistribution(string _name):name(_name), max_value(0){}
+	// Virtual, because CSizeDistribution holds these by base pointer and
+	// deletes through it.  Without this, `delete p_dist` was undefined
+	// behaviour -- latent only because the destructor was inverted and never
+	// actually deleted anything (see below).
+	virtual ~CBaseDistribution(){}
+	// Deep copy, so CSizeDistribution can have real value semantics.  It used
+	// to share the pointer, which is why the inverted destructor could not
+	// simply be fixed: flipping it turned a leak into a double free.
+	virtual CBaseDistribution *clone() const = 0;
 	virtual double get()=0;
 	virtual void parse(istream &in)=0;
 	virtual void print(ostream &out)const=0;
@@ -36,7 +50,22 @@ class CSizeDistribution
 	CSizeDistribution():p_dist(NULL){}
 	template<class T>
 	CSizeDistribution(const T &dist):p_dist(new T(dist)){}
-	~CSizeDistribution(){if(!p_dist) delete p_dist;};
+	// Rule of three.  The compiler-generated copy shared p_dist, so the old
+	// destructor had been written inverted -- `if(!p_dist) delete p_dist` --
+	// which leaked rather than double-freeing.  With a deep copy the obvious
+	// destructor is correct.
+	CSizeDistribution(const CSizeDistribution &other)
+		:p_dist(other.p_dist ? other.p_dist->clone() : NULL){}
+	CSizeDistribution &operator=(const CSizeDistribution &other){
+		if(this!=&other){
+			CBaseDistribution *copy =
+				other.p_dist ? other.p_dist->clone() : NULL;
+			delete p_dist;
+			p_dist=copy;
+			}
+		return *this;
+		}
+	~CSizeDistribution(){ delete p_dist; };
 
 	friend istream & operator>>(istream &in, CSizeDistribution &dist);
 	friend std::ostream & operator<< (std::ostream &out, const CSizeDistribution &dist);
@@ -45,6 +74,7 @@ class CSizeDistribution
 		p_dist->print(out);
 		}
 	double get(){
+		ERROR(!p_dist, "size distribution used before it was set");
 		return p_dist->get();
 		}
 
@@ -61,6 +91,7 @@ class CMonoDist : public CBaseDistribution
 	{
 	public:
 	CMonoDist(double _r=0):CBaseDistribution("mono"), r(_r){}
+	CBaseDistribution *clone() const { return new CMonoDist(*this); }
 	double get(){return r;}
 	void parse(istream &in){
 		in>>r;
@@ -91,15 +122,16 @@ class CUniformDist: public CBaseDistribution
 	{
 	public:
 	CUniformDist(double _min=0.5, double _max=1):CBaseDistribution("uniform"), min(_min), max(_max)
-		,unif(tr1::uniform_real<double> (min, max))
 		{
+		unif=std::uniform_real_distribution<double> (min, max);
 		}
+	CBaseDistribution *clone() const { return new CUniformDist(*this); }
 	double get(){
 		return unif(eng0);
 		}
 	void parse(istream &in){
 		in>>min>>max;
-		unif=tr1::uniform_real<double> (min, max);
+		unif=std::uniform_real_distribution<double> (min, max);
 		max_value=max;
 		}
 
@@ -111,8 +143,12 @@ class CUniformDist: public CBaseDistribution
 	friend ostream & operator<< (ostream &out, const CUniformDist &dist);
 
  	private:
-	tr1::uniform_real<double> unif;
+	// min/max are declared and initialised before unif: the constructor used to
+	// build unif from min and max in the member-initialiser list, but members
+	// are initialised in *declaration* order, so unif was being constructed
+	// from uninitialised bounds.
 	double min, max;
+	std::uniform_real_distribution<double> unif;
 	};
 istream & operator>>(istream &in, CUniformDist &dist){
 	dist.parse(in);
@@ -128,6 +164,7 @@ class CReadDist: public CBaseDistribution
 	{
 	public:
 	CReadDist():CBaseDistribution("read") {}
+	CBaseDistribution *clone() const { return new CReadDist(*this); }
 	double get(){
 		return values.at(unif(eng0));
 		}
@@ -147,7 +184,7 @@ class CReadDist: public CBaseDistribution
 			values.push_back(r);
 			max_value=max(max_value,r);
 			}
-		unif=tr1::uniform_int<int> (0, values.size()-1);
+		unif=std::uniform_int_distribution<int> (0, values.size()-1);
 		}
 
 	void print(ostream &out)const{
@@ -158,7 +195,7 @@ class CReadDist: public CBaseDistribution
 	friend ostream & operator<< (ostream &out, const CUniformDist &dist);
 
  	private:
-	tr1::uniform_int<int> unif;
+	std::uniform_int_distribution<int> unif;
 	vector<double> values;
 	string filename;
 	};

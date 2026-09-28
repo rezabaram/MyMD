@@ -35,7 +35,7 @@ ifeq ($(origin CC),default)
   CC:=$(shell command -v g++-14 2>/dev/null || command -v g++)
 endif
 
-CXXFLAGS_STD=-std=gnu++98
+CXXFLAGS_STD=-std=gnu++17
 INCLUDES=$(GSL_INC)
 FLAGS=$(CXXFLAGS_STD) $(INCLUDES)
 LDFLAGS=$(GSL_LIB) -lgsl -lgslcblas -lm

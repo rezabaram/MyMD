@@ -20,8 +20,8 @@
 
 extern CConfig config;
 
-#include<tr1/random>
-std::tr1::ranlux64_base_01 eng;
+#include<random>
+std::ranlux48_base eng;      // see the note in include/size_dist.h
 
 extern MTRand rgen;
 
@@ -32,13 +32,18 @@ typedef GeomObjectBase * BasePtr;
 class CSys{
 	CSys();
 	public:
-	CSys(unsigned long maxnparticle=100000000):t(0), outDt(0.01) 
-	,maxr(0), maxh(0), maxv(0), G(vec(0.0))
-	,maxNParticle(maxnparticle)
-	,epsFreeze(1.0e-12), outEnergy("log_energy")
-	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
+	// The initialiser list follows the order in which the members are
+	// declared.  It did not before, which is harmless here (nothing depends on
+	// another member) but is the kind of thing that hides a real bug the day
+	// something does.
+	CSys(unsigned long maxnparticle=100000000):t(0), outDt(0.01)
 	,walls(config.get_param<vec>("boxcorner"), config.get_param<vec>("boxsize"), config.get_param<string>("boundary"))
 	,celllist(CCellList<ParticleContainer, CParticle>(&walls))
+	,maxr(0), maxh(0), maxv(0), G(vec(0.0))
+	,maxNParticle(maxnparticle)
+	,epsFreeze(1.0e-12)
+	,maxRadii(0), top_v(vec(0.0,0.0,0.0))
+	,outEnergy("log_energy")
 	{
 	TRY
 	CATCH
@@ -105,8 +110,9 @@ class CSys{
 	};
 
 CSys::~CSys(){
-TRY
-CATCH
+	// Deliberately no TRY/CATCH here.  A destructor is implicitly noexcept
+	// since C++11, so the RETHROW in the CATCH block would call std::terminate
+	// rather than propagate -- and there is nothing in this body to throw.
 	}
 
 vec CSys::center_of_mass()const{
@@ -201,9 +207,9 @@ TRY
 
 		double eta=config.get_param<double>("eta");
 		double zeta=config.get_param<double>("zeta");
-		int N=config.get_param<int>("nParticle");
+		unsigned int N=config.get_param<unsigned int>("nParticle");
 		double dl=1./pow((double)N,1./3.);
-		tr1::uniform_real<double> unif(0, 1);
+		std::uniform_real_distribution<double> unif(0, 1);
 
 		cerr<<"Cell size: "<< dl <<endl;
 		celllist.setup(dl);
@@ -213,7 +219,7 @@ TRY
 		double xx,yy,zz;
 		xx=0;yy=zz=0.5*dl;
 		ofstream testout("orient");
-		for(int i=0; i<N; i++){
+		for(unsigned int i=0; i<N; i++){
 			xx+=dl;
 			if(xx>walls.L(0)){xx=0.5*dx; yy+=dy;}
 			if(yy>walls.L(1)){xx=0.5*dx; yy=0.5*dy; zz+=dz;}
@@ -224,10 +230,9 @@ TRY
 			double b =r/(pow(zeta,2./3.)*pow(eta, 1/3.));
 			double c =r*eta*pow(zeta/eta,1./3.);
 
-			double phi=2*rgen()*M_PI;
-			double beta=asin(rgen());
-			double alpha=(2*rgen()-1)*M_PI;
-			//Quaternion q=Quaternion(cos(alpha),0,0,sin(alpha))*Quaternion(cos(beta),0,sin(beta),0)*Quaternion(cos(phi),sin(phi),0 ,0);
+			// (three unused rgen() draws for a hand-built quaternion used to
+			// sit here, left over from a commented-out construction.  They
+			// were dead but still advanced the random stream.)
 			Quaternion q=randomQuaternion();
 			//q=q*randomQuaternion();
 			testout<<spherical(q.toBody(vec(1,0,0)))<<endl;
@@ -271,7 +276,7 @@ TRY
 			
 			double rmin=config.get_param<double>("rmin");
 			double rmax=config.get_param<double>("rmax");
-			std::tr1::uniform_real<double> unif(rmin, rmax);
+			std::uniform_real_distribution<double> unif(rmin, rmax);
 			
 			for(int i=0; i<10000;i++){
 				double a = unif(eng);
@@ -429,10 +434,8 @@ CATCH
 void CSys::forward(double &dt){
 TRY
        ParticleContainer::iterator it;
-       CParticle *p1;
        for(it=particles.begin(); it!=particles.end(); ++it){
-               p1=*it;
-               //if((vec2d(p1->x(0)(0),p1->x(0)(1))-vec2d(0.5, 0.5)).abs()>0.7*(1.2-p1->x(0)(2)))p1->expired=true;
+               //if((vec2d((*it)->x(0)(0),(*it)->x(0)(1))-vec2d(0.5, 0.5)).abs()>0.7*(1.2-(*it)->x(0)(2)))(*it)->expired=true;
                //if(abs(p1->x(0)(0)-0.5)>0.4*(1.2-p1->x(0)(2)))p1->expired=true;
 	       //if(p1->x(0)(2)<config.get_param<double>("particleSize")/2.)p1->frozen=true;
                if((*it)->expired){

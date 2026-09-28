@@ -5,6 +5,8 @@
 *.eps
 .deps/
 ellipmd
+ellipmd-asan
+*.dSYM/
 log
 log_energy
 

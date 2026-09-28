@@ -57,7 +57,7 @@ class CBox: public GeomObjectBase
 		else{ERROR(1, "Boundary condition not defined");}
 		};
 	virtual ~CBox(){
-		for(int i=0; i<nFaces; i++){
+		for(size_t i=0; i<nFaces; i++){
 			delete face[i];
 			}
 		delete [] face;

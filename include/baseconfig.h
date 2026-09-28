@@ -110,9 +110,17 @@ class CBaseConfig : public CParamBase {
 
 	template<class T>
 	T get_param(string name, CParamBase::out_type def=CParamBase::Normal)const {
-		//const CParamBase  *pp=params[name];
 		validate_param(name);
-		CParam<T> * const p = static_cast< CParam<T>* > (params.find(name)->second );//i dont know if there is a better solution, i like this tough
+		// This used to be an unchecked static_cast< CParam<T>* >, which is
+		// undefined behaviour when T is not the type the parameter was
+		// registered with: it silently reinterpreted a CParam<unsigned int> as
+		// a CParam<int>, relying on the two layouts happening to agree.  They
+		// do today, but UBSan flags the downcast, and a future change to
+		// CParam's layout would turn it into a wrong value rather than an
+		// error.  dynamic_cast costs a few nanoseconds and fails loudly.
+		CParam<T> * const p =
+			dynamic_cast< CParam<T>* >(params.find(name)->second);
+		ERROR(!p, "parameter '"+name+"' is not of the type requested from get_param");
 
 		if(def==CParamBase::Default) return p->get_default();
 		else return p->get();
