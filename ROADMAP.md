@@ -62,16 +62,16 @@ Phase 0 comes first — without it, every later change is a gamble.
 
 ---
 
-## Phase 0 — Safety net  *(must land first)*
+## Phase 0 — Safety net  *(must land first)*  — **DONE**
 
-- [ ] `bench/check_physics.py`: run a fixed config with a fixed seed, compare
+- [x] `bench/check_physics.py`: run a fixed config with a fixed seed, compare
       every snapshot against a committed reference within a tolerance
       (max |Δposition|, |Δquaternion|, |Δsemi-axis|).
-- [ ] Two reference cases, to cover both initialisation paths:
+- [x] Two reference cases, to cover both initialisation paths:
       - deposition + solid walls (`config_quick`)
       - Stillinger + `periodic_xyz`
-- [ ] `make check` target; non-zero exit on failure.
-- [ ] Record why a tolerance rather than a hash: recompilation with different
+- [x] `make check` target; non-zero exit on failure.
+- [x] Record why a tolerance rather than a hash: recompilation with different
       flags may perturb the last bits, and a bit-exact test would block
       legitimate optimisation.
 
@@ -80,41 +80,41 @@ physics is perturbed (verify by nudging a constant and watching it fail).
 
 ---
 
-## Phase 1 — Delete the dead weight
+## Phase 1 — Delete the dead weight  — **mostly DONE**
 
 Nothing here changes behaviour.
 
 **Vestigial translation units** (not even compiled — the Makefile builds only
 `main.cc`):
-- [ ] `CConfig.cc` — includes only.
-- [ ] `grid.cc` — a single `#include`.
+- [x] `CConfig.cc` — includes only.
+- [x] `grid.cc` — a single `#include`.
 
 **Tools that cannot build** (already excluded from `tools/Makefile`):
-- [ ] `tools/asphericity.cc` — includes a nonexistent `<CStat.h>` and a
+- [x] `tools/asphericity.cc` — includes a nonexistent `<CStat.h>` and a
       pre-`include/` path.
-- [ ] `tools/sphere_map.cc` — includes `include/define_params.h`, renamed to
+- [x] `tools/sphere_map.cc` — includes `include/define_params.h`, renamed to
       `config.h` years ago.
-- [ ] `tools/correlation.cc`, `tools/coord2xdr.cc` — need HDF5 and Sun RPC/XDR.
-- [ ] `bin/coord2xdr.sh` — driver for the above.
+- [x] `tools/correlation.cc`, `tools/coord2xdr.cc` — need HDF5 and Sun RPC/XDR.
+- [x] `bin/coord2xdr.sh` — driver for the above.
 
 **Superseded pipeline:**
-- [ ] `bin/coord2pov`, `make pov` — the POV-Ray path, replaced by
+- [x] `bin/coord2pov`, `make pov` — the POV-Ray path, replaced by
       `VISUALIZATION.md`.
-- [ ] `bin/coord2pr3d`, `bin/genFrames.sh`, `bin/encodejpg.sh`,
+- [x] `bin/coord2pr3d`, `bin/genFrames.sh`, `bin/encodejpg.sh`,
       `make animate` / `movie` — the raster3d path.
 
 **Cluster scripts with the author's absolute paths baked in** (`/home/reza/...`),
 useless to anyone else:
-- [ ] `bin/jobs`, `bin/jobs_abc`, `bin/jobs_gen_asp`, `bin/jobs_relax`,
+- [x] `bin/jobs`, `bin/jobs_abc`, `bin/jobs_gen_asp`, `bin/jobs_relax`,
       `bin/lastarg.sh`.
-- [ ] `bin/avgdensity.sh` — shells out to an `avg` binary that is not in the
+- [x] `bin/avgdensity.sh` — shells out to an `avg` binary that is not in the
       repo and assumes a directory layout that no longer exists.
 
 **Half-finished features** that are referenced but never instantiated:
-- [ ] `include/cylinder.h` (`CCylinder`) — self-described as "not complete".
-- [ ] `include/composite.h` (`CComposite`) — "maybe not fully working"; needs
+- [x] `include/cylinder.h` (`CCylinder`) — self-described as "not complete".
+- [x] `include/composite.h` (`CComposite`) — "maybe not fully working"; needs
       the `interaction.h` overloads and `shapes.h` include removed with it.
-- [ ] `include/verlet.h` — the Verlet list is `#undef`'d out and has therefore
+- [x] `include/verlet.h` — the Verlet list is `#undef`'d out and has therefore
       never run in any build we have. Decide: repair and enable, or delete.
       Deleting is defensible until Phase 6 makes the cell list fast enough that
       it would only be needed for very large N.
@@ -185,12 +185,12 @@ a compiler, CMake and GSL/Eigen.
 
 ---
 
-## Phase 4 — Bug fixes (correctness)
+## Phase 4 — Bug fixes (correctness)  — **in progress**
 
 From `PORTING-NOTES.md`, plus what the port surfaced. Ordered by how much they
 can silently mislead a result.
 
-- [ ] **`zeta` / `zetaWidth` are ignored for `particleType general`.** Reads
+- [x] **`zeta` / `zetaWidth` are ignored for `particleType general`.** Reads
       `zeta0`/`zetaW`, then computes `zeta = eta0 * TruncGaussRand(1, etaW)`.
       The two shape parameters are therefore not independent and `zetaWidth`
       does nothing. Any published result using unequal `eta`/`zeta` is suspect.
@@ -202,18 +202,34 @@ can silently mislead a result.
       for `int` where the parameter was registered as `unsigned int` is UB that
       currently happens to work. Store a type tag and check it, or at least
       `dynamic_cast` in a debug build.
-- [ ] **First line of `log_energy` is uninitialised garbage** — energies are
-      written before they are computed on the first pass.
-- [ ] **The "Relaxation criterion reached ... KE < 1e-8" message is printed on
+- [x] **First line of `log_energy` was uninitialised garbage** — energies are
+      accumulated at the end of `forward()`, so on the first snapshot they had
+      never been computed.  Added `CSys::computeEnergies()`.
+- [x] **The "Relaxation criterion reached ... KE < 1e-8" message was printed on
       every exit**, including a normal `maxTime` exit.
+- [x] **Deposition aborted with "Point out of grid" once the box filled up** —
+      a new layer was seeded unconditionally at a z that could exceed the lid.
+      Only went unnoticed because `nParticle` was usually exhausted first.
+- [x] **`method restart` was broken** — `celllist.build()` ran before
+      `celllist.setup()`, so `which()` divided by an uninitialised `dx`.
+- [x] **`nRadii` was a dead guard** — a function-local static nothing ever
+      incremented.
 - [ ] **Default parameters are unusable** — `particleSize=1` in a `1×1×2` box
       puts every particle outside the grid. Ship a `config` or fail loudly.
+- [ ] **The deposition gate uses a literal `1.` as the box height**
+      (`maxh < 1 + 2*maxRadii`), a leftover from a 1×1×1 box.  It should be
+      `walls.L(2)`, but changing it changes how many particles get placed, so it
+      needs a deliberate decision rather than a drive-by fix.
+- [ ] **`README` documents the shape parameters wrongly.** It says
+      `eta = a/b, xi = b/c`; the code computes `a/b = zeta` and `c/a = eta`.
+      The config-file names do not mean what the README says.
+- [ ] **The snapshot format carries no velocities**, so `method restart` starts
+      from rest.  Needs a format change (extra columns) or a separate state file.
 - [ ] `CParticle::addforce` overwrites `avgforces` with the *last* contact
       force rather than accumulating, and uses a `static prev` that is shared
       across all particles — so "average force" is neither averaged nor
-      per-particle.
-- [ ] `CSys::add_particle_layer`: `nRadii` is a `static` that is never
-      incremented, so the guard `ERROR(nRadii>=radii.size(), ...)` is dead.
+      per-particle.  Its only consumer is an `if(0)` block in `forward()`, so
+      the honest fix is probably deletion.
 - [ ] `TNode::normal_fabric_tensor()` returns `branch_fabric_M` from its dead
       early return, and `bool calculated=false` is a local so the cache never
       works.
