@@ -220,17 +220,11 @@ const _s = new THREE.Vector3();
 const _c = new THREE.Color();
 const plain = new THREE.Color(0x7fb0e8);
 
-// --- per-frame scalar ranges, so the colour scale does not jump around
-const ranges = {};
-for (const k of ['a', 'c', 'aspect', 'volume']) ranges[k] = [Infinity, -Infinity];
-for (const f of FRAMES) {
-  for (const p of f.stats) {
-    for (const k of Object.keys(ranges)) {
-      ranges[k][0] = Math.min(ranges[k][0], p[k]);
-      ranges[k][1] = Math.max(ranges[k][1], p[k]);
-    }
-  }
-}
+// --- scalar ranges for the colour modes, computed once in Python so the
+//     colour scale does not jump from frame to frame.  (The old code shipped
+//     a JSON object per particle per frame just to work these out, which made
+//     the page roughly 3x bigger than the trajectory data itself.)
+const ranges = DATA.ranges;
 
 let colorMode = '__COLORMODE__';
 
@@ -379,17 +373,13 @@ def _pack(snapshot):
     (x,y,z,w) order that three.js uses."""
     n = len(snapshot)
     buf = bytearray(n * 10 * 4)
-    stats = []
     for i in range(n):
         x, y, z = snapshot.positions[i]
         w, qx, qy, qz = snapshot.quats[i]
         a, b, c = snapshot.axes[i]
         struct.pack_into("<10f", buf, i * 40,
                          x, y, z, qx, qy, qz, w, a, b, c)
-        stats.append({"a": a, "b": b, "c": c,
-                      "aspect": (c / a) if a else 0.0,
-                      "volume": 4.0 / 3.0 * 3.141592653589793 * a * b * c})
-    return base64.b64encode(bytes(buf)).decode("ascii"), stats
+    return base64.b64encode(bytes(buf)).decode("ascii")
 
 
 def build(paths, out_path, title, fps=4.0, color="uniform"):
@@ -398,15 +388,30 @@ def build(paths, out_path, title, fps=4.0, color="uniform"):
     frames = []
     lo = [float("inf")] * 3
     hi = [float("-inf")] * 3
+    # colour-mode ranges, so the scale is stable across the whole trajectory
+    keys = ("a", "c", "aspect", "volume")
+    rng = {k: [float("inf"), float("-inf")] for k in keys}
+
+    def note(a, b, c):
+        vals = {"a": a, "c": c,
+                "aspect": (c / a) if a else 0.0,
+                "volume": 4.0 / 3.0 * 3.141592653589793 * a * b * c}
+        for k, v in vals.items():
+            if v < rng[k][0]:
+                rng[k][0] = v
+            if v > rng[k][1]:
+                rng[k][1] = v
+
     for i, path in enumerate(paths):
         snap = read_snapshot(path)
-        blobb64, stats = _pack(snap)
+        blobb64 = _pack(snap)
         if i < len(times):
             text = "%s   t = %g" % (os.path.basename(path), times[i])
         else:
             text = os.path.basename(path)
-        frames.append({"label": text, "n": len(snap),
-                       "b64": blobb64, "stats": stats})
+        frames.append({"label": text, "n": len(snap), "b64": blobb64})
+        for a, b, c in snap.axes:
+            note(a, b, c)
         blo, bhi = bounding_box(snap)
         for k in range(3):
             lo[k] = min(lo[k], blo[k])
@@ -414,7 +419,7 @@ def build(paths, out_path, title, fps=4.0, color="uniform"):
 
     import json
     payload = json.dumps({"box": {"min": lo, "max": hi},
-                          "fps": fps, "frames": frames})
+                          "ranges": rng, "fps": fps, "frames": frames})
     # </script> inside the JSON would terminate the host <script> element
     payload = payload.replace("</", "<\\/")
 
