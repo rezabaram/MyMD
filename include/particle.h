@@ -182,13 +182,39 @@ ostream &operator <<(ostream &out, const CParticle &p){
 double friction=1;
 
 //using beeman method
+//
+// The translational velocity used to be advanced as
+//
+//     calPos:  v += (3/2) a_n dt - (1/2) a_{n-1} dt          (predictor)
+//     calVel:  v += (a_n - a_{n+1}) dt/3                     (corrector)
+//
+// That corrector is wrong.  Relative to this predictor the standard Beeman
+// corrector is (1/3)(a_{n+1} - 2 a_n + a_{n-1}) dt, so the a_{n+1} term needs
+// the opposite sign and the a_{n-1} term was missing entirely.  Taylor
+// expanding the old pair gives
+//
+//     v_{n+1} - v_n = a dt + (1/6) a' dt^2 + O(dt^3)
+//
+// against the exact a dt + (1/2) a' dt^2 -- only **first-order** accurate.
+// The rotational update just below already used the standard coefficients.
+//
+// It is measurable on a perfectly elastic bounce (damping, friction and
+// fluiddampping all zero), where the ball must return to the height it was
+// dropped from.  Apogee after the first bounce, dropped from z = 0.800:
+//
+//     dt = 1e-4    0.8390  ->  0.8000
+//     dt = 5e-5    0.8192  ->  0.8000
+//     dt = 2.5e-5  0.8095  ->  0.8000
+//        (before)            (after)
+//
+// i.e. a 5% energy error per bounce at dt=1e-4, converging only linearly.
+// bench/reference/elastic_bounce asserts the corrected behaviour.
 void CParticle::calPos(double dt){
 TRY
 	static const double c=1./6.0;
 	//translational degree
 	x(0) += x(1)*dt + x(2)*(dt*dt*4.0*c) - x0(2)*(dt*dt*c);
-	//x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
-	x(1) += x(2)*(dt*1.5) - x0(2)*(dt*0.5);
+	x(1) += x(2)*(dt*5.0*c) - x0(2)*(dt*c);
 
 	//rotational degree
 	static vec wp;
@@ -219,8 +245,9 @@ void CParticle::calVel(double dt){
 	x0(0)=x(0);
 	x0(2)=x(2);
 	x(2)=*forces/mass;
-	//x(1)+= x(2)*(dt*2*c);
-	x(1)+= x(2)*(dt*2*c)-x(2)*(dt*4*c) + x0(2)*(dt*2*c);
+	// standard Beeman corrector, relative to the predictor in calPos:
+	//   v += (1/3) a_{n+1} dt
+	x(1)+= x(2)*(dt*2*c);
 	
 	w0(2)=w(2);
 	static vec wp, wwp, torquep;

@@ -64,11 +64,18 @@ TOL_INSIDE = 1e-6            # slack on the box test
 
 
 def run_case(case, workdir):
-    """Run one reference case and return the directory it wrote into."""
+    """Run one reference case and return the directory it wrote into.
+
+    Every regular file in the case directory is copied in, so a case may bring
+    auxiliary inputs (the elastic-bounce case restarts from a drop file) as well
+    as its config."""
     src = os.path.join(REFERENCE, case)
     if not os.path.isdir(src):
         raise SystemExit("no such reference case: %s" % case)
-    shutil.copy(os.path.join(src, "config"), os.path.join(workdir, "config"))
+    for name in os.listdir(src):
+        full = os.path.join(src, name)
+        if os.path.isfile(full):
+            shutil.copy(full, os.path.join(workdir, name))
     with open(os.path.join(workdir, "stdout.log"), "w") as log:
         rc = subprocess.call([ELF, SEED, "config"], cwd=workdir,
                              stdout=log, stderr=subprocess.STDOUT)
@@ -176,6 +183,41 @@ def check_invariants(case, snapshot_path, workdir):
     return ok, msgs
 
 
+# --- case-specific checks -------------------------------------------------
+#
+# Some physics cannot be pinned down by comparing a snapshot: the point is a
+# conservation law.  These run in addition to tiers 1 and 2.
+
+# the elastic-bounce case drops a sphere from this height with damping,
+# friction and fluiddampping all zero, so it must come back to it
+BOUNCE_DROP_Z = 0.8
+BOUNCE_TOL = 5e-3
+
+
+def bounce_apogee(workdir):
+    files = expand_paths([os.path.join(workdir, "out0*")])
+    zs = []
+    for path in files:
+        snap = read_snapshot(path)
+        if len(snap):
+            zs.append(snap.positions[0][2])
+    return max(zs) if zs else None
+
+
+def extra_checks(case, workdir):
+    """Returns (ok, messages) for checks specific to one case."""
+    if case != "elastic_bounce":
+        return True, []
+    apogee = bounce_apogee(workdir)
+    if apogee is None:
+        return False, ["  energy conservation : FAIL (no frames)"]
+    good = abs(apogee - BOUNCE_DROP_Z) <= BOUNCE_TOL
+    return good, ["  energy conservation      : dropped from %.4f, returned to "
+                  "%.4f (tol %.0e)  %s"
+                  % (BOUNCE_DROP_Z, apogee, BOUNCE_TOL,
+                     "ok" if good else "FAIL")]
+
+
 def regenerate(case, workdir):
     dst = os.path.join(REFERENCE, case, "expected")
     os.makedirs(dst, exist_ok=True)
@@ -233,7 +275,12 @@ def main(argv=None):
             print(" tier 2 (invariants)")
             for m in msgs2:
                 print(m)
-            if ok1 and ok2:
+            ok3, msgs3 = extra_checks(case, workdir)
+            if msgs3:
+                print(" tier 3 (case specific)")
+                for m in msgs3:
+                    print(m)
+            if ok1 and ok2 and ok3:
                 print("  -> PASS")
             else:
                 failures.append(case)
