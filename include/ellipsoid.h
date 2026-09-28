@@ -230,10 +230,6 @@ class CEllipsoid: public GeomObjectBase
 		return X*ellip_mat*X;
 		}
 
-	Matrix inv()const{
-		return (~rotat_mat*inv_scale_mat*rotat_mat);
-		}
-
 	void update_tranlation_mat() {
 	TRY	
 		trans_mat(0,3)=-Xc(0);
@@ -323,12 +319,27 @@ class CEllipsoid: public GeomObjectBase
 		setup();
 		}
 
+	/// plane.n * inv() * plane.n, without building inv().
+	///
+	/// inv() is ~R * S^-1 * R and S^-1 is diagonal, so the quadratic form
+	/// collapses to a weighted sum of the squared components of R*plane.n.
+	/// Forming the matrix instead costs three heap allocations on every wall
+	/// face test -- and every particle tests up to six faces every step, so
+	/// this was the largest single source of allocation in the program.
+	/// (plane.n * ~R is the same as R * plane.n: both operators sum
+	/// v(j) * M(i,j), one of them over the transposed matrix.)
+	double plane_alpha(const CPlane &plane)const{
+		const vec Rn = rotat_mat*plane.n;
+		return Rn(0)*Rn(0)*inv_scale_mat(0,0)
+		     + Rn(1)*Rn(1)*inv_scale_mat(1,1)
+		     + Rn(2)*Rn(2)*inv_scale_mat(2,2);
+		}
+
 	bool doesHit(const CPlane &plane)const {//FIXME needs to be obtimized
 	TRY
 		if(fabs(plane(this->Xc)) > this->radius) return false;
-		double alpha;
-		alpha=(plane.n*(this->inv())*plane.n);
-	
+		double alpha=plane_alpha(plane);
+
 		ERROR(alpha<=0, "Impossible happened");
 
 		alpha=1/sqrt(alpha);
@@ -342,9 +353,8 @@ class CEllipsoid: public GeomObjectBase
 
 	vec point_to_plane(const CPlane &plane)const{//FIXME needs to be obtimized
 	TRY
-		double alpha;
-		alpha=(plane.n*(this->inv())*plane.n);
-	
+		double alpha=plane_alpha(plane);
+
 		ERROR(alpha<0, "Impossible happened");
 
 		alpha=1/sqrt(alpha);
@@ -468,7 +478,6 @@ class CEllipsoid: public GeomObjectBase
 	vec    inv_scale_vec;
 
 	Matrix ellip_mat;
-	Matrix inv_rot_scale_mat;   ///< cached result of inv(), see update_tranlation_mat
 	Matrix inert_mat;
 
 	double a,b,c;
