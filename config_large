@@ -1,0 +1,22 @@
+# benchmark B4 : 2500 particles, particleSize 0.0232079, timeStep 0.00001
+boxsize		1 1 1.2
+boxcorner	0 0 0
+density		1
+Gravity		0   0   -10
+outDt		0.025
+timeStep	0.00001
+maxTime		0.275
+particleSize	0.0232079
+particleSizeWidth 0.05
+nParticle	2500
+stiffness	5e+02
+damping		5e+0
+friction	2.0e-1
+cohesion	0.0
+output		out
+method		deposition
+boundary	solid
+eta		1.4
+etaWidth	0.25
+zeta		1.4
+zetaWidth	0.25
