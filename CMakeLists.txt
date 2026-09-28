@@ -42,6 +42,9 @@ target_include_directories(ellipmd PRIVATE
   ${GSL_INCLUDE_DIRS})
 target_link_libraries(ellipmd PRIVATE ${GSL_LIBRARIES})
 target_compile_options(ellipmd PRIVATE -Wall)
+# single source of truth for the version: CMakeLists.txt's project(VERSION)
+target_compile_definitions(ellipmd PRIVATE
+  MYMD_VERSION="${PROJECT_VERSION}")
 
 # ---------------------------------------------------------------------------
 # Analysis utilities.  See tools/Makefile for the ones that were dropped

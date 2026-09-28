@@ -8,7 +8,10 @@
 #ifndef MYMD_VERSION_H
 #define MYMD_VERSION_H
 
-// Keep in sync with project(MyMD VERSION ...) in CMakeLists.txt.
+// CMake defines this from project(MyMD VERSION ...), so the two cannot drift.
+// The fallback is for the Makefile build, which has no such notion.
+#ifndef MYMD_VERSION
 #define MYMD_VERSION "0.1.0"
+#endif
 
 #endif /* MYMD_VERSION_H */
