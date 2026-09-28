@@ -17,6 +17,12 @@ bench/runs/
 __pycache__/
 *.pyc
 
+# The regression reference data under bench/reference/ is test input, not run
+# output.  Without this the broad '*out*' rule above silently swallows it --
+# which it did, leaving make check with no reference data in a fresh clone.
+!bench/reference/**
+!bench/reference/**/*
+
 # binaries produced by 'make tools' (see tools/Makefile)
 /tools/coord_convert
 /tools/coord2xdr

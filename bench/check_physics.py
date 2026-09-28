@@ -62,6 +62,14 @@ TOL_ROTATION = 1e-9
 TOL_VOLUME_REL = 1e-6        # particle shapes should not drift
 TOL_INSIDE = 1e-6            # slack on the box test
 
+# The expected final state is stored under a fixed name rather than as the
+# snapshot it came from.  Call it 'outend' and the repository's own '*out*'
+# ignore rule swallows it, which is exactly what happened: the harness passed
+# locally for a while with its reference data untracked, and would have failed
+# on a fresh clone.  Do not rename this to anything containing 'out' or ending
+# in '.dat' -- both are ignored here.
+EXPECTED_NAME = "final.snapshot"
+
 
 def run_case(case, workdir):
     """Run one reference case and return the directory it wrote into.
@@ -167,7 +175,7 @@ def check_invariants(case, snapshot_path, workdir):
     ok = ok and outside == 0
 
     vol = sum(4.0 / 3.0 * math.pi * a * b * c for a, b, c in snap.axes)
-    ref = os.path.join(REFERENCE, case, "expected", "outend")
+    ref = os.path.join(REFERENCE, case, "expected", EXPECTED_NAME)
     if os.path.isfile(ref):
         rsnap = read_snapshot(ref)
         rvol = sum(4.0 / 3.0 * math.pi * a * b * c for a, b, c in rsnap.axes)
@@ -219,13 +227,16 @@ def extra_checks(case, workdir):
 
 
 def regenerate(case, workdir):
+    """Store the final state as expected/<EXPECTED_NAME>.
+
+    Only the final state is kept: it is the only thing tier 1 compares against
+    and tier 2 needs, and keeping the whole trajectory would mean hundreds of
+    ~1 MB files per case."""
     dst = os.path.join(REFERENCE, case, "expected")
+    shutil.rmtree(dst, ignore_errors=True)
     os.makedirs(dst, exist_ok=True)
-    for name in os.listdir(workdir):
-        if name.startswith("out"):
-            shutil.copy(os.path.join(workdir, name),
-                        os.path.join(dst, name))
-    print("  regenerated expected/ for %s" % case)
+    shutil.copy(final_snapshot(workdir), os.path.join(dst, EXPECTED_NAME))
+    print("  regenerated expected/%s for %s" % (EXPECTED_NAME, case))
 
 
 def main(argv=None):
@@ -259,12 +270,14 @@ def main(argv=None):
                 print("  ok (regenerated)")
                 continue
 
-            expected = os.path.join(REFERENCE, case, "expected",
-                                    os.path.basename(final))
+            expected = os.path.join(REFERENCE, case, "expected", EXPECTED_NAME)
             if not os.path.isfile(expected):
                 failures.append(case)
-                print("  FAIL: no expected output at %s "
-                      "(run with --regenerate once)" % expected)
+                print("  FAIL: no reference data at %s\n"
+                      "        run 'python3 bench/check_physics.py "
+                      "--case %s --regenerate' once, and make sure the file is\n"
+                      "        actually tracked by git (it must not match an "
+                      "ignore rule)." % (expected, case))
                 continue
 
             ok1, msgs1 = compare_snapshots(expected, final)
