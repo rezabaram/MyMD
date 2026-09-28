@@ -8,6 +8,11 @@ Numbers are from `bench/results.json`, which is committed.
 optimisations are worth.  Use `--repeat N` (the median is recorded, along with
 every sample) before believing any delta below that.
 
+`--fast` skips the longest configuration (B4, about 9 of the ~16 minutes) for
+use while iterating, and merges rather than overwrites, so the skipped entry
+keeps its last full-sweep number.  Run a full sweep before quoting the file as
+a whole — the `repeats` field on each entry says whether it was re-measured.
+
 ---
 
 # Part 1 — scaling: 10x particles x 1/10 time step
@@ -166,7 +171,12 @@ moved.
 | + allocation-free matrix inverse | 52.06 s | 18.929 | -34% |
 | + GSL workspace reuse | ~52 s | ~18.9 | no measurable change |
 
-Full re-baseline afterwards (`bench/results.json`, single runs):
+**The C++17 migration is performance-neutral** — B2 55.76 s before, 55.22 s
+after, both within the noise floor — which is what you would expect, since it
+changed an RNG engine and an exception specification rather than anything on
+the hot path.
+
+Full re-baseline after the optimisation work (`bench/results.json`):
 
 | run | before | after | delta |
 |---|---|---|---|

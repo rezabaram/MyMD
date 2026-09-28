@@ -97,8 +97,19 @@ def main(argv=None):
         return 2
 
     os.makedirs(args.workdir, exist_ok=True)
-    results = []
     t_start = time.time()
+
+    # Keep the entries we are not re-measuring, so `--fast` refreshes three of
+    # the four configurations without discarding the fourth's last full-sweep
+    # number.  A full sweep is still what you run to refresh everything.
+    previous = {}
+    try:
+        with open(os.path.join(HERE, "results.json")) as fh:
+            for rec in json.load(fh):
+                previous[rec["name"]] = rec
+    except (OSError, ValueError):
+        pass
+    results = []
 
     selected = RUNS
     if args.fast:
@@ -142,8 +153,11 @@ def main(argv=None):
             "rc": rc,
         }
         results.append(rec)
+        ordered = [r for r in results] + [
+            previous[r[0]] for r in RUNS
+            if r[0] in previous and r[0] not in {x["name"] for x in results}]
         with open(os.path.join(HERE, "results.json"), "w") as fh:
-            json.dump(results, fh, indent=1)
+            json.dump(ordered, fh, indent=1)
 
         spread = ""
         if repeat > 1:
