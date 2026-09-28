@@ -7,6 +7,13 @@ point; the entries below cover the port and modernisation work.
 
 ### Fixed
 
+- **A missing config file was a warning, not an error.**  The run then
+  continued with the compiled-in defaults, which are not a working
+  configuration (`particleSize=1` in a `1x1x2` box), and died later with a
+  confusing `Point out of grid`.  It now fails immediately and says what to
+  pass.  A working `config` is also committed, so `make run` works on a fresh
+  checkout.
+
 - **`CParticle::`** carried an `avgforces` member that `addforce` overwrote
   with the last contact force (rather than accumulating), using a `static vec
   prev` shared by every particle; `avgtorque` was declared and never used.  The

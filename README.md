@@ -31,9 +31,10 @@ make run CONFIG=config_quick    # a ~1 s smoke test: 100 spheroids settling
 open viz/trajectory_large.html  # look at it  (see docs/VISUALIZATION.md)
 ```
 
-`make run` without `CONFIG=` looks for a file called `config` and falls back to
-the compiled-in defaults, which are not a working configuration — always pass
-`CONFIG=`, or copy one of the `config_*` files to `config`.
+`make run` without `CONFIG=` reads the `config` file in the working directory,
+which is committed and is the same small smoke test as `config_quick`.  Naming
+a file that does not exist is a hard error rather than a silent fall back to the
+compiled-in defaults.
 
 ## Requirements
 
@@ -214,10 +215,11 @@ baseline and [`ROADMAP.md`](ROADMAP.md) for what is known to be wrong.
 These are real and worth knowing before you trust a number:
 
 * `cohesion` and `static_friction` are not implemented (the code warns).
-* A restarted run loses velocities.
+* A restarted run loses velocities, because the snapshot format carries none.
 * The integrator's stability limit is not enforced — reducing `particleSize`
   without reducing `timeStep` will blow up.
-* The deposition layer gate uses a hardcoded box height; see `ROADMAP.md`.
+* `fluiddampping` is on by default (0.05), so every run has a
+  velocity-proportional drag unless it is explicitly disabled.
 * The code is single-threaded and the hot path is dominated by a vendored
   heap-allocating matrix class; `ROADMAP.md` Phase 6 has a profile.
 

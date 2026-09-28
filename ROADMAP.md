@@ -232,8 +232,10 @@ can silently mislead a result.
       `celllist.setup()`, so `which()` divided by an uninitialised `dx`.
 - [x] **`nRadii` was a dead guard** — a function-local static nothing ever
       incremented.
-- [ ] **Default parameters are unusable** — `particleSize=1` in a `1×1×2` box
-      puts every particle outside the grid. Ship a `config` or fail loudly.
+- [x] **Default parameters were unusable** — `particleSize=1` in a `1×1×2` box
+      put every particle outside the grid.  A working `config` is now shipped,
+      and naming a file that does not exist is a hard error with a message
+      rather than a silent fall back to those defaults.
 - [x] **The deposition gate used a literal `1.` as the box height**
       (`maxh < 1 + 2*maxRadii`), a leftover from a 1×1×1 box.  It should be
       `walls.L(2)`, but changing it changes how many particles get placed, so it

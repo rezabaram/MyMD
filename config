@@ -1,0 +1,33 @@
+# The default configuration: what 'make run' and './ellipmd <seed>' pick up
+# when no file is named.  It is deliberately the same small smoke test as
+# config_quick, so that a fresh checkout runs something that works.
+#
+# (Until this file existed, a missing config meant the compiled-in defaults,
+# which are not a working configuration: particleSize=1 inside a 1x1x2 box
+# puts every particle outside the grid.)
+#   make run CONFIG=config_quick
+# 1000 steps with ~100 particles; finishes in a few seconds.
+
+boxsize		1 1 1.2
+boxcorner	0 0 0
+density		1
+Gravity		0   0   -10
+
+outDt		0.02
+timeStep	0.0001
+maxTime		0.1
+
+particleSize	0.05
+particleSizeWidth 0.01
+nParticle	100
+
+stiffness	5e+02
+damping		5e+0
+friction	2.0e-1
+cohesion	0.0
+
+output		out
+method		deposition
+boundary	solid
+eta		1.4
+zeta		1.4

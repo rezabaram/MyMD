@@ -125,8 +125,13 @@ void CConfig::parse(string infilename) {
 
 	if(!inputFile.good())
 	{
-	cerr << "WARNING: Unable to open input file: " << infilename << endl;
-	return;
+	// This used to warn and carry on with the compiled-in defaults, which are
+	// not a working configuration -- particleSize=1 inside a 1x1x2 box puts
+	// every particle outside the grid, and the run dies later with a confusing
+	// "Point out of grid".  Better to say so here.
+	ERROR(1, "cannot open config file '"+infilename+"'\n"
+	         "\tPass one as the second argument:  ./ellipmd <seed> <config-file>\n"
+	         "\tOr use one of the examples:        make run CONFIG=config_quick");
 	}
 	parse(inputFile);
 	inputFile.close();
