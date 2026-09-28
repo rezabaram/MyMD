@@ -167,41 +167,89 @@ CATCH
 // for fast convergence x should be initially on E1 and near to minimum 
 void findMin(HomVec &x,  CEllipsoid  &E1, CEllipsoid  &E2, long nIter=1){
 TRY
+	// Plain 3x3 stack arrays rather than math::matrix<double>.
+	//
+	// This loop runs about 14.8 times per call on average, twice per contact,
+	// and there are ~870 calls per step.  Every iteration used to go through
+	// mat_scale, mat_add and invert_into plus two matrix-vector products, and
+	// each of those evaluates matrixT::operator() for every element -- which
+	// bounds-checks its indices and tests the reference count before handing
+	// back a reference.  That accessor overhead, not the arithmetic, is what
+	// the profile was showing.
+	//
+	// The arithmetic is written to mirror the helpers exactly, including the
+	// accumulation order and the partial-pivoting inverse, so the iteration
+	// converges to the same points rather than merely similar ones.
+	double Em1[3][3], Em2[3][3], scaled[3][3], sum[3][3], inv[3][3];
+	for(int i=0; i<3; ++i)
+		for(int j=0; j<3; ++j){
+			Em1[i][j]=E1.ellip_mat(i,j);
+			Em2[i][j]=E2.ellip_mat(i,j);
+			}
+
+	const vec c1=E1.Xc, c2=E2.Xc;
 	double lambda, lambda0;
 	vec xp0, xp=x.project();
-	static Matrix Em1(3,3), Em2(3,3);
-	// Scratch for the fixed-point iteration below, which used to build
-	// `!(Em2 + lambda*Em1) * (Em2*Xc2 + lambda*Em1*Xc1)` out of expression
-	// temporaries: about five matrix objects per iteration, each five heap
-	// allocations, up to 500 iterations, twice per contact.  It was the last
-	// thing keeping matrix<double> at ~78% of the profile.
-	static Matrix scaled(3,3), sum(3,3), inv(3,3);
-	for(size_t i=0; i<3; i++){
-	for(size_t j=0; j<3; j++){
-		Em1(i,j)=E1.ellip_mat(i,j);
-		Em2(i,j)=E2.ellip_mat(i,j);
-		}
-		}
-	
+
 	long iter=0;
 	bool converged=false;
-	lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
+	lambda=fabs((xp-c1)*E2.ellip_mat*(xp-c2));
 	do{
 		++iter;
 		xp0=xp;
 		lambda0=lambda;
-		//using the fact that the gradients of the potentials of the 
-		//the ellipsoids are in opposite directions at the minimum
-		lambda=fabs((xp-E1.Xc)*E2.ellip_mat*(xp-E2.Xc));
-		mat_scale(scaled, Em1, lambda);   // scaled = lambda*Em1
-		mat_add(sum, Em2, scaled);        // sum    = Em2 + lambda*Em1
-		invert_into(inv, sum);            // inv    = sum^-1
-		xp = inv*(Em2*E2.Xc + scaled*E1.Xc);
+		// the gradients of the two potentials are opposite at the minimum
+		lambda=fabs((xp-c1)*E2.ellip_mat*(xp-c2));
+
+		for(int i=0; i<3; ++i)
+			for(int j=0; j<3; ++j){
+				scaled[i][j]=Em1[i][j]*lambda;
+				sum[i][j]=Em2[i][j]+scaled[i][j];
+				}
+
+		// inv = sum^-1, Gauss-Jordan with partial pivoting
+		{
+			double m[3][6];
+			for(int i=0; i<3; ++i){
+				for(int j=0; j<3; ++j){
+					m[i][j]=sum[i][j];
+					m[i][3+j]=(i==j)?1.0:0.0;
+					}
+				}
+			for(int k=0; k<3; ++k){
+				int piv=k;
+				for(int i=k+1; i<3; ++i)
+					if(fabs(m[i][k])>fabs(m[piv][k])) piv=i;
+				if(piv!=k)
+					for(int j=0; j<6; ++j){
+						const double t=m[k][j]; m[k][j]=m[piv][j]; m[piv][j]=t;
+						}
+				const double d=m[k][k];
+				ERROR(d==0.0, "findMin: singular matrix in the fixed-point step");
+				for(int j=0; j<6; ++j) m[k][j]/=d;
+				for(int i=0; i<3; ++i){
+					if(i==k) continue;
+					const double f=m[i][k];
+					if(f==0.0) continue;
+					for(int j=0; j<6; ++j) m[i][j]-=f*m[k][j];
+					}
+				}
+			for(int i=0; i<3; ++i)
+				for(int j=0; j<3; ++j)
+					inv[i][j]=m[i][3+j];
+			}
+
+		// xp = inv * (Em2*Xc2 + lambda*Em1*Xc1)
+		double rhs[3];
+		for(int i=0; i<3; ++i)
+			rhs[i]=Em2[i][0]*c2(0)+Em2[i][1]*c2(1)+Em2[i][2]*c2(2)
+			      +scaled[i][0]*c1(0)+scaled[i][1]*c1(1)+scaled[i][2]*c1(2);
+		for(int i=0; i<3; ++i)
+			xp(i)=inv[i][0]*rhs[0]+inv[i][1]*rhs[1]+inv[i][2]*rhs[2];
+
 		converged= (xp-xp0).abs()<1e-13 and fabs(lambda0-lambda)<1e-10;
 		}
 	while(iter<nIter and !converged);
-	//	cout<<setprecision(14)<<iter<<"  lambda="<< lambda<<"   Xp="<<xp <<"  C1="<< E1.Xc<<"  C2="<<E2.Xc<<endl;
-	
 
 	if(!converged)WARNING("minimization not converged: "<<(xp-xp0).abs()<<"    "<<fabs(lambda0-lambda));
 	if(converged and E2(xp) > 0)WARNING("A minimum point is not inside the corresponding ellipse: "<<xp<<". E(x)= "<<E2(xp)<<endl<<E1<<endl<<E2);
