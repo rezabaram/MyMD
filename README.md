@@ -27,6 +27,7 @@ make gsl          # one-off: fetch and build the GSL dependency (~2 min)
 make ellipmd      # build the solver
 make check        # physics regression tests (fast, run this after any change)
 
+make live         # dashboard: edit parameters, press Start, watch it run
 make run CONFIG=config_quick    # a ~1 s smoke test: 100 spheroids settling
 open viz/trajectory_large.html  # look at it  (see docs/VISUALIZATION.md)
 ```

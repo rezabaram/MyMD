@@ -51,7 +51,7 @@ bench: ellipmd
 
 update:
 	git pull origin master
-.PHONY: all run clean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench asan asan-check
+.PHONY: all run clean update tools gsl deps viewer viewer-check ovito ovito-render dump check bench asan asan-check live
 tools:
 	$(MAKE) -C tools
 
@@ -64,6 +64,15 @@ COLOR ?= uniform
 viewer:
 	python3 tools/web_viewer.py $(OUT) -o $(HTML) --color $(COLOR)
 	@echo "open file://$$(cd $$(dirname '$(HTML)') && pwd)/$$(basename '$(HTML)')"
+
+# Live dashboard: edit the parameters, press Start, and watch the run fill in
+# the browser.  Local only -- the server is the Python standard library.
+#   make live                        # opens on http://127.0.0.1:8770/
+#   make live LIVE_CONFIG=config_quick PORT=8800
+LIVE_CONFIG ?= $(ROOT)/config_rain
+PORT ?= 8770
+live:
+	python3 tools/live_viewer.py --port $(PORT) --config $(LIVE_CONFIG)
 
 # LAMMPS-dump conversion, for dragging into the OVITO GUI:
 #   make dump OUT='out0*' DUMP=trajectory.dump

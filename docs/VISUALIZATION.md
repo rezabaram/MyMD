@@ -46,6 +46,40 @@ want to colour by a physical quantity.
 
 ---
 
+## 0. The live dashboard (watch a run as it happens)
+
+```sh
+make live                       # http://127.0.0.1:8770/
+make live LIVE_CONFIG=config_quick PORT=8800
+python3 tools/live_viewer.py --config config_rain --rundir viz/live
+```
+
+`tools/live_viewer.py` is a local web app: it serves a page with a **parameter
+form**, Start and Stop, a progress bar, live statistics and a 3D view that picks
+up each new snapshot as the solver writes it.  Edit the config in the page, press
+Start, and watch the box fill.
+
+Nothing is installed and nothing leaves the machine -- the server is the Python
+standard library's `http.server`, and three.js comes from the same CDN the other
+viewers use.
+
+| endpoint | |
+|---|---|
+| `GET /` | the dashboard |
+| `GET /api/status` | running, t, particles, energies, frame list, log tail |
+| `GET /api/frame/<name>` | one snapshot as a float32 blob |
+| `POST /api/run` | `{"config": "...", "seed": 1}` |
+| `POST /api/stop` | terminate the run |
+
+The page shares its scene, colour maps and per-frame update with
+`web_viewer.py` (they live in `tools/viewer_common.py`), so the two render
+identically.
+
+`follow` keeps the newest frame on screen; turn it off, or drag the slider, to
+scrub back through what has been produced so far while the run carries on.
+
+---
+
 ## 1. The built-in web viewer (no installs)
 
 ```sh
