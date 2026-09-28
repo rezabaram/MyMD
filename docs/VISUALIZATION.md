@@ -98,6 +98,38 @@ keys, and colour-by-uniform / random / `c` / `a` / `c/a` / volume.  Z is up,
 because that is where gravity points.  A frame with 10^4 particles is one draw
 call.
 
+### Exporting a video
+
+Both viewers have a **record** button next to the colour selector, with a
+resolution choice (540p / 720p / 1080p).  Pressing it plays the whole
+trajectory through once and downloads a video file.
+
+* **Only the 3D view is recorded.**  The capture is taken from the WebGL
+  canvas, and the panels, buttons and sliders are separate DOM elements, so
+  they cannot appear in the file.
+* **The simulation box and the camera spin are always included**, whatever the
+  view toggles happen to be set to — a video is a rendered artefact, not a live
+  view, and both are part of the render.
+* **The camera turns one fixed step per frame** while recording.  The on-screen
+  spin advances with wall-clock time, which would give a different angle per
+  frame depending on how long each frame took to render.
+* Recording uses the browser's own `MediaRecorder` against a stream from the
+  canvas, so **nothing is uploaded anywhere**.  MP4 is preferred; where the
+  browser cannot produce it — Chrome has historically offered only WebM — the
+  file is written as WebM and named `.webm` rather than being called an mp4 it
+  is not.  The button says which format you will get.  Safari records MP4
+  directly.
+
+For a ray-traced mp4 instead of a screen recording, OVITO can do it offline:
+
+```sh
+make ovito
+.deps/venv/bin/python tools/ovito_reader.py 'out0*' outend --anim --out movie.mp4 --fps 30
+```
+
+`ovito_reader.py` also takes `--quality` and `--outlines`.  It needs ffmpeg,
+which OVITO will find if it is on `PATH`.
+
 ### Random colours
 
 `--color random` (or picking *random per particle* in the page) gives every

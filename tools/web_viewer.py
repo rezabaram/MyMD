@@ -67,6 +67,12 @@ PAGE_HEAD = r"""<!DOCTYPE html>
   </label>
   <label><input id="box" type="checkbox" checked> box</label>
   <label><input id="spin" type="checkbox"> spin</label>
+  <select id="vres" title="video resolution">
+      <option value="960x540">540p</option>
+      <option value="1280x720" selected>720p</option>
+      <option value="1920x1080">1080p</option>
+    </select>
+  <button id="export" title="record the 3D view to a video file">record</button>
 </div>
 """ + ERROR_BLOCK + r"""
 <script id="trajectory" type="application/json">__DATA__</script>
@@ -148,6 +154,7 @@ function animate(now) {
   }
   drawScene();
 }
+initVideoExport('export', 'vres', { frames: () => FRAMES, show: showFrame });
 showFrame(0);
 requestAnimationFrame(animate);
 """

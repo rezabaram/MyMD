@@ -344,11 +344,167 @@ function applyFrame(arr, n) {
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }
 
+// Set while a video is being recorded, so the wall-clock spin in animate()
+// does not fight the fixed per-frame spin the export applies.
+let exporting = false;
+
 function spinCamera(dt) {
+  if (exporting) return;
   const s = 0.35 * dt;
   const p = camera.position.clone().sub(controls.target);
   p.applyAxisAngle(new THREE.Vector3(0, 0, 1), s);
   camera.position.copy(controls.target).add(p);
+}
+
+
+// ------------------------------------------------------------ video export
+//
+// Records the 3D canvas to a video file.  Only the canvas is captured, so none
+// of the panels, buttons or sliders appear -- they are separate DOM elements,
+// not part of the drawing surface.  Whatever the page is drawing *is* in the
+// video: the simulation box is drawn when the "box" toggle is on, and the
+// camera spin is applied one fixed step per exported frame when "spin" is on,
+// so the rotation is smooth and reproducible rather than tied to however long
+// each frame took to render.
+//
+// Recording is done by the browser's own MediaRecorder against a stream taken
+// from the canvas, so nothing is uploaded anywhere.  MP4 is preferred; where
+// the browser cannot produce it (Chrome has historically offered only WebM)
+// the file is written as WebM and named .webm rather than being called an mp4
+// it is not.
+//
+// The page supplies where the frames come from, because the two pages keep
+// them differently -- the static viewer has a fixed FRAMES array, the live one
+// a list that grows as the run goes.
+
+function pickVideoMime() {
+  if (typeof MediaRecorder === 'undefined') return null;
+  const candidates = [
+    'video/mp4;codecs=avc1.4d002a',     // mp4, main profile
+    'video/mp4;codecs=avc1.42E01E',     // mp4, baseline
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  for (const m of candidates) {
+    try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) { }
+  }
+  return null;
+}
+
+function videoFormatLabel() {
+  const m = pickVideoMime();
+  if (!m) return 'unavailable';
+  return m.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+}
+
+const waitMs = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// `source` = { frames: () => array, show: (i) => Promise }
+async function exportVideo(opts, source) {
+  opts = Object.assign({ fps: 30, width: 1280, height: 720,
+                         bitrate: 12000000, onProgress: null }, opts || {});
+  const mime = pickVideoMime();
+  if (!mime) {
+    alert('This browser cannot record video: MediaRecorder is unavailable.');
+    return false;
+  }
+  const list = source.frames();
+  if (!list || !list.length) {
+    alert('There are no frames to record yet.');
+    return false;
+  }
+
+  const canvas = renderer.domElement;
+
+  // Record at a fixed size rather than whatever the window happens to be.
+  const size = new THREE.Vector2();
+  renderer.getSize(size);
+  const oldAspect = camera.aspect;
+  // The simulation box and the camera spin are part of the render, not view
+  // furniture, so the video always has both regardless of the toggles.
+  const oldCellVisible = cell.visible;
+  cell.visible = true;
+  renderer.setSize(opts.width, opts.height, false);
+  camera.aspect = opts.width / opts.height;
+  camera.updateProjectionMatrix();
+
+  const stream = canvas.captureStream(0);          // 0 = only on requestFrame
+  const track = stream.getVideoTracks()[0];
+  const chunks = [];
+  const rec = new MediaRecorder(stream,
+                                { mimeType: mime, videoBitsPerSecond: opts.bitrate });
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  const stopped = new Promise((res) => { rec.onstop = res; });
+
+  const period = 1000 / opts.fps;
+  exporting = true;                                // animate() stops spinning
+  rec.start();
+  try {
+    for (let i = 0; i < list.length; i++) {
+      const t0 = performance.now();
+      await source.show(i);
+      // One fixed step of rotation per frame: the wall-clock spin in animate()
+      // would give a different angle per frame depending on render time.
+      spinCamera(1.0 / opts.fps);
+      drawScene();                       // applyFrame only uploads; this draws
+      if (track.requestFrame) track.requestFrame();
+      if (opts.onProgress) opts.onProgress(i + 1, list.length);
+      // MediaRecorder timestamps by wall clock, so pace the frames or a slow
+      // render makes the video play at the wrong speed.
+      const spent = performance.now() - t0;
+      if (spent < period) await waitMs(period - spent);
+    }
+  } finally {
+    exporting = false;
+    rec.stop();
+    await stopped;
+    renderer.setSize(size.x, size.y, false);
+    camera.aspect = oldAspect;
+    camera.updateProjectionMatrix();
+    cell.visible = oldCellVisible;
+    if (typeof userMovedCamera !== 'undefined' && !userMovedCamera) homeCamera();
+  }
+
+  const ext = mime.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
+  const blob = new Blob(chunks, { type: mime.split(';')[0] });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'ellipmd-' + list.length + 'frames.' + ext;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return true;
+}
+
+/// Wire up an export button and a resolution select, if the page has them.
+function initVideoExport(btnId, resId, source) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const res = resId ? document.getElementById(resId) : null;
+  const fmt = videoFormatLabel();
+  btn.textContent = 'record ' + fmt;
+  btn.title = fmt === 'unavailable'
+    ? 'this browser cannot record video'
+    : 'record the 3D view (without the interface) to a ' + fmt
+      + ' file, with the box drawn and the camera turning';
+  btn.disabled = (fmt === 'unavailable');
+  btn.addEventListener('click', async () => {
+    let w = 1280, h = 720;
+    if (res && res.value) { const p = res.value.split('x'); w = +p[0]; h = +p[1]; }
+    const label = btn.textContent;
+    btn.disabled = true;
+    await exportVideo({
+      width: w, height: h, fps: 30, onProgress: (i, n) => {
+        btn.textContent = Math.round(100 * i / n) + '%';
+      },
+    }, source);
+    btn.textContent = label;
+    btn.disabled = false;
+  });
 }
 
 function resizeRenderer() {

@@ -526,6 +526,7 @@ function animate(now) {
   }
   drawScene();
 }
+initVideoExport('export', 'vres', { frames: () => frames, show: showFrame });
 requestAnimationFrame(animate);
 loop();
 """
@@ -616,6 +617,12 @@ PAGE_HEAD = r"""<!DOCTYPE html>
   <label><input id="box" type="checkbox" checked> box</label>
   <label><input id="spin" type="checkbox"> spin</label>
   <button id="fit" title="put the camera back to fit the box">fit</button>
+  <select id="vres" title="video resolution">
+      <option value="960x540">540p</option>
+      <option value="1280x720" selected>720p</option>
+      <option value="1920x1080">1080p</option>
+    </select>
+  <button id="export" title="record the 3D view to a video file">record</button>
 </div>
 
 <div id="side">
