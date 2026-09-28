@@ -176,10 +176,7 @@ function viridis(out, t) {
 
 // ------------------------------------------------------------------ scene
 const view = document.getElementById('view');
-// preserveDrawingBuffer keeps the rendered frame readable after the
-// compositor has taken it, which canvas.toBlob() during a video export needs.
-const renderer = new THREE.WebGLRenderer({ antialias: true,
-                                           preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 view.appendChild(renderer.domElement);
 
@@ -363,36 +360,40 @@ function spinCamera(dt) {
 
 
 
-// Switching the backing store to the export resolution while leaving the CSS
-// size alone stretches the on-screen image -- the canvas keeps its displayed
-// size and its contents are rescaled, which changes the apparent aspect ratio
-// for the whole of the recording.  Fit the canvas into its container at the
-// export aspect instead, letterboxed, and put it back afterwards.
-function fitCanvasForExport(width, height) {
-  const canvas = renderer.domElement;
-  const prev = { w: canvas.style.width, h: canvas.style.height,
-                 pos: canvas.style.position, left: canvas.style.left,
-                 top: canvas.style.top };
-  const host = view.getBoundingClientRect();
-  if (host.width > 0 && host.height > 0) {
-    const scale = Math.min(host.width / width, host.height / height);
-    canvas.style.position = 'absolute';
-    canvas.style.width = Math.round(width * scale) + 'px';
-    canvas.style.height = Math.round(height * scale) + 'px';
-    canvas.style.left = Math.round((host.width - width * scale) / 2) + 'px';
-    canvas.style.top = Math.round((host.height - height * scale) / 2) + 'px';
-  }
-  return prev;
-}
-
-function unfitCanvasAfterExport(prev) {
-  const canvas = renderer.domElement;
-  canvas.style.width = prev.w;
-  canvas.style.height = prev.h;
-  canvas.style.position = prev.pos;
-  canvas.style.left = prev.left;
-  canvas.style.top = prev.top;
-  resizeRenderer();            // backing store back to the window, and CSS with it
+// Video export renders into its own offscreen canvas rather than resizing the
+// one on screen.
+//
+// Resizing the visible canvas changes the displayed picture's shape for the
+// whole recording, and the obvious fix -- preserveDrawingBuffer, so the
+// drawing buffer survives long enough to be read -- slows every frame the
+// viewer draws, not just the ones being exported.  A second renderer, created
+// for the export and disposed after it, costs one WebGL context and leaves
+// ordinary viewing completely alone.
+//
+// The export camera follows the on-screen camera before every frame, so the
+// spin and anything the user has orbited to are what gets recorded.
+function beginExportRender(width, height) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const r = new THREE.WebGLRenderer({ canvas: canvas, antialias: true,
+                                      preserveDrawingBuffer: true });
+  r.setPixelRatio(1);
+  r.setSize(width, height, false);
+  const cam = camera.clone();
+  cam.aspect = width / height;
+  cam.updateProjectionMatrix();
+  return {
+    canvas: canvas,
+    camera: cam,
+    render() {
+      cam.position.copy(camera.position);
+      cam.quaternion.copy(camera.quaternion);
+      cam.up.copy(camera.up);
+      r.render(scene, cam);
+    },
+    dispose() { r.dispose(); },
+  };
 }
 
 // ------------------------------------------------------------ video export
@@ -430,16 +431,9 @@ async function exportMp4ViaServer(opts, source) {
     alert('There are no frames to record yet.');
     return false;
   }
-  const canvas = renderer.domElement;
-  const size = new THREE.Vector2();
-  renderer.getSize(size);
-  const oldAspect = camera.aspect;
   const oldCellVisible = cell.visible;
   cell.visible = true;
-  renderer.setSize(opts.width, opts.height, false);
-  const prevLayout = fitCanvasForExport(opts.width, opts.height);
-  camera.aspect = opts.width / opts.height;
-  camera.updateProjectionMatrix();
+  const ex = beginExportRender(opts.width, opts.height);
   exporting = true;
 
   let token = null;
@@ -467,8 +461,8 @@ async function exportMp4ViaServer(opts, source) {
     for (let i = 0; i < list.length; i++) {
       await source.show(i);
       spinCamera(1.0 / opts.fps);      // one fixed step, as in the browser path
-      drawScene();
-      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      ex.render();
+      const blob = await new Promise((res) => ex.canvas.toBlob(res, 'image/png'));
       if (!blob) throw new Error('could not read the canvas');
       const r = await fetch('/api/encode/frame?token=' + encodeURIComponent(token),
                             { method: 'POST', body: blob });
@@ -505,11 +499,8 @@ async function exportMp4ViaServer(opts, source) {
     return false;
   } finally {
     exporting = false;
-    unfitCanvasAfterExport(prevLayout);
-    camera.aspect = oldAspect;
-    camera.updateProjectionMatrix();
+    ex.dispose();
     cell.visible = oldCellVisible;
-    if (typeof userMovedCamera !== 'undefined' && !userMovedCamera) homeCamera();
   }
 }
 
@@ -552,22 +543,12 @@ async function exportVideo(opts, source) {
     return false;
   }
 
-  const canvas = renderer.domElement;
-
-  // Record at a fixed size rather than whatever the window happens to be.
-  const size = new THREE.Vector2();
-  renderer.getSize(size);
-  const oldAspect = camera.aspect;
   // The simulation box and the camera spin are part of the render, not view
   // furniture, so the video always has both regardless of the toggles.
   const oldCellVisible = cell.visible;
   cell.visible = true;
-  renderer.setSize(opts.width, opts.height, false);
-  const prevLayout = fitCanvasForExport(opts.width, opts.height);
-  camera.aspect = opts.width / opts.height;
-  camera.updateProjectionMatrix();
-
-  const stream = canvas.captureStream(0);          // 0 = only on requestFrame
+  const ex = beginExportRender(opts.width, opts.height);
+  const stream = ex.canvas.captureStream(0);        // 0 = only on requestFrame
   const track = stream.getVideoTracks()[0];
   const chunks = [];
   const rec = new MediaRecorder(stream,
@@ -585,7 +566,7 @@ async function exportVideo(opts, source) {
       // One fixed step of rotation per frame: the wall-clock spin in animate()
       // would give a different angle per frame depending on render time.
       spinCamera(1.0 / opts.fps);
-      drawScene();                       // applyFrame only uploads; this draws
+      ex.render();                       // applyFrame only uploads; this draws
       if (track.requestFrame) track.requestFrame();
       if (opts.onProgress) opts.onProgress(i + 1, list.length);
       // MediaRecorder timestamps by wall clock, so pace the frames or a slow
@@ -597,11 +578,8 @@ async function exportVideo(opts, source) {
     exporting = false;
     rec.stop();
     await stopped;
-    unfitCanvasAfterExport(prevLayout);
-    camera.aspect = oldAspect;
-    camera.updateProjectionMatrix();
+    ex.dispose();
     cell.visible = oldCellVisible;
-    if (typeof userMovedCamera !== 'undefined' && !userMovedCamera) homeCamera();
   }
 
   const ext = mime.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
